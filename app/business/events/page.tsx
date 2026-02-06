@@ -4,13 +4,13 @@ import { ProtectedRoute } from "@/components/protected-route"
 import { BusinessSidebar } from "@/components/business/business-sidebar"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { mockEvents } from "@/lib/mock-data"
 import { Plus, Calendar, Clock, MapPin, MoreVertical } from "lucide-react"
 import Image from "next/image"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 export default function BusinessEventsPage() {
-  const businessEvents = mockEvents.filter((e) => e.businessId === "1")
+  // Events feature coming soon - showing empty state for now
+  const businessEvents: { id: string; title: string; description: string; date: string; time: string; location: string; image: string }[] = []
 
   return (
     <ProtectedRoute requireBusiness>

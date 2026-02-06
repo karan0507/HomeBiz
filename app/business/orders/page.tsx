@@ -54,11 +54,11 @@ export default function BusinessOrdersPage() {
                           <td className="py-3 px-4">
                             <Badge
                               variant={
-                                order.status === "completed"
+                                order.status === "completed" || order.status === "picked_up"
                                   ? "default"
-                                  : order.status === "processing"
+                                  : order.status === "preparing" || order.status === "ready"
                                     ? "secondary"
-                                    : order.status === "pending"
+                                    : order.status === "placed" || order.status === "confirmed"
                                       ? "outline"
                                       : "destructive"
                               }

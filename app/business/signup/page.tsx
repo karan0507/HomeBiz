@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Building, Lock, Mail, User, Phone } from "lucide-react"
+import { useAuth } from "@/lib/auth-context"
 
 export default function BusinessSignupPage() {
   const [formData, setFormData] = useState({
@@ -24,6 +25,7 @@ export default function BusinessSignupPage() {
   const [success, setSuccess] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const { signup } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,12 +38,22 @@ export default function BusinessSignupPage() {
       return
     }
 
-    // Mock signup - in real app would create user
-    setTimeout(() => {
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters")
+      setIsLoading(false)
+      return
+    }
+
+    const success = await signup(formData.name, formData.email, formData.password, "business")
+
+    if (success) {
       setSuccess(true)
       setIsLoading(false)
-      setTimeout(() => router.push("/business/login"), 2000)
-    }, 1000)
+      setTimeout(() => router.push("/business/dashboard"), 1500)
+    } else {
+      setError("Email already registered. Please try another.")
+      setIsLoading(false)
+    }
   }
 
   return (

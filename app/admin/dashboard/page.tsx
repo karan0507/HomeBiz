@@ -91,20 +91,20 @@ export default function AdminDashboardPage() {
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate">{business.name}</p>
                           <p className="text-sm text-muted-foreground truncate">
-                            {business.city}, {business.state}
+                            {business.neighborhood}, {business.city}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
                           <div
                             className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              business.status === "active"
+                              business.verificationStatus === "approved"
                                 ? "bg-green-100 text-green-700"
-                                : business.status === "pending"
+                                : business.verificationStatus === "pending"
                                   ? "bg-yellow-100 text-yellow-700"
                                   : "bg-red-100 text-red-700"
                             }`}
                           >
-                            {business.status}
+                            {business.verificationStatus}
                           </div>
                         </div>
                       </div>

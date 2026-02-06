@@ -1,11 +1,10 @@
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { mockCategories } from "@/lib/mock-data"
-import { LandingNav } from "@/components/landing/landing-nav"
-import { Footer } from "@/components/landing/footer"
-import { Utensils, Coffee, Heart, ShoppingBag, Briefcase, Home } from "lucide-react"
+import { MainLayout } from "@/components/layout/main-layout"
+import { Utensils, Coffee, Heart, ShoppingBag, Briefcase, Home, type LucideIcon } from "lucide-react"
 
-const iconMap: Record<string, any> = {
+const iconMap: Record<string, LucideIcon> = {
   utensils: Utensils,
   coffee: Coffee,
   heart: Heart,
@@ -16,9 +15,7 @@ const iconMap: Record<string, any> = {
 
 export default function CategoriesPage() {
   return (
-    <div className="min-h-screen flex flex-col">
-      <LandingNav />
-      <main className="flex-1">
+    <MainLayout>
         <section className="py-16 md:py-24 bg-background">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
@@ -59,8 +56,6 @@ export default function CategoriesPage() {
             </div>
           </div>
         </section>
-      </main>
-      <Footer />
-    </div>
+    </MainLayout>
   )
 }

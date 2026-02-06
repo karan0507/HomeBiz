@@ -4,15 +4,12 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { mockBusinesses } from "@/lib/mock-data"
-import { LandingNav } from "@/components/landing/landing-nav"
-import { Footer } from "@/components/landing/footer"
+import { MainLayout } from "@/components/layout/main-layout"
 import { Star, MapPin, Clock, CheckCircle } from "lucide-react"
 
 export default function BusinessesPage() {
   return (
-    <div className="min-h-screen flex flex-col">
-      <LandingNav />
-      <main className="flex-1">
+    <MainLayout>
         <section className="py-16 md:py-24 bg-background">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
@@ -34,15 +31,15 @@ export default function BusinessesPage() {
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-                    {business.isPremium && (
-                      <Badge className="absolute top-3 right-3 bg-accent text-accent-foreground">Premium</Badge>
+                    {business.isVerified && (
+                      <Badge className="absolute top-3 right-3 bg-accent text-accent-foreground">Verified</Badge>
                     )}
                   </div>
 
                   <CardHeader className="space-y-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <Link href={`/business/${business.slug}`}>
+                        <Link href={`/kitchens/${business.slug}`}>
                           <h3 className="text-xl font-display font-semibold hover:text-primary transition-colors truncate">
                             {business.name}
                           </h3>
@@ -67,16 +64,16 @@ export default function BusinessesPage() {
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <MapPin className="h-4 w-4 flex-shrink-0" />
                       <span className="truncate">
-                        {business.city}, {business.state}
+                        {business.neighborhood}, {business.city}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Clock className="h-4 w-4 flex-shrink-0" />
-                      <span>Open until {business.openingHours.monday?.close || "9:00 PM"}</span>
+                      <span>Open until {business.operatingHours.monday?.close || "9:00 PM"}</span>
                     </div>
 
-                    <Link href={`/business/${business.slug}`} className="block mt-4">
+                    <Link href={`/kitchens/${business.slug}`} className="block mt-4">
                       <Button
                         variant="outline"
                         className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors bg-transparent"
@@ -90,8 +87,6 @@ export default function BusinessesPage() {
             </div>
           </div>
         </section>
-      </main>
-      <Footer />
-    </div>
+    </MainLayout>
   )
 }

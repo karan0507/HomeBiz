@@ -65,7 +65,7 @@ export default function AdminBusinessesPage() {
                             </div>
                           </td>
                           <td className="py-3 px-4 text-muted-foreground">
-                            {business.city}, {business.state}
+                            {business.neighborhood}, {business.city}
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex items-center gap-1">
@@ -77,19 +77,19 @@ export default function AdminBusinessesPage() {
                           <td className="py-3 px-4">
                             <Badge
                               variant={
-                                business.status === "active"
+                                business.verificationStatus === "approved"
                                   ? "default"
-                                  : business.status === "pending"
+                                  : business.verificationStatus === "pending"
                                     ? "secondary"
                                     : "destructive"
                               }
                             >
-                              {business.status}
+                              {business.verificationStatus}
                             </Badge>
                           </td>
                           <td className="py-3 px-4">
-                            <Badge variant={business.isPremium ? "default" : "outline"}>
-                              {business.isPremium ? "Premium" : "Free"}
+                            <Badge variant={business.isVerified ? "default" : "outline"}>
+                              {business.isVerified ? "Verified" : "Pending"}
                             </Badge>
                           </td>
                           <td className="py-3 px-4 text-right">
@@ -101,9 +101,9 @@ export default function AdminBusinessesPage() {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem>View Details</DropdownMenuItem>
-                                <DropdownMenuItem>Edit Business</DropdownMenuItem>
+                                <DropdownMenuItem>Edit Kitchen</DropdownMenuItem>
                                 <DropdownMenuItem>
-                                  {business.status === "active" ? "Suspend" : "Activate"}
+                                  {business.verificationStatus === "approved" ? "Suspend" : "Activate"}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem className="text-destructive">Delete Business</DropdownMenuItem>
                               </DropdownMenuContent>

@@ -105,11 +105,11 @@ export default function BusinessDashboardPage() {
                             <p className="font-semibold">${order.total}</p>
                             <div
                               className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                order.status === "completed"
+                                order.status === "completed" || order.status === "picked_up"
                                   ? "bg-green-100 text-green-700"
-                                  : order.status === "processing"
+                                  : order.status === "preparing" || order.status === "ready"
                                     ? "bg-blue-100 text-blue-700"
-                                    : order.status === "pending"
+                                    : order.status === "placed" || order.status === "confirmed"
                                       ? "bg-yellow-100 text-yellow-700"
                                       : "bg-red-100 text-red-700"
                               }`}

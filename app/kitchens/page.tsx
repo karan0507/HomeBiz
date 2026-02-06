@@ -1,0 +1,471 @@
+"use client";
+
+import { useState, useMemo, Suspense } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import {
+  Search,
+  SlidersHorizontal,
+  Star,
+  MapPin,
+  Clock,
+  ChefHat,
+  Heart,
+  X,
+  BadgeCheck,
+  Grid3X3,
+  List,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { MainLayout } from "@/components/layout/main-layout";
+import { useCart } from "@/lib/cart-context";
+import { mockBusinesses, mockCategories } from "@/lib/mock-data";
+
+function KitchensContent() {
+  const searchParams = useSearchParams();
+  const initialCuisine = searchParams.get("cuisine") || "";
+  const initialQuery = searchParams.get("q") || "";
+
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
+  const [selectedCuisine, setSelectedCuisine] = useState(initialCuisine);
+  const [selectedDietary, setSelectedDietary] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState("rating");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
+  const { isInWishlist, toggleWishlist } = useCart();
+
+  const dietaryOptions = ["Vegetarian", "Vegan", "Halal", "Gluten-Free", "Dairy-Free"];
+
+  const filteredKitchens = useMemo(() => {
+    let result = [...mockBusinesses];
+
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (k) =>
+          k.name.toLowerCase().includes(query) ||
+          k.cuisineTypes.some((c) => c.toLowerCase().includes(query)) ||
+          k.neighborhood.toLowerCase().includes(query)
+      );
+    }
+
+    if (selectedCuisine) {
+      result = result.filter((k) =>
+        k.cuisineTypes.some((c) => c.toLowerCase().includes(selectedCuisine.toLowerCase()))
+      );
+    }
+
+    if (selectedDietary.length > 0) {
+      result = result.filter((k) =>
+        selectedDietary.some((d) => k.dietaryOptions.includes(d))
+      );
+    }
+
+    switch (sortBy) {
+      case "rating":
+        result.sort((a, b) => b.rating - a.rating);
+        break;
+      case "orders":
+        result.sort((a, b) => b.totalOrders - a.totalOrders);
+        break;
+      case "name":
+        result.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+    }
+
+    return result;
+  }, [searchQuery, selectedCuisine, selectedDietary, sortBy]);
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setSelectedCuisine("");
+    setSelectedDietary([]);
+    setSortBy("rating");
+  };
+
+  const hasFilters = searchQuery || selectedCuisine || selectedDietary.length > 0;
+
+  return (
+    <MainLayout>
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold">Find Home Kitchens</h1>
+          <p className="text-muted-foreground mt-1">
+            {filteredKitchens.length} home chefs ready to cook for you in Toronto
+          </p>
+        </div>
+
+        {/* Search & Filter Bar */}
+        <div className="flex gap-3 mb-6">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search cuisines, dishes, or neighbourhoods..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 h-11"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 hover:text-foreground"
+              >
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+            )}
+          </div>
+
+          {/* View Toggle (Desktop) */}
+          <div className="hidden md:flex border rounded-lg overflow-hidden">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`px-3 py-2 ${viewMode === "grid" ? "bg-primary text-white" : "bg-background hover:bg-muted"}`}
+            >
+              <Grid3X3 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={`px-3 py-2 ${viewMode === "list" ? "bg-primary text-white" : "bg-background hover:bg-muted"}`}
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
+
+          <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="h-11 gap-2 shrink-0">
+                <SlidersHorizontal className="w-4 h-4" />
+                <span className="hidden sm:inline">Filters</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-full sm:max-w-md">
+              <SheetHeader>
+                <SheetTitle>Filter Kitchens</SheetTitle>
+              </SheetHeader>
+              <div className="py-6 space-y-6 overflow-y-auto">
+                <div>
+                  <label className="text-sm font-medium mb-3 block">Cuisine Type</label>
+                  <div className="flex flex-wrap gap-2">
+                    {mockCategories.slice(0, 10).map((cat) => (
+                      <Button
+                        key={cat.id}
+                        variant={selectedCuisine === cat.slug ? "default" : "outline"}
+                        size="sm"
+                        className="h-9"
+                        onClick={() =>
+                          setSelectedCuisine(selectedCuisine === cat.slug ? "" : cat.slug)
+                        }
+                      >
+                        {cat.name}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-3 block">Dietary Options</label>
+                  <div className="flex flex-wrap gap-2">
+                    {dietaryOptions.map((option) => (
+                      <Button
+                        key={option}
+                        variant={selectedDietary.includes(option) ? "default" : "outline"}
+                        size="sm"
+                        className="h-9"
+                        onClick={() =>
+                          setSelectedDietary((prev) =>
+                            prev.includes(option)
+                              ? prev.filter((d) => d !== option)
+                              : [...prev, option]
+                          )
+                        }
+                      >
+                        {option}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-3 block">Sort By</label>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { value: "rating", label: "Top Rated" },
+                      { value: "orders", label: "Most Popular" },
+                      { value: "name", label: "Name A-Z" },
+                    ].map((option) => (
+                      <Button
+                        key={option.value}
+                        variant={sortBy === option.value ? "default" : "outline"}
+                        size="sm"
+                        className="h-9"
+                        onClick={() => setSortBy(option.value)}
+                      >
+                        {option.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-4 border-t">
+                  <Button variant="outline" className="flex-1" onClick={clearFilters}>
+                    Clear All
+                  </Button>
+                  <Button className="flex-1 bg-gradient-to-r from-primary to-emerald-600" onClick={() => setFilterOpen(false)}>
+                    Show {filteredKitchens.length} Results
+                  </Button>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+
+        {/* Quick Filters */}
+        <div className="flex gap-2 overflow-x-auto pb-4 mb-4 no-scrollbar">
+          {mockCategories.slice(0, 8).map((cat) => (
+            <Button
+              key={cat.id}
+              variant={selectedCuisine === cat.slug ? "default" : "secondary"}
+              size="sm"
+              className={`shrink-0 h-9 gap-1.5 ${selectedCuisine === cat.slug ? "bg-gradient-to-r from-primary to-emerald-600" : ""}`}
+              onClick={() => setSelectedCuisine(selectedCuisine === cat.slug ? "" : cat.slug)}
+            >
+              <span>{cat.icon}</span>
+              {cat.name}
+            </Button>
+          ))}
+        </div>
+
+        {/* Active Filters */}
+        {hasFilters && (
+          <div className="flex items-center gap-2 mb-6 flex-wrap">
+            <span className="text-sm text-muted-foreground">Active filters:</span>
+            {selectedCuisine && (
+              <Badge variant="secondary" className="gap-1.5 h-7 pl-3 pr-2">
+                {selectedCuisine}
+                <X className="w-3.5 h-3.5 cursor-pointer hover:text-destructive" onClick={() => setSelectedCuisine("")} />
+              </Badge>
+            )}
+            {selectedDietary.map((d) => (
+              <Badge key={d} variant="secondary" className="gap-1.5 h-7 pl-3 pr-2">
+                {d}
+                <X
+                  className="w-3.5 h-3.5 cursor-pointer hover:text-destructive"
+                  onClick={() => setSelectedDietary((prev) => prev.filter((x) => x !== d))}
+                />
+              </Badge>
+            ))}
+            <button onClick={clearFilters} className="text-sm text-primary hover:underline font-medium">
+              Clear all
+            </button>
+          </div>
+        )}
+
+        {/* Kitchen Grid/List */}
+        {filteredKitchens.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="w-20 h-20 rounded-full bg-muted mx-auto flex items-center justify-center mb-4">
+              <ChefHat className="w-10 h-10 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">No kitchens found</h3>
+            <p className="text-muted-foreground mb-4">Try adjusting your filters or search terms</p>
+            <Button variant="outline" onClick={clearFilters}>Clear all filters</Button>
+          </div>
+        ) : (
+          <div className={viewMode === "grid"
+            ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+            : "space-y-3"
+          }>
+            {filteredKitchens.map((kitchen) => (
+              viewMode === "grid" ? (
+                // Grid View Card
+                <Card key={kitchen.id} className="overflow-hidden group hover:shadow-lg transition-all hover:border-primary/50">
+                  <Link href={`/kitchens/${kitchen.slug}`}>
+                    <div className="h-32 bg-gradient-to-br from-primary/20 via-primary/10 to-emerald-500/10 relative">
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary via-primary to-emerald-600 flex items-center justify-center shadow-lg">
+                          <ChefHat className="w-8 h-8 text-white" />
+                        </div>
+                      </div>
+                      {kitchen.isVerified && (
+                        <Badge className="absolute top-3 left-3 bg-primary/90 text-white border-0 gap-1">
+                          <BadgeCheck className="w-3 h-3" />
+                          Verified
+                        </Badge>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-2 right-2 h-8 w-8 bg-white/80 hover:bg-white"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          toggleWishlist(kitchen.id);
+                        }}
+                      >
+                        <Heart
+                          className={`w-4 h-4 ${
+                            isInWishlist(kitchen.id) ? "fill-red-500 text-red-500" : ""
+                          }`}
+                        />
+                      </Button>
+                    </div>
+                    <CardContent className="p-4">
+                      <h3 className="font-semibold truncate group-hover:text-primary transition-colors">
+                        {kitchen.name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground truncate mt-0.5">
+                        {kitchen.cuisineTypes.slice(0, 2).join(" • ")}
+                      </p>
+
+                      <div className="flex items-center gap-3 mt-3 text-sm">
+                        <span className="flex items-center gap-1 bg-yellow-50 text-yellow-700 px-2 py-0.5 rounded-full">
+                          <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                          <span className="font-medium">{kitchen.rating}</span>
+                        </span>
+                        <span className="flex items-center gap-1 text-muted-foreground text-xs">
+                          <MapPin className="w-3 h-3" />
+                          {kitchen.neighborhood}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between mt-3 pt-3 border-t">
+                        <div className="flex gap-1">
+                          {kitchen.dietaryOptions.slice(0, 2).map((opt) => (
+                            <Badge key={opt} variant="outline" className="text-[10px] h-5 px-1.5">
+                              {opt}
+                            </Badge>
+                          ))}
+                        </div>
+                        <Badge
+                          className={
+                            kitchen.acceptingOrders
+                              ? "bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px]"
+                              : "bg-red-100 text-red-700 border-red-200 text-[10px]"
+                          }
+                        >
+                          {kitchen.acceptingOrders ? "Open" : "Closed"}
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Link>
+                </Card>
+              ) : (
+                // List View Card
+                <Card key={kitchen.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                  <Link href={`/kitchens/${kitchen.slug}`}>
+                    <CardContent className="p-4">
+                      <div className="flex gap-4">
+                        <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-primary/20 to-emerald-500/10 flex items-center justify-center shrink-0">
+                          <ChefHat className="w-10 h-10 text-primary" />
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-semibold truncate">{kitchen.name}</h3>
+                                {kitchen.isVerified && (
+                                  <BadgeCheck className="w-4 h-4 text-primary shrink-0" />
+                                )}
+                              </div>
+                              <p className="text-sm text-muted-foreground truncate">
+                                {kitchen.cuisineTypes.slice(0, 3).join(" • ")}
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 shrink-0"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                toggleWishlist(kitchen.id);
+                              }}
+                            >
+                              <Heart
+                                className={`w-4 h-4 ${
+                                  isInWishlist(kitchen.id) ? "fill-red-500 text-red-500" : ""
+                                }`}
+                              />
+                            </Button>
+                          </div>
+
+                          <div className="flex items-center gap-4 mt-2 text-sm">
+                            <span className="flex items-center gap-1">
+                              <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                              <span className="font-medium">{kitchen.rating}</span>
+                              <span className="text-muted-foreground">({kitchen.reviewCount})</span>
+                            </span>
+                            <span className="flex items-center gap-1 text-muted-foreground">
+                              <MapPin className="w-3.5 h-3.5" />
+                              {kitchen.neighborhood}
+                            </span>
+                            <span className="flex items-center gap-1 text-muted-foreground">
+                              <Clock className="w-3.5 h-3.5" />
+                              {kitchen.preparationTime}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 mt-2">
+                            {kitchen.dietaryOptions.slice(0, 3).map((opt) => (
+                              <Badge key={opt} variant="outline" className="text-xs h-6">
+                                {opt}
+                              </Badge>
+                            ))}
+                            <Badge
+                              className={`ml-auto ${
+                                kitchen.acceptingOrders
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "bg-red-100 text-red-700"
+                              }`}
+                            >
+                              {kitchen.acceptingOrders ? "Open Now" : "Closed"}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Link>
+                </Card>
+              )
+            ))}
+          </div>
+        )}
+      </div>
+    </MainLayout>
+  );
+}
+
+export default function KitchensPage() {
+  return (
+    <Suspense
+      fallback={
+        <MainLayout>
+          <div className="container mx-auto px-4 py-8 max-w-7xl">
+            <div className="animate-pulse space-y-6">
+              <div className="h-10 bg-muted rounded w-64" />
+              <div className="h-11 bg-muted rounded" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                  <div key={i} className="h-64 bg-muted rounded-lg" />
+                ))}
+              </div>
+            </div>
+          </div>
+        </MainLayout>
+      }
+    >
+      <KitchensContent />
+    </Suspense>
+  );
+}

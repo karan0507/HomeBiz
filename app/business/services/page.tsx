@@ -10,7 +10,7 @@ import { Plus, MoreVertical, Clock } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 export default function BusinessServicesPage() {
-  const businessServices = mockServices.filter((s) => s.businessId === "3")
+  const businessServices = mockServices.filter((s) => s.businessId === "1")
 
   return (
     <ProtectedRoute requireBusiness>
@@ -38,7 +38,7 @@ export default function BusinessServicesPage() {
                         <h3 className="font-semibold truncate">{service.name}</h3>
                         <div className="flex items-center gap-2 mt-2">
                           <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">{service.duration}</span>
+                          <span className="text-sm text-muted-foreground">{service.prepTime}</span>
                         </div>
                       </div>
                       <DropdownMenu>

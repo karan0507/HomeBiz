@@ -40,8 +40,8 @@ export default function BusinessProductsPage() {
                       fill
                       className="object-cover"
                     />
-                    <Badge className="absolute top-3 right-3" variant={product.inStock ? "default" : "secondary"}>
-                      {product.inStock ? "In Stock" : "Out of Stock"}
+                    <Badge className="absolute top-3 right-3" variant={product.available ? "default" : "secondary"}>
+                      {product.available ? "Available" : "Unavailable"}
                     </Badge>
                   </div>
                   <CardHeader>
