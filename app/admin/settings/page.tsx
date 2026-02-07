@@ -1,7 +1,7 @@
 "use client"
 
 import { ProtectedRoute } from "@/components/protected-route"
-import { AdminSidebar } from "@/components/admin/admin-sidebar"
+import { AdminLayout } from "@/components/admin/admin-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,14 +12,12 @@ import { Separator } from "@/components/ui/separator"
 export default function AdminSettingsPage() {
   return (
     <ProtectedRoute requireAdmin>
-      <div className="flex min-h-screen bg-background">
-        <AdminSidebar />
-        <main className="flex-1 p-8">
-          <div className="max-w-4xl mx-auto space-y-8">
-            <div>
-              <h1 className="text-3xl font-display font-bold">Settings</h1>
-              <p className="text-muted-foreground mt-2">Manage platform settings and configurations</p>
-            </div>
+      <AdminLayout>
+        <div className="space-y-6 md:space-y-8 max-w-4xl">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold">Settings</h1>
+            <p className="text-muted-foreground mt-1 md:mt-2">Manage platform settings and configurations</p>
+          </div>
 
             <Card>
               <CardHeader>
@@ -102,10 +100,9 @@ export default function AdminSettingsPage() {
                   </div>
                 </div>
               </CardContent>
-            </Card>
-          </div>
-        </main>
-      </div>
+          </Card>
+        </div>
+      </AdminLayout>
     </ProtectedRoute>
   )
 }

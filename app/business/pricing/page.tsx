@@ -1,7 +1,7 @@
 "use client"
 
 import { ProtectedRoute } from "@/components/protected-route"
-import { BusinessSidebar } from "@/components/business/business-sidebar"
+import { BusinessLayout } from "@/components/business/business-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -58,14 +58,12 @@ export default function BusinessPricingPage() {
 
   return (
     <ProtectedRoute requireBusiness>
-      <div className="flex min-h-screen bg-background">
-        <BusinessSidebar />
-        <main className="flex-1 p-8">
-          <div className="max-w-7xl mx-auto space-y-8">
-            <div>
-              <h1 className="text-3xl font-display font-bold">Pricing Plans</h1>
-              <p className="text-muted-foreground mt-2">Choose the right plan for your business</p>
-            </div>
+      <BusinessLayout>
+        <div className="space-y-6 md:space-y-8">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold">Pricing Plans</h1>
+            <p className="text-muted-foreground mt-1 md:mt-2">Choose the right plan for your business</p>
+          </div>
 
             <div className="grid md:grid-cols-3 gap-6">
               {plans.map((plan) => (
@@ -96,10 +94,9 @@ export default function BusinessPricingPage() {
                   </CardContent>
                 </Card>
               ))}
-            </div>
           </div>
-        </main>
-      </div>
+        </div>
+      </BusinessLayout>
     </ProtectedRoute>
   )
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import {
   ChefHat,
@@ -19,8 +19,10 @@ import {
   Instagram,
   Twitter,
   Facebook,
+  Utensils,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth-context";
@@ -33,8 +35,11 @@ interface MainLayoutProps {
 
 export function MainLayout({ children, hideNav, hideFooter }: MainLayoutProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
   const { cartCount, wishlist } = useCart();
   const { user, logout, isAuthenticated } = useAuth();
 
@@ -46,11 +51,21 @@ export function MainLayout({ children, hideNav, hideFooter }: MainLayoutProps) {
 
   useEffect(() => {
     setMobileMenuOpen(false);
+    setShowSearch(false);
   }, [pathname]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/kitchens?q=${encodeURIComponent(searchQuery.trim())}`);
+      setShowSearch(false);
+      setSearchQuery("");
+    }
+  };
 
   const navItems = [
     { href: "/", label: "Home", icon: Home },
-    { href: "/kitchens", label: "Browse", icon: Search },
+    { href: "/kitchens", label: "Browse", icon: Utensils },
     { href: "/cart", label: "Cart", icon: ShoppingCart, badge: cartCount },
     { href: "/account", label: "Account", icon: User },
   ];
@@ -96,13 +111,28 @@ export function MainLayout({ children, hideNav, hideFooter }: MainLayoutProps) {
                   How It Works
                 </Button>
               </Link>
+              <Link href="/contact">
+                <Button variant="ghost" size="sm" className={cn(isActive("/contact") && "bg-primary/10 text-primary")}>
+                  Contact
+                </Button>
+              </Link>
             </nav>
 
             {/* Right Actions */}
             <div className="flex items-center gap-1">
+              {/* Search Toggle */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 flex items-center justify-center"
+                onClick={() => setShowSearch(!showSearch)}
+              >
+                <Search className="w-4 h-4" />
+              </Button>
+
               {/* Wishlist */}
-              <Link href="/account?tab=wishlist" className="hidden sm:block">
-                <Button variant="ghost" size="icon" className="relative h-9 w-9">
+              <Link href="/account?tab=wishlist" className="hidden sm:flex">
+                <Button variant="ghost" size="icon" className="relative h-9 w-9 flex items-center justify-center">
                   <Heart className="w-4 h-4" />
                   {wishlist.length > 0 && (
                     <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-medium">
@@ -113,8 +143,8 @@ export function MainLayout({ children, hideNav, hideFooter }: MainLayoutProps) {
               </Link>
 
               {/* Cart */}
-              <Link href="/cart" className="hidden sm:block">
-                <Button variant="ghost" size="icon" className="relative h-9 w-9">
+              <Link href="/cart" className="hidden sm:flex">
+                <Button variant="ghost" size="icon" className="relative h-9 w-9 flex items-center justify-center">
                   <ShoppingCart className="w-4 h-4" />
                   {cartCount > 0 && (
                     <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-white text-[10px] rounded-full flex items-center justify-center font-medium">
@@ -154,13 +184,37 @@ export function MainLayout({ children, hideNav, hideFooter }: MainLayoutProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden h-9 w-9"
+                className="md:hidden h-9 w-9 flex items-center justify-center"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               >
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </Button>
             </div>
           </div>
+
+          {/* Search Bar Dropdown */}
+          {showSearch && (
+            <div className="border-t bg-background/95 backdrop-blur-md">
+              <div className="container mx-auto px-4 py-3">
+                <form onSubmit={handleSearch} className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Search cuisines, dishes, or chefs..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10 h-10"
+                      autoFocus
+                    />
+                  </div>
+                  <Button type="submit" size="default" className="px-6">
+                    Search
+                  </Button>
+                </form>
+              </div>
+            </div>
+          )}
 
           {/* Mobile Menu */}
           {mobileMenuOpen && (
@@ -174,6 +228,9 @@ export function MainLayout({ children, hideNav, hideFooter }: MainLayoutProps) {
                 </Link>
                 <Link href="/how-it-works" className="block">
                   <Button variant="ghost" className="w-full justify-start h-11">How It Works</Button>
+                </Link>
+                <Link href="/contact" className="block">
+                  <Button variant="ghost" className="w-full justify-start h-11">Contact Us</Button>
                 </Link>
                 <div className="border-t pt-3 mt-3">
                   {isAuthenticated ? (
@@ -231,10 +288,12 @@ export function MainLayout({ children, hideNav, hideFooter }: MainLayoutProps) {
                   isActive(item.href) ? "text-primary" : "text-muted-foreground"
                 )}
               >
-                <item.icon className={cn("w-5 h-5", isActive(item.href) && "text-primary")} />
+                <div className="flex items-center justify-center w-6 h-6">
+                  <item.icon className={cn("w-5 h-5", isActive(item.href) && "text-primary")} />
+                </div>
                 <span className="text-[10px] font-medium">{item.label}</span>
-                {item.badge && item.badge > 0 && (
-                  <span className="absolute top-1.5 right-1/4 w-4 h-4 bg-primary text-white text-[10px] rounded-full flex items-center justify-center font-medium">
+                {item.badge !== undefined && item.badge > 0 && (
+                  <span className="absolute top-1 left-1/2 translate-x-1 w-4 h-4 bg-primary text-white text-[10px] rounded-full flex items-center justify-center font-medium">
                     {item.badge}
                   </span>
                 )}

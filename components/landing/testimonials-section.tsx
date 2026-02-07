@@ -29,7 +29,7 @@ export function TestimonialsSection() {
   };
 
   return (
-    <section className="py-12 md:py-16 bg-gradient-to-b from-secondary/20 to-background">
+    <section className="py-16 md:py-24 bg-gradient-to-b from-secondary/20 to-background">
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <motion.div
@@ -37,7 +37,7 @@ export function TestimonialsSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-16"
+          className="text-center mb-10"
         >
           <span className="inline-block px-4 py-1.5 rounded-full glass-emerald text-primary text-sm font-medium mb-4">
             Community Love
@@ -52,7 +52,7 @@ export function TestimonialsSection() {
         </motion.div>
 
         {/* Desktop: Grid Layout */}
-        <div className="hidden lg:grid grid-cols-3 gap-6">
+        <div className="hidden lg:grid grid-cols-3 gap-4">
           {testimonials.slice(0, 6).map((testimonial, index) => (
             <TestimonialCard key={testimonial.id} testimonial={testimonial} index={index} />
           ))}
@@ -134,47 +134,47 @@ function TestimonialCard({
       transition={{ duration: 0.5, delay: index * 0.1 }}
       className="h-full"
     >
-      <div className="h-full p-6 rounded-3xl glass hover-lift">
-        {/* Quote Icon */}
-        <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center mb-4">
-          <Quote className="w-6 h-6 text-white" />
+      <div className="h-full flex flex-col p-4 md:p-5 rounded-2xl glass hover-lift">
+        {/* Header Row - Quote Icon + Rating */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-primary flex items-center justify-center">
+            <Quote className="w-4 h-4 md:w-5 md:h-5 text-white" />
+          </div>
+          <div className="flex items-center gap-0.5">
+            {[...Array(5)].map((_, i) => (
+              <Star
+                key={i}
+                className={`w-3 h-3 md:w-3.5 md:h-3.5 ${
+                  i < testimonial.rating
+                    ? "fill-yellow-400 text-yellow-400"
+                    : "text-gray-300"
+                }`}
+              />
+            ))}
+          </div>
         </div>
 
-        {/* Rating */}
-        <div className="flex items-center gap-1 mb-4">
-          {[...Array(5)].map((_, i) => (
-            <Star
-              key={i}
-              className={`w-4 h-4 ${
-                i < testimonial.rating
-                  ? "fill-yellow-400 text-yellow-400"
-                  : "text-gray-300"
-              }`}
-            />
-          ))}
-        </div>
-
-        {/* Quote */}
-        <p className="text-foreground/90 leading-relaxed mb-6">
+        {/* Quote - smaller text, limited lines */}
+        <p className="text-sm text-foreground/90 leading-relaxed mb-4 line-clamp-4 flex-1">
           &quot;{testimonial.quote}&quot;
         </p>
 
-        {/* Author */}
-        <div className="flex items-center gap-3 pt-4 border-t border-border">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
-            <User className="w-6 h-6 text-primary" />
+        {/* Author - compact */}
+        <div className="flex items-center gap-2 pt-3 border-t border-border">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center flex-shrink-0">
+            <User className="w-4 h-4 text-primary" />
           </div>
-          <div>
-            <p className="font-semibold">{testimonial.name}</p>
-            <p className="text-sm text-muted-foreground">
+          <div className="min-w-0 flex-1">
+            <p className="font-medium text-sm truncate">{testimonial.name}</p>
+            <p className="text-xs text-muted-foreground truncate">
               {testimonial.role} {testimonial.location && `• ${testimonial.location}`}
             </p>
           </div>
         </div>
 
-        {/* Featured Kitchen Tag (if applicable) */}
+        {/* Featured Kitchen Tag - fixed at bottom */}
         {testimonial.kitchenOrdered && (
-          <div className="mt-4 px-3 py-1.5 rounded-full bg-secondary text-sm text-center">
+          <div className="mt-3 px-2.5 py-1 rounded-full bg-secondary text-xs text-center truncate">
             Ordered from <span className="font-medium">{testimonial.kitchenOrdered}</span>
           </div>
         )}

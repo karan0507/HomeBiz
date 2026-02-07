@@ -33,7 +33,7 @@ export function FeaturedKitchens() {
   const kitchens = getFeaturedKitchens();
 
   return (
-    <section className="py-12 md:py-16">
+    <section className="py-16 md:py-24">
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <motion.div

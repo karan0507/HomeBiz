@@ -1,7 +1,7 @@
 "use client"
 
 import { ProtectedRoute } from "@/components/protected-route"
-import { BusinessSidebar } from "@/components/business/business-sidebar"
+import { BusinessLayout } from "@/components/business/business-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { mockOrders, mockProducts, mockServices, mockReviews } from "@/lib/mock-data"
 import { ShoppingCart, Package, DollarSign, Star, TrendingUp, Eye } from "lucide-react"
@@ -51,14 +51,12 @@ export default function BusinessDashboardPage() {
 
   return (
     <ProtectedRoute requireBusiness>
-      <div className="flex min-h-screen bg-background">
-        <BusinessSidebar />
-        <main className="flex-1 p-8">
-          <div className="max-w-7xl mx-auto space-y-8">
-            <div>
-              <h1 className="text-3xl font-display font-bold">Dashboard</h1>
-              <p className="text-muted-foreground mt-2">Welcome back, {user?.name}</p>
-            </div>
+      <BusinessLayout>
+        <div className="space-y-6 md:space-y-8">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
+            <p className="text-muted-foreground mt-1 md:mt-2">Welcome back, {user?.name}</p>
+          </div>
 
             {/* Stats Grid */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -178,10 +176,9 @@ export default function BusinessDashboardPage() {
                   </div>
                 </CardContent>
               </Card>
-            </div>
           </div>
-        </main>
-      </div>
+        </div>
+      </BusinessLayout>
     </ProtectedRoute>
   )
 }

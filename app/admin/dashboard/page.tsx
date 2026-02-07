@@ -1,7 +1,7 @@
 "use client"
 
 import { ProtectedRoute } from "@/components/protected-route"
-import { AdminSidebar } from "@/components/admin/admin-sidebar"
+import { AdminLayout } from "@/components/admin/admin-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { mockBusinesses, mockUsers, mockCategories, mockReviews } from "@/lib/mock-data"
 import { Users, Building, FolderTree, Star, TrendingUp, Activity } from "lucide-react"
@@ -43,14 +43,12 @@ export default function AdminDashboardPage() {
 
   return (
     <ProtectedRoute requireAdmin>
-      <div className="flex min-h-screen bg-background">
-        <AdminSidebar />
-        <main className="flex-1 p-8">
-          <div className="max-w-7xl mx-auto space-y-8">
-            <div>
-              <h1 className="text-3xl font-display font-bold">Dashboard</h1>
-              <p className="text-muted-foreground mt-2">Overview of your business directory platform</p>
-            </div>
+      <AdminLayout>
+        <div className="space-y-6 md:space-y-8">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
+            <p className="text-muted-foreground mt-1 md:mt-2">Overview of your business directory platform</p>
+          </div>
 
             {/* Stats Grid */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -142,10 +140,9 @@ export default function AdminDashboardPage() {
                   </div>
                 </CardContent>
               </Card>
-            </div>
           </div>
-        </main>
-      </div>
+        </div>
+      </AdminLayout>
     </ProtectedRoute>
   )
 }

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Clock, MapPin, CreditCard } from "lucide-react";
+import { ArrowLeft, Clock, MapPin, CreditCard, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,15 +19,28 @@ export default function CheckoutPage() {
   const [pickupTime, setPickupTime] = useState("asap");
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
-  if (items.length === 0) {
-    router.push("/cart");
-    return null;
-  }
+  // Handle redirects in useEffect to avoid setState during render
+  useEffect(() => {
+    if (items.length === 0) {
+      setIsRedirecting(true);
+      router.push("/cart");
+    } else if (!user) {
+      setIsRedirecting(true);
+      router.push("/login?redirect=/checkout");
+    }
+  }, [items.length, user, router]);
 
-  if (!user) {
-    router.push("/login?redirect=/checkout");
-    return null;
+  // Show loading while redirecting
+  if (isRedirecting || items.length === 0 || !user) {
+    return (
+      <MainLayout hideFooter>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </MainLayout>
+    );
   }
 
   const kitchenName = items[0]?.kitchenName || "Kitchen";
