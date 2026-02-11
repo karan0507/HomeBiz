@@ -51,7 +51,7 @@ function OrderConfirmationContent() {
             className="bg-muted/50 rounded-xl p-4 mb-6"
           >
             <div className="text-sm text-muted-foreground mb-1">Order ID</div>
-            <div className="text-lg font-mono font-semibold">{orderId}</div>
+            <div className="text-lg font-mono font-semibold text-foreground">{orderId}</div>
           </motion.div>
 
           {/* Pickup Info */}

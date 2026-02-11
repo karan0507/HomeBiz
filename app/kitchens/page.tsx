@@ -42,10 +42,14 @@ function KitchensContent() {
   const [sortBy, setSortBy] = useState("rating");
   const [filterOpen, setFilterOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [minRating, setMinRating] = useState(0);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 50]);
+  const [maxDistance, setMaxDistance] = useState(10);
 
-  const { isInWishlist, toggleWishlist } = useCart();
+  const { isInWishlist, toggleWishlist, isHydrated } = useCart();
 
   const dietaryOptions = ["Vegetarian", "Vegan", "Halal", "Gluten-Free", "Dairy-Free"];
+  const ratingOptions = [4.5, 4.0, 3.5, 3.0];
 
   const filteredKitchens = useMemo(() => {
     let result = [...mockBusinesses];
@@ -72,6 +76,14 @@ function KitchensContent() {
       );
     }
 
+    if (minRating > 0) {
+      result = result.filter((k) => k.rating >= minRating);
+    }
+
+    if (priceRange[0] > 0 || priceRange[1] < 50) {
+      result = result.filter((k) => k.minimumOrder >= priceRange[0] && k.minimumOrder <= priceRange[1]);
+    }
+
     switch (sortBy) {
       case "rating":
         result.sort((a, b) => b.rating - a.rating);
@@ -85,16 +97,19 @@ function KitchensContent() {
     }
 
     return result;
-  }, [searchQuery, selectedCuisine, selectedDietary, sortBy]);
+  }, [searchQuery, selectedCuisine, selectedDietary, sortBy, minRating, priceRange]);
 
   const clearFilters = () => {
     setSearchQuery("");
     setSelectedCuisine("");
     setSelectedDietary([]);
     setSortBy("rating");
+    setMinRating(0);
+    setPriceRange([0, 50]);
+    setMaxDistance(10);
   };
 
-  const hasFilters = searchQuery || selectedCuisine || selectedDietary.length > 0;
+  const hasFilters = searchQuery || selectedCuisine || selectedDietary.length > 0 || minRating > 0 || priceRange[0] > 0 || priceRange[1] < 50;
 
   return (
     <MainLayout>
@@ -108,14 +123,14 @@ function KitchensContent() {
         </div>
 
         {/* Search & Filter Bar */}
-        <div className="flex gap-3 mb-6">
+        <div className="flex gap-2 mb-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Search cuisines, dishes, or neighbourhoods..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-11"
+              className="pl-10 h-9"
             />
             {searchQuery && (
               <button
@@ -128,16 +143,16 @@ function KitchensContent() {
           </div>
 
           {/* View Toggle (Desktop) */}
-          <div className="hidden md:flex border rounded-lg overflow-hidden">
+          <div className="hidden md:flex border rounded-md overflow-hidden">
             <button
               onClick={() => setViewMode("grid")}
-              className={`px-3 py-2 ${viewMode === "grid" ? "bg-primary text-white" : "bg-background hover:bg-muted"}`}
+              className={`px-2.5 py-1.5 ${viewMode === "grid" ? "bg-primary text-white" : "bg-background hover:bg-muted"}`}
             >
               <Grid3X3 className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`px-3 py-2 ${viewMode === "list" ? "bg-primary text-white" : "bg-background hover:bg-muted"}`}
+              className={`px-2.5 py-1.5 ${viewMode === "list" ? "bg-primary text-white" : "bg-background hover:bg-muted"}`}
             >
               <List className="w-4 h-4" />
             </button>
@@ -145,7 +160,7 @@ function KitchensContent() {
 
           <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
             <SheetTrigger asChild>
-              <Button variant="outline" className="h-11 gap-2 shrink-0">
+              <Button variant="outline" size="sm" className="gap-1.5 shrink-0">
                 <SlidersHorizontal className="w-4 h-4" />
                 <span className="hidden sm:inline">Filters</span>
               </Button>
@@ -198,6 +213,71 @@ function KitchensContent() {
                 </div>
 
                 <div>
+                  <label className="text-sm font-medium mb-3 block">Minimum Rating</label>
+                  <div className="flex flex-wrap gap-2">
+                    {ratingOptions.map((rating) => (
+                      <Button
+                        key={rating}
+                        variant={minRating === rating ? "default" : "outline"}
+                        size="sm"
+                        className="h-9 gap-1"
+                        onClick={() => setMinRating(minRating === rating ? 0 : rating)}
+                      >
+                        <Star className="w-3 h-3 fill-current" />
+                        {rating}+
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-3 block">Price Range (Min Order)</label>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <label className="text-xs text-muted-foreground mb-1 block">Min ($)</label>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={priceRange[1]}
+                        value={priceRange[0]}
+                        onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
+                        className="h-9"
+                      />
+                    </div>
+                    <span className="text-muted-foreground mt-4">-</span>
+                    <div className="flex-1">
+                      <label className="text-xs text-muted-foreground mb-1 block">Max ($)</label>
+                      <Input
+                        type="number"
+                        min={priceRange[0]}
+                        max={100}
+                        value={priceRange[1]}
+                        onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
+                        className="h-9"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-3 block">Distance (km)</label>
+                  <div className="flex flex-wrap gap-2">
+                    {[2, 5, 10, 15].map((dist) => (
+                      <Button
+                        key={dist}
+                        variant={maxDistance === dist ? "default" : "outline"}
+                        size="sm"
+                        className="h-9"
+                        onClick={() => setMaxDistance(dist)}
+                      >
+                        {dist} km
+                      </Button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">Location services coming soon</p>
+                </div>
+
+                <div>
                   <label className="text-sm font-medium mb-3 block">Sort By</label>
                   <div className="flex flex-wrap gap-2">
                     {[
@@ -232,41 +312,44 @@ function KitchensContent() {
         </div>
 
         {/* Quick Filters */}
-        <div className="flex gap-2 overflow-x-auto pb-4 mb-4 no-scrollbar">
-          {mockCategories.slice(0, 8).map((cat) => (
-            <Button
-              key={cat.id}
-              variant={selectedCuisine === cat.slug ? "default" : "secondary"}
-              size="sm"
-              className={`shrink-0 h-9 gap-1.5 ${selectedCuisine === cat.slug ? "bg-gradient-to-r from-primary to-emerald-600" : ""}`}
-              onClick={() => setSelectedCuisine(selectedCuisine === cat.slug ? "" : cat.slug)}
-            >
-              <span>{cat.icon}</span>
-              {cat.name}
-            </Button>
-          ))}
+        <div className="relative mb-4">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+            {mockCategories.slice(0, 8).map((cat) => (
+              <Button
+                key={cat.id}
+                variant={selectedCuisine === cat.slug ? "default" : "secondary"}
+                size="sm"
+                className={`shrink-0 h-8 gap-1 transition-all text-xs ${selectedCuisine === cat.slug ? "bg-gradient-to-r from-primary to-emerald-600 shadow-sm" : "hover:bg-muted"}`}
+                onClick={() => setSelectedCuisine(selectedCuisine === cat.slug ? "" : cat.slug)}
+              >
+                <span className="text-sm">{cat.icon}</span>
+                {cat.name}
+              </Button>
+            ))}
+          </div>
+          <div className="absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none md:hidden" />
         </div>
 
         {/* Active Filters */}
         {hasFilters && (
-          <div className="flex items-center gap-2 mb-6 flex-wrap">
-            <span className="text-sm text-muted-foreground">Active filters:</span>
+          <div className="flex items-center gap-2 mb-6 flex-wrap bg-muted/30 p-3 rounded-lg">
+            <span className="text-sm text-muted-foreground font-medium">Filters:</span>
             {selectedCuisine && (
-              <Badge variant="secondary" className="gap-1.5 h-7 pl-3 pr-2">
+              <Badge variant="secondary" className="gap-1.5 h-7 pl-3 pr-2 bg-primary/10 text-primary border-primary/20">
                 {selectedCuisine}
-                <X className="w-3.5 h-3.5 cursor-pointer hover:text-destructive" onClick={() => setSelectedCuisine("")} />
+                <X className="w-3.5 h-3.5 cursor-pointer hover:text-destructive transition-colors" onClick={() => setSelectedCuisine("")} />
               </Badge>
             )}
             {selectedDietary.map((d) => (
-              <Badge key={d} variant="secondary" className="gap-1.5 h-7 pl-3 pr-2">
+              <Badge key={d} variant="secondary" className="gap-1.5 h-7 pl-3 pr-2 bg-accent/10 text-accent border-accent/20">
                 {d}
                 <X
-                  className="w-3.5 h-3.5 cursor-pointer hover:text-destructive"
+                  className="w-3.5 h-3.5 cursor-pointer hover:text-destructive transition-colors"
                   onClick={() => setSelectedDietary((prev) => prev.filter((x) => x !== d))}
                 />
               </Badge>
             ))}
-            <button onClick={clearFilters} className="text-sm text-primary hover:underline font-medium">
+            <button onClick={clearFilters} className="text-sm text-destructive hover:underline font-medium ml-auto">
               Clear all
             </button>
           </div>
@@ -315,7 +398,7 @@ function KitchensContent() {
                       >
                         <Heart
                           className={`w-4 h-4 ${
-                            isInWishlist(kitchen.id) ? "fill-red-500 text-red-500" : ""
+                            isHydrated && isInWishlist(kitchen.id) ? "fill-red-500 text-red-500" : ""
                           }`}
                         />
                       </Button>
@@ -394,7 +477,7 @@ function KitchensContent() {
                             >
                               <Heart
                                 className={`w-4 h-4 ${
-                                  isInWishlist(kitchen.id) ? "fill-red-500 text-red-500" : ""
+                                  isHydrated && isInWishlist(kitchen.id) ? "fill-red-500 text-red-500" : ""
                                 }`}
                               />
                             </Button>

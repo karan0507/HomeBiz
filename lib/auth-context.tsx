@@ -36,27 +36,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const initialized = useRef(false)
 
   useEffect(() => {
-    // Load registered users from localStorage on mount
-    if (!initialized.current) {
-      const storedRegisteredUsers = localStorage.getItem("registeredUsers")
-      if (storedRegisteredUsers) {
-        const registeredUsers = JSON.parse(storedRegisteredUsers)
-        // Merge with mock users, avoiding duplicates
-        const existingEmails = new Set(runtimeUsers.map(u => u.email))
-        registeredUsers.forEach((u: User) => {
-          if (!existingEmails.has(u.email)) {
-            runtimeUsers.push(u)
-          }
-        })
-      }
-      initialized.current = true
+    if (initialized.current) return;
+
+    const storedRegisteredUsers = localStorage.getItem("registeredUsers")
+    if (storedRegisteredUsers) {
+      const registeredUsers = JSON.parse(storedRegisteredUsers)
+      const existingEmails = new Set(runtimeUsers.map(u => u.email))
+      registeredUsers.forEach((u: User) => {
+        if (!existingEmails.has(u.email)) {
+          runtimeUsers.push(u)
+        }
+      })
     }
 
-    // Check for stored user session
     const storedUser = localStorage.getItem("user")
     if (storedUser) {
       setUser(JSON.parse(storedUser))
     }
+
+    initialized.current = true
     setIsLoading(false)
   }, [])
 

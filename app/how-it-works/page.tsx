@@ -93,7 +93,7 @@ export default function HowItWorksPage() {
         {/* Steps */}
         <section className="py-16">
           <div className="container mx-auto px-4">
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="relative grid md:grid-cols-2 lg:grid-cols-4 gap-8">
               {steps.map((step, index) => {
                 const Icon = step.icon
                 return (
@@ -102,13 +102,18 @@ export default function HowItWorksPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    className="text-center"
+                    className="text-center relative"
                   >
                     <div className="relative">
-                      <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-emerald-500 to-lime-500 flex items-center justify-center mb-6">
+                      {/* Dotted line connector (hidden on mobile, shown on lg screens) */}
+                      {index < steps.length - 1 && (
+                        <div className="hidden lg:block absolute top-10 left-[60%] w-full h-0.5 border-t-2 border-dashed border-emerald-300 z-0" />
+                      )}
+
+                      <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-emerald-500 to-lime-500 flex items-center justify-center mb-6 relative z-10">
                         <Icon className="w-10 h-10 text-white" />
                       </div>
-                      <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold">
+                      <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold z-10">
                         {index + 1}
                       </div>
                     </div>

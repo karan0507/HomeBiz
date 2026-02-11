@@ -16,7 +16,6 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 const stats = [
   { value: "50+", label: "Home Chefs" },
@@ -104,26 +103,28 @@ export function HeroSection() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
               onSubmit={handleSearch}
-              className="flex flex-col sm:flex-row gap-3 mb-8 max-w-lg mx-auto lg:mx-0"
+              className="mb-8 max-w-xl mx-auto lg:mx-0"
             >
-              <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
+              <div className="relative flex items-center bg-white dark:bg-zinc-900 rounded-2xl shadow-xl shadow-primary/10 border-2 border-primary/20 hover:border-primary/40 focus-within:border-primary focus-within:shadow-primary/20 transition-all p-1.5">
+                <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 ml-1">
+                  <Search className="w-5 h-5 text-primary" />
+                </div>
+                <input
                   type="text"
                   placeholder="Search cuisines, dishes, or chefs..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-12 pl-12 pr-4 text-base rounded-xl border-2 focus:border-primary"
+                  className="flex-1 h-11 px-4 bg-transparent text-base outline-none placeholder:text-muted-foreground"
                 />
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="h-10 px-5 rounded-xl bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90 gap-2 shadow-md"
+                >
+                  <span className="hidden sm:inline">Find Food</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
               </div>
-              <Button
-                type="submit"
-                size="lg"
-                className="h-12 px-8 rounded-xl bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90 gap-2"
-              >
-                Find Food
-                <ArrowRight className="w-4 h-4" />
-              </Button>
             </motion.form>
 
             {/* Quick Categories */}
@@ -133,7 +134,7 @@ export function HeroSection() {
               transition={{ duration: 0.5, delay: 0.4 }}
               className="mb-10"
             >
-              <p className="text-sm text-muted-foreground mb-3">Popular cuisines:</p>
+              <p className="text-sm text-muted-foreground mb-3 font-bold">Popular cuisines:</p>
               <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
                 {quickCategories.map((cat) => (
                   <Link key={cat.label} href={`/kitchens?cuisine=${cat.label.toLowerCase()}`}>
@@ -164,21 +165,39 @@ export function HeroSection() {
             </motion.div>
           </div>
 
-          {/* Right Column - Visual */}
+          {/* Right Column - Hero Image */}
           <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            className="hidden lg:block relative"
+          >
+            <div className="relative">
+              <img
+                src="/images/hero1.jpg"
+                alt="Delicious Home-Cooked Food"
+                className="w-full h-auto object-cover rounded-2xl"
+                style={{
+                  maskImage: 'linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%), linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)',
+                  WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%), linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)',
+                  maskComposite: 'intersect',
+                  WebkitMaskComposite: 'source-in'
+                }}
+              />
+            </div>
+          </motion.div>
+
+          {/* Right Column - Visual Card (Commented) */}
+          {/* <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.3 }}
             className="hidden lg:block relative"
           >
-            {/* Main Card */}
             <div className="relative">
-              {/* Background Pattern */}
               <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-primary/20 via-primary/10 to-emerald-500/20 -rotate-3 scale-105" />
 
-              {/* Main Content Card */}
               <div className="relative bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border">
-                {/* Header */}
                 <div className="flex items-center gap-4 mb-6">
                   <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-emerald-600 flex items-center justify-center shadow-lg">
                     <ChefHat className="w-8 h-8 text-white" />
@@ -193,7 +212,6 @@ export function HeroSection() {
                   </div>
                 </div>
 
-                {/* Sample Menu Items */}
                 <div className="space-y-4 mb-6">
                   {[
                     { name: "Butter Chicken", price: "$14.99", emoji: "🍛" },
@@ -208,7 +226,6 @@ export function HeroSection() {
                   ))}
                 </div>
 
-                {/* Footer */}
                 <div className="flex items-center justify-between pt-4 border-t">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Clock className="w-4 h-4" />
@@ -221,7 +238,6 @@ export function HeroSection() {
                 </div>
               </div>
 
-              {/* Floating Badge - Top Right */}
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -239,7 +255,6 @@ export function HeroSection() {
                 </div>
               </motion.div>
 
-              {/* Floating Badge - Bottom Left */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -257,7 +272,7 @@ export function HeroSection() {
                 </div>
               </motion.div>
             </div>
-          </motion.div>
+          </motion.div> */}
         </div>
       </div>
     </section>

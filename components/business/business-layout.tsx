@@ -77,13 +77,16 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-background">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-64 bg-card border-r flex-col h-screen sticky top-0">
-        <div className="p-6 border-b">
-          <Link href="/business/dashboard" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center shadow-lg">
+      <aside className="hidden md:flex w-64 bg-gradient-to-b from-card to-card/95 border-r flex-col h-screen sticky top-0">
+        <div className="p-6 border-b border-border/50">
+          <Link href="/business/dashboard" className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary via-primary to-emerald-600 flex items-center justify-center shadow-lg shadow-primary/25">
               <ChefHat className="h-5 w-5 text-white" />
             </div>
-            <span className="text-lg font-semibold">Business Portal</span>
+            <div>
+              <span className="text-lg font-bold">HomeBiz</span>
+              <p className="text-xs text-muted-foreground">Chef Portal</p>
+            </div>
           </Link>
         </div>
 
@@ -95,13 +98,18 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
               <Link key={item.href} href={item.href}>
                 <div
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors",
+                    "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all",
                     active
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      ? "bg-gradient-to-r from-primary/15 to-emerald-500/10 text-primary shadow-sm"
+                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                   )}
                 >
-                  <Icon className="h-5 w-5" />
+                  <div className={cn(
+                    "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
+                    active ? "bg-primary/10" : "bg-transparent"
+                  )}>
+                    <Icon className="h-4 w-4" />
+                  </div>
                   <span className="font-medium">{item.label}</span>
                 </div>
               </Link>
@@ -109,12 +117,12 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
           })}
         </nav>
 
-        <div className="p-4 border-t space-y-3">
-          <div className="px-3 py-2">
-            <p className="text-sm font-medium truncate">{user?.name}</p>
+        <div className="p-4 border-t border-border/50 space-y-3">
+          <div className="px-3 py-3 rounded-xl bg-gradient-to-r from-primary/5 to-emerald-500/5">
+            <p className="text-sm font-semibold truncate">{user?.name}</p>
             <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
           </div>
-          <Button variant="ghost" className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10" onClick={logout}>
+          <Button variant="ghost" className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl" onClick={logout}>
             <LogOut className="h-4 w-4 mr-3" />
             Logout
           </Button>
@@ -125,15 +133,15 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
       <header
         className={cn(
           "fixed top-0 left-0 right-0 z-50 md:hidden bg-background/95 backdrop-blur-md border-b transition-all",
-          isScrolled && "shadow-sm"
+          isScrolled && "shadow-md"
         )}
       >
         <div className="px-4 h-14 flex items-center justify-between">
           <Link href="/business/dashboard" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center shadow-lg">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-emerald-600 flex items-center justify-center shadow-lg shadow-primary/25">
               <ChefHat className="h-5 w-5 text-white" />
             </div>
-            <span className="font-bold text-lg">Business</span>
+            <span className="font-bold text-lg bg-gradient-to-r from-primary to-emerald-600 bg-clip-text text-transparent">HomeBiz</span>
           </Link>
 
           <div className="flex items-center gap-2">

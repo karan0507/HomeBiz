@@ -82,37 +82,64 @@ export function MainLayout({ children, hideNav, hideFooter }: MainLayoutProps) {
         <header
           className={cn(
             "fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b transition-all",
-            isScrolled && "shadow-sm"
+            isScrolled && "shadow-sm",
           )}
         >
           <div className="container mx-auto px-4 h-14 flex items-center justify-between">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary via-primary to-emerald-600 flex items-center justify-center shadow-lg shadow-primary/25">
-                <ChefHat className="w-5 h-5 text-white" />
+              <div className="flex items-center justify-center w-12 h-12 rounded-lg overflow-hidden bg-white p-1">
+                <img
+                  src="/images/logo.png"
+                  alt="HomeBiz Logo"
+                  className="w-full h-full object-contain"
+                />
               </div>
-              <span className="font-bold text-xl hidden sm:block">HomeBiz</span>
             </Link>
 
             {/* Desktop Nav */}
             <nav className="hidden md:flex items-center gap-1">
               <Link href="/kitchens">
-                <Button variant="ghost" size="sm" className={cn(isActive("/kitchens") && "bg-primary/10 text-primary")}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    isActive("/kitchens") && "bg-primary/10 text-primary",
+                  )}
+                >
                   Browse Kitchens
                 </Button>
               </Link>
               <Link href="/categories">
-                <Button variant="ghost" size="sm" className={cn(isActive("/categories") && "bg-primary/10 text-primary")}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    isActive("/categories") && "bg-primary/10 text-primary",
+                  )}
+                >
                   Cuisines
                 </Button>
               </Link>
               <Link href="/how-it-works">
-                <Button variant="ghost" size="sm" className={cn(isActive("/how-it-works") && "bg-primary/10 text-primary")}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    isActive("/how-it-works") && "bg-primary/10 text-primary",
+                  )}
+                >
                   How It Works
                 </Button>
               </Link>
               <Link href="/contact">
-                <Button variant="ghost" size="sm" className={cn(isActive("/contact") && "bg-primary/10 text-primary")}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    isActive("/contact") && "bg-primary/10 text-primary",
+                  )}
+                >
                   Contact
                 </Button>
               </Link>
@@ -132,7 +159,11 @@ export function MainLayout({ children, hideNav, hideFooter }: MainLayoutProps) {
 
               {/* Wishlist */}
               <Link href="/account?tab=wishlist" className="hidden sm:flex">
-                <Button variant="ghost" size="icon" className="relative h-9 w-9 flex items-center justify-center">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative h-9 w-9 flex items-center justify-center"
+                >
                   <Heart className="w-4 h-4" />
                   {wishlist.length > 0 && (
                     <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-medium">
@@ -144,7 +175,11 @@ export function MainLayout({ children, hideNav, hideFooter }: MainLayoutProps) {
 
               {/* Cart */}
               <Link href="/cart" className="hidden sm:flex">
-                <Button variant="ghost" size="icon" className="relative h-9 w-9 flex items-center justify-center">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative h-9 w-9 flex items-center justify-center"
+                >
                   <ShoppingCart className="w-4 h-4" />
                   {cartCount > 0 && (
                     <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-white text-[10px] rounded-full flex items-center justify-center font-medium">
@@ -162,17 +197,24 @@ export function MainLayout({ children, hideNav, hideFooter }: MainLayoutProps) {
                       <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
                         <User className="w-3 h-3 text-primary" />
                       </div>
-                      <span className="hidden lg:inline">{user?.name?.split(" ")[0]}</span>
+                      <span className="hidden lg:inline">
+                        {user?.name?.split(" ")[0]}
+                      </span>
                     </Button>
                   </Link>
                 </div>
               ) : (
                 <div className="hidden sm:flex items-center gap-2">
                   <Link href="/login">
-                    <Button variant="ghost" size="sm">Sign In</Button>
+                    <Button variant="ghost" size="sm">
+                      Sign In
+                    </Button>
                   </Link>
                   <Link href="/business/signup">
-                    <Button size="sm" className="gap-1.5 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90">
+                    <Button
+                      size="sm"
+                      className="gap-1.5 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90"
+                    >
                       <ChefHat className="w-3 h-3" />
                       Become a Chef
                     </Button>
@@ -187,7 +229,11 @@ export function MainLayout({ children, hideNav, hideFooter }: MainLayoutProps) {
                 className="md:hidden h-9 w-9 flex items-center justify-center"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               >
-                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                {mobileMenuOpen ? (
+                  <X className="w-5 h-5" />
+                ) : (
+                  <Menu className="w-5 h-5" />
+                )}
               </Button>
             </div>
           </div>
@@ -221,22 +267,33 @@ export function MainLayout({ children, hideNav, hideFooter }: MainLayoutProps) {
             <div className="md:hidden border-t bg-background/95 backdrop-blur-md">
               <div className="container mx-auto px-4 py-4 space-y-1">
                 <Link href="/kitchens" className="block">
-                  <Button variant="ghost" className="w-full justify-start h-11">Browse Kitchens</Button>
+                  <Button variant="ghost" className="w-full justify-start h-11">
+                    Browse Kitchens
+                  </Button>
                 </Link>
                 <Link href="/categories" className="block">
-                  <Button variant="ghost" className="w-full justify-start h-11">Cuisines</Button>
+                  <Button variant="ghost" className="w-full justify-start h-11">
+                    Cuisines
+                  </Button>
                 </Link>
                 <Link href="/how-it-works" className="block">
-                  <Button variant="ghost" className="w-full justify-start h-11">How It Works</Button>
+                  <Button variant="ghost" className="w-full justify-start h-11">
+                    How It Works
+                  </Button>
                 </Link>
                 <Link href="/contact" className="block">
-                  <Button variant="ghost" className="w-full justify-start h-11">Contact Us</Button>
+                  <Button variant="ghost" className="w-full justify-start h-11">
+                    Contact Us
+                  </Button>
                 </Link>
                 <div className="border-t pt-3 mt-3">
                   {isAuthenticated ? (
                     <>
                       <Link href="/account" className="block">
-                        <Button variant="ghost" className="w-full justify-start h-11 gap-2">
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start h-11 gap-2"
+                        >
                           <User className="w-4 h-4" />
                           My Account
                         </Button>
@@ -253,7 +310,12 @@ export function MainLayout({ children, hideNav, hideFooter }: MainLayoutProps) {
                   ) : (
                     <>
                       <Link href="/login" className="block">
-                        <Button variant="ghost" className="w-full justify-start h-11">Sign In</Button>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start h-11"
+                        >
+                          Sign In
+                        </Button>
                       </Link>
                       <Link href="/business/signup" className="block">
                         <Button className="w-full justify-start h-11 gap-2 bg-gradient-to-r from-primary to-emerald-600">
@@ -272,7 +334,7 @@ export function MainLayout({ children, hideNav, hideFooter }: MainLayoutProps) {
 
       {/* Main Content */}
       <main className={cn("flex-1", !hideNav && "pt-14 pb-16 md:pb-0")}>
-        {children}
+        <div className="px-2 md:px-4 lg:px-8">{children}</div>
       </main>
 
       {/* Mobile Bottom Navigation */}
@@ -285,14 +347,21 @@ export function MainLayout({ children, hideNav, hideFooter }: MainLayoutProps) {
                 href={item.href}
                 className={cn(
                   "flex flex-col items-center justify-center gap-0.5 transition-colors relative",
-                  isActive(item.href) ? "text-primary" : "text-muted-foreground"
+                  isActive(item.href)
+                    ? "text-primary"
+                    : "text-muted-foreground",
                 )}
               >
                 <div className="flex items-center justify-center w-6 h-6">
-                  <item.icon className={cn("w-5 h-5", isActive(item.href) && "text-primary")} />
+                  <item.icon
+                    className={cn(
+                      "w-5 h-5",
+                      isActive(item.href) && "text-primary",
+                    )}
+                  />
                 </div>
                 <span className="text-[10px] font-medium">{item.label}</span>
-                {item.badge !== undefined && item.badge > 0 && (
+                {item.badge && item.badge > 0 && (
                   <span className="absolute top-1 left-1/2 translate-x-1 w-4 h-4 bg-primary text-white text-[10px] rounded-full flex items-center justify-center font-medium">
                     {item.badge}
                   </span>
@@ -324,16 +393,26 @@ export function MainLayout({ children, hideNav, hideFooter }: MainLayoutProps) {
                   <span className="font-bold text-2xl">HomeBiz</span>
                 </Link>
                 <p className="text-zinc-400 text-sm leading-relaxed mb-6">
-                  Connecting Toronto with authentic home-cooked meals from talented neighbourhood chefs. Taste the love in every bite.
+                  Connecting Toronto with authentic home-cooked meals from
+                  talented neighbourhood chefs. Taste the love in every bite.
                 </p>
                 <div className="flex gap-3">
-                  <a href="#" className="w-10 h-10 rounded-xl bg-white/5 hover:bg-primary/20 flex items-center justify-center transition-colors">
+                  <a
+                    href="#"
+                    className="w-10 h-10 rounded-xl bg-white/5 hover:bg-primary/20 flex items-center justify-center transition-colors"
+                  >
                     <Instagram className="w-5 h-5" />
                   </a>
-                  <a href="#" className="w-10 h-10 rounded-xl bg-white/5 hover:bg-primary/20 flex items-center justify-center transition-colors">
+                  <a
+                    href="#"
+                    className="w-10 h-10 rounded-xl bg-white/5 hover:bg-primary/20 flex items-center justify-center transition-colors"
+                  >
                     <Twitter className="w-5 h-5" />
                   </a>
-                  <a href="#" className="w-10 h-10 rounded-xl bg-white/5 hover:bg-primary/20 flex items-center justify-center transition-colors">
+                  <a
+                    href="#"
+                    className="w-10 h-10 rounded-xl bg-white/5 hover:bg-primary/20 flex items-center justify-center transition-colors"
+                  >
                     <Facebook className="w-5 h-5" />
                   </a>
                 </div>
@@ -350,7 +429,10 @@ export function MainLayout({ children, hideNav, hideFooter }: MainLayoutProps) {
                     { href: "/pricing", label: "Pricing" },
                   ].map((link) => (
                     <li key={link.href}>
-                      <Link href={link.href} className="text-zinc-400 hover:text-white transition-colors text-sm">
+                      <Link
+                        href={link.href}
+                        className="text-zinc-400 hover:text-white transition-colors text-sm"
+                      >
                         {link.label}
                       </Link>
                     </li>
@@ -369,7 +451,10 @@ export function MainLayout({ children, hideNav, hideFooter }: MainLayoutProps) {
                     { href: "/faq", label: "FAQ" },
                   ].map((link) => (
                     <li key={link.href}>
-                      <Link href={link.href} className="text-zinc-400 hover:text-white transition-colors text-sm">
+                      <Link
+                        href={link.href}
+                        className="text-zinc-400 hover:text-white transition-colors text-sm"
+                      >
                         {link.label}
                       </Link>
                     </li>
@@ -406,12 +491,28 @@ export function MainLayout({ children, hideNav, hideFooter }: MainLayoutProps) {
             {/* Bottom Bar */}
             <div className="border-t border-white/10 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
               <p className="text-zinc-500 text-sm">
-                © {new Date().getFullYear()} HomeBiz Toronto. All rights reserved.
+                © {new Date().getFullYear()} HomeBiz Toronto. All rights
+                reserved.
               </p>
               <div className="flex items-center gap-6 text-sm text-zinc-500">
-                <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
-                <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
-                <Link href="/contact" className="hover:text-white transition-colors">Contact Us</Link>
+                <Link
+                  href="/privacy"
+                  className="hover:text-white transition-colors"
+                >
+                  Privacy Policy
+                </Link>
+                <Link
+                  href="/terms"
+                  className="hover:text-white transition-colors"
+                >
+                  Terms of Service
+                </Link>
+                <Link
+                  href="/contact"
+                  className="hover:text-white transition-colors"
+                >
+                  Contact Us
+                </Link>
               </div>
             </div>
           </div>

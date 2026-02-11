@@ -12,7 +12,6 @@
 
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -24,13 +23,15 @@ import {
   ChefHat,
   Utensils,
   Badge as BadgeIcon,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getFeaturedKitchens, type Kitchen } from "@/lib/mock-data";
+import { useFeaturedKitchens } from "@/hooks/useKitchens";
+import { useCart } from "@/lib/cart-context";
 
 export function FeaturedKitchens() {
-  const kitchens = getFeaturedKitchens();
+  const { kitchens, loading } = useFeaturedKitchens(6);
 
   return (
     <section className="py-16 md:py-24">
@@ -64,11 +65,32 @@ export function FeaturedKitchens() {
         </motion.div>
 
         {/* Kitchens Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-          {kitchens.slice(0, 6).map((kitchen, index) => (
-            <KitchenCard key={kitchen.id} kitchen={kitchen} index={index} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+            {[1,2,3,4,5,6].map((i) => (
+              <div key={i} className="rounded-2xl glass overflow-hidden animate-pulse">
+                <div className="h-48 bg-muted" />
+                <div className="p-6 space-y-3">
+                  <div className="h-6 bg-muted rounded w-3/4" />
+                  <div className="h-4 bg-muted rounded w-1/2" />
+                  <div className="h-4 bg-muted rounded w-2/3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : kitchens.length === 0 ? (
+          <div className="text-center py-16">
+            <ChefHat className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-xl font-semibold mb-2">Coming Soon</h3>
+            <p className="text-muted-foreground">New home kitchens will be featured soon!</p>
+          </div>
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+            {kitchens.slice(0, 6).map((kitchen, index) => (
+              <KitchenCard key={kitchen.id} kitchen={kitchen} index={index} />
+            ))}
+          </div>
+        )}
 
         {/* Bottom CTA */}
         <motion.div
@@ -122,18 +144,29 @@ const cuisineEmojiMap: Record<string, string> = {
   "Indian": "🇮🇳",
 };
 
+// Truncate text helper
+function truncateText(text: string, maxLength: number) {
+  if (text.length <= maxLength) return { text, truncated: false };
+  return { text: text.slice(0, maxLength) + "...", truncated: true };
+}
+
 /**
  * Kitchen Card Component
  * Displays individual home kitchen with chef info
  */
 function KitchenCard({ kitchen, index }: { kitchen: Kitchen; index: number }) {
-  const [isWishlisted, setIsWishlisted] = useState(false);
+  const { isInWishlist, toggleWishlist, isHydrated } = useCart();
+  const isWishlisted = isHydrated && isInWishlist(kitchen.id);
 
   // Get cuisine emoji from first cuisine type
   const cuisineEmoji = cuisineEmojiMap[kitchen.cuisineTypes[0]] || "🍽️";
 
   // Format minimum order as price range indicator
   const priceRange = kitchen.minimumOrder >= 25 ? "$$" : kitchen.minimumOrder >= 15 ? "$" : "$";
+
+  // Get combined tags text
+  const allTags = kitchen.specialties.join(", ");
+  const { text: displayTags, truncated: hasTruncatedTags } = truncateText(allTags, 40);
 
   return (
     <motion.div
@@ -143,9 +176,9 @@ function KitchenCard({ kitchen, index }: { kitchen: Kitchen; index: number }) {
       transition={{ duration: 0.5, delay: index * 0.1 }}
     >
       <Link href={`/kitchens/${kitchen.slug}`}>
-        <div className="group relative bg-card rounded-3xl overflow-hidden border border-border hover-lift">
+        <div className="group relative bg-card rounded-2xl overflow-hidden border border-border hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
           {/* Image Container */}
-          <div className="relative aspect-[4/3] bg-secondary/50 overflow-hidden">
+          <div className="relative aspect-[16/10] bg-secondary/50 overflow-hidden">
             {/* Placeholder with gradient and icon */}
             <div className="absolute inset-0 gradient-emerald-lime-subtle flex items-center justify-center">
               <div className="text-center">
@@ -178,14 +211,15 @@ function KitchenCard({ kitchen, index }: { kitchen: Kitchen; index: number }) {
               whileTap={{ scale: 0.9 }}
               onClick={(e) => {
                 e.preventDefault();
-                setIsWishlisted(!isWishlisted);
+                e.stopPropagation();
+                toggleWishlist(kitchen.id);
               }}
-              className="absolute top-4 right-4 w-10 h-10 rounded-full glass flex items-center justify-center"
+              className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 dark:bg-zinc-800/90 shadow-md flex items-center justify-center hover:scale-110 transition-transform"
               aria-label={isWishlisted ? "Remove from favorites" : "Add to favorites"}
             >
               <Heart
-                className={`w-5 h-5 transition-colors ${
-                  isWishlisted ? "fill-red-500 text-red-500" : "text-foreground"
+                className={`w-4 h-4 transition-colors ${
+                  isWishlisted ? "fill-red-500 text-red-500" : "text-muted-foreground"
                 }`}
               />
             </motion.button>
@@ -200,72 +234,54 @@ function KitchenCard({ kitchen, index }: { kitchen: Kitchen; index: number }) {
           </div>
 
           {/* Content */}
-          <div className="p-6">
-            {/* Kitchen Name */}
-            <h3 className="font-bold text-lg line-clamp-1 group-hover:text-primary transition-colors">
-              {kitchen.name}
-            </h3>
+          <div className="p-4">
+            {/* Kitchen Name & Rating */}
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="font-semibold text-base line-clamp-1 group-hover:text-primary transition-colors">
+                {kitchen.name}
+              </h3>
+              <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 px-2 py-0.5 rounded-full shrink-0">
+                <Star className="w-3 h-3 fill-current" />
+                <span className="text-xs font-semibold">{kitchen.rating}</span>
+              </div>
+            </div>
 
-            {/* Cuisine Types & Location */}
-            <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-              <ChefHat className="w-4 h-4" />
-              <span>{kitchen.cuisineTypes.join(", ")}</span>
-              <span className="text-border">•</span>
-              <MapPin className="w-4 h-4" />
+            {/* Cuisine & Location */}
+            <div className="flex items-center gap-1.5 mt-1.5 text-xs text-muted-foreground">
+              <span>{kitchen.cuisineTypes.slice(0, 2).join(" • ")}</span>
+              <span>•</span>
+              <MapPin className="w-3 h-3" />
               <span>{kitchen.neighborhood}</span>
             </div>
 
-            {/* Rating */}
-            <div className="flex items-center gap-2 mt-3">
-              <div className="flex items-center">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`w-4 h-4 ${
-                      i < Math.floor(kitchen.rating)
-                        ? "fill-yellow-400 text-yellow-400"
-                        : "text-gray-300"
-                    }`}
-                  />
-                ))}
-              </div>
-              <span className="text-sm font-medium">{kitchen.rating}</span>
-              <span className="text-sm text-muted-foreground">
-                ({kitchen.reviewCount} reviews)
+            {/* Tags with 40 char limit */}
+            <div className="flex items-center gap-1.5 mt-3">
+              <span className="text-xs text-muted-foreground line-clamp-1">
+                {displayTags}
               </span>
-            </div>
-
-            {/* Short Description */}
-            <p className="text-sm text-muted-foreground mt-3 line-clamp-2">
-              {kitchen.tagline}
-            </p>
-
-            {/* Cuisine Tags */}
-            <div className="flex flex-wrap gap-2 mt-4">
-              {kitchen.specialties.slice(0, 3).map((specialty) => (
-                <span
-                  key={specialty}
-                  className="px-2 py-1 text-xs rounded-full bg-secondary text-secondary-foreground"
+              {hasTruncatedTags && (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    alert(`Specialties: ${allTags}`);
+                  }}
+                  className="shrink-0 w-5 h-5 rounded-full bg-muted flex items-center justify-center hover:bg-primary/10 transition-colors"
+                  title={allTags}
                 >
-                  {specialty}
-                </span>
-              ))}
+                  <Info className="w-3 h-3 text-muted-foreground" />
+                </button>
+              )}
             </div>
 
-            {/* Footer - Price Range & Availability */}
-            <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
-              <div className="flex items-center gap-2">
-                <Utensils className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
-                  Min ${kitchen.minimumOrder} {priceRange}
-                </span>
-              </div>
-              <div className="flex items-center gap-1 text-sm">
-                <Clock className="w-4 h-4 text-primary" />
-                <span className={kitchen.acceptingOrders ? "text-primary font-medium" : "text-muted-foreground"}>
-                  {kitchen.acceptingOrders ? "Accepting Orders" : "Currently Closed"}
-                </span>
-              </div>
+            {/* Footer */}
+            <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
+              <span className="text-xs text-muted-foreground">
+                Min ${kitchen.minimumOrder}
+              </span>
+              <span className={`text-xs font-medium ${kitchen.acceptingOrders ? "text-green-600" : "text-muted-foreground"}`}>
+                {kitchen.acceptingOrders ? "Open" : "Closed"}
+              </span>
             </div>
           </div>
         </div>

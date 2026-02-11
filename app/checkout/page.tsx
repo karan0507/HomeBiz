@@ -147,16 +147,16 @@ export default function CheckoutPage() {
                 <div className="mt-3 space-y-3">
                   <div>
                     <Label className="text-xs">Card Number</Label>
-                    <Input placeholder="1234 5678 9012 3456" className="h-9 mt-1" />
+                    <Input placeholder="1234 5678 9012 3456" className="h-8 mt-1 text-sm" />
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <Label className="text-xs">Expiry</Label>
-                      <Input placeholder="MM/YY" className="h-9 mt-1" />
+                      <Input placeholder="MM/YY" className="h-8 mt-1 text-sm" />
                     </div>
                     <div>
                       <Label className="text-xs">CVC</Label>
-                      <Input placeholder="123" className="h-9 mt-1" />
+                      <Input placeholder="123" className="h-8 mt-1 text-sm" />
                     </div>
                   </div>
                 </div>
@@ -195,7 +195,8 @@ export default function CheckoutPage() {
 
           {/* Place Order */}
           <Button
-            className="w-full h-12"
+            size="sm"
+            className="w-full"
             onClick={handlePlaceOrder}
             disabled={isProcessing}
           >

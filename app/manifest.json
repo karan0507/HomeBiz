@@ -1,0 +1,16 @@
+{
+  "name": "HomeBiz - Home Cooking Delivery",
+  "short_name": "HomeBiz",
+  "description": "Authentic home cooking from your Toronto neighbours",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#6366F1",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

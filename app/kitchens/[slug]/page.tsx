@@ -2,6 +2,7 @@
 
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { useState, useEffect, useRef } from "react";
 import {
   Star,
   MapPin,
@@ -15,6 +16,7 @@ import {
   ShoppingCart,
   ArrowLeft,
   Utensils,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +32,10 @@ export default function KitchenDetailPage() {
   const kitchen = mockBusinesses.find((k) => k.slug === slug);
   const menuItems = mockProducts.filter((p) => p.kitchenId === kitchen?.id);
   const reviews = mockReviews.filter((r) => r.kitchenId === kitchen?.id);
+
+  const [visibleReviews, setVisibleReviews] = useState(2);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const observerTarget = useRef(null);
 
   const {
     items,
@@ -62,6 +68,31 @@ export default function KitchenDetailPage() {
     const cartItem = items.find((c) => c.item.id === itemId);
     return cartItem?.quantity || 0;
   };
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && visibleReviews < reviews.length && !isLoadingMore) {
+          setIsLoadingMore(true);
+          setTimeout(() => {
+            setVisibleReviews((prev) => Math.min(prev + 2, reviews.length));
+            setIsLoadingMore(false);
+          }, 500);
+        }
+      },
+      { threshold: 1 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => {
+      if (observerTarget.current) {
+        observer.unobserve(observerTarget.current);
+      }
+    };
+  }, [visibleReviews, reviews.length, isLoadingMore]);
 
   return (
     <MainLayout>
@@ -217,11 +248,11 @@ export default function KitchenDetailPage() {
                               ) : (
                                 <Button
                                   size="sm"
-                                  className="h-8 text-xs gap-1 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90"
+                                  className="h-7 text-xs px-3 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90"
                                   onClick={() => addToCart(item, kitchen.id, kitchen.name)}
                                   disabled={!item.available}
                                 >
-                                  <Plus className="w-3 h-3" />
+                                  <Plus className="w-3 h-3 mr-1" />
                                   Add
                                 </Button>
                               )}
@@ -240,14 +271,15 @@ export default function KitchenDetailPage() {
           <div className="space-y-6">
             {/* Sticky Cart Summary (Desktop) */}
             {cartCount > 0 && (
-              <Card className="hidden lg:block sticky top-20 bg-gradient-to-br from-primary/5 to-emerald-500/5 border-primary/20">
-                <CardContent className="p-5">
+              <div className="hidden lg:block sticky top-20 self-start">
+                <Card className="bg-background border shadow-md">
+                  <CardContent className="p-5">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                       <ShoppingCart className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                      <p className="font-semibold">Your Order</p>
+                      <p className="font-semibold text-foreground">Your Order</p>
                       <p className="text-sm text-muted-foreground">{cartCount} items</p>
                     </div>
                   </div>
@@ -269,13 +301,14 @@ export default function KitchenDetailPage() {
                     </div>
                   </div>
                   <Link href="/cart">
-                    <Button className="w-full gap-2 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90">
+                    <Button size="sm" className="w-full gap-2 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90">
                       <ShoppingCart className="w-4 h-4" />
                       View Cart
                     </Button>
                   </Link>
                 </CardContent>
               </Card>
+              </div>
             )}
 
             {/* Reviews */}
@@ -286,7 +319,7 @@ export default function KitchenDetailPage() {
                   Reviews ({reviews.length})
                 </h2>
                 <div className="space-y-3">
-                  {reviews.slice(0, 5).map((review) => (
+                  {reviews.slice(0, visibleReviews).map((review) => (
                     <Card key={review.id}>
                       <CardContent className="p-4">
                         <div className="flex items-start gap-3">
@@ -311,6 +344,11 @@ export default function KitchenDetailPage() {
                       </CardContent>
                     </Card>
                   ))}
+                  {visibleReviews < reviews.length && (
+                    <div ref={observerTarget} className="flex justify-center py-4">
+                      {isLoadingMore && <Loader2 className="w-5 h-5 animate-spin text-primary" />}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -320,12 +358,12 @@ export default function KitchenDetailPage() {
 
       {/* Mobile Floating Cart Button */}
       {cartCount > 0 && (
-        <div className="fixed bottom-16 left-4 right-4 z-40 lg:hidden">
+        <div className="fixed bottom-16 left-0 right-0 z-40 lg:hidden px-3 py-2 bg-background/95 backdrop-blur-sm border-t shadow-lg">
           <Link href="/cart">
-            <Button className="w-full h-12 rounded-xl shadow-xl gap-2 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90">
+            <Button size="sm" className="w-full gap-2 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90">
               <ShoppingCart className="w-4 h-4" />
               <span>View Cart ({cartCount})</span>
-              <span className="ml-auto font-bold">${cartTotal.toFixed(2)}</span>
+              <span className="ml-auto font-semibold">${cartTotal.toFixed(2)}</span>
             </Button>
           </Link>
         </div>

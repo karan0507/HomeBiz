@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { type MenuItem } from "./mock-data";
 
 interface CartItem {
@@ -22,6 +22,7 @@ interface CartContextType {
   cartCount: number;
   cartTotal: number;
   currentKitchen: string | null;
+  isHydrated: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -30,13 +31,31 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [currentKitchen, setCurrentKitchen] = useState<string | null>(null);
+  const [isHydrated, setIsHydrated] = useState(false);
+  const initialized = useRef(false);
 
-  // Load from localStorage on mount
+  // Load from localStorage on mount (only once)
   useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+
     const savedCart = localStorage.getItem("cart");
     const savedWishlist = localStorage.getItem("wishlist");
-    if (savedCart) setItems(JSON.parse(savedCart));
-    if (savedWishlist) setWishlist(JSON.parse(savedWishlist));
+    if (savedCart) {
+      try {
+        setItems(JSON.parse(savedCart));
+      } catch (e) {
+        localStorage.removeItem("cart");
+      }
+    }
+    if (savedWishlist) {
+      try {
+        setWishlist(JSON.parse(savedWishlist));
+      } catch (e) {
+        localStorage.removeItem("wishlist");
+      }
+    }
+    setIsHydrated(true);
   }, []);
 
   // Save to localStorage on change
@@ -119,6 +138,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         cartCount,
         cartTotal,
         currentKitchen,
+        isHydrated,
       }}
     >
       {children}
