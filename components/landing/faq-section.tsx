@@ -14,7 +14,32 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, HelpCircle, ChefHat, Users, CreditCard, Shield } from "lucide-react";
-import { mockFAQs as faqItems } from "@/lib/mock-data";
+const faqItems = [
+  {
+    id: "q1",
+    category: "general",
+    question: "What is HomeBiz?",
+    answer: "HomeBiz is a platform connecting local home chefs with customers who want authentic, home-cooked meals.",
+  },
+  {
+    id: "q2",
+    category: "customers",
+    question: "How do I order?",
+    answer: "Simply browse kitchens near you, add items to your cart, and place your order. You can pick it up at the scheduled time.",
+  },
+  {
+    id: "q3",
+    category: "chefs",
+    question: "How do I become a chef?",
+    answer: "Click on 'Become a Chef' to register your kitchen, provide your food handler certificate, and start selling!",
+  },
+  {
+    id: "q4",
+    category: "safety",
+    question: "Is the food safe?",
+    answer: "Yes, all our chefs are required to have valid food handler certificates and follow local health regulations.",
+  },
+];
 
 // Category icons mapping
 const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {

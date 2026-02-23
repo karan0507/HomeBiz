@@ -15,7 +15,35 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, Quote, ChevronLeft, ChevronRight, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { mockTestimonials as testimonials } from "@/lib/mock-data";
+const testimonials = [
+  {
+    id: "t1",
+    name: "Sarah Jenkins",
+    role: "Regular Customer",
+    quote: "The best homemade food I've ever had in Toronto. It feels like my mom's cooking!",
+    rating: 5,
+    location: "North York",
+    kitchenOrdered: "Auntie's Kitchen",
+  },
+  {
+    id: "t2",
+    name: "Michael Chen",
+    role: "Local Foodie",
+    quote: "Finding authentic Sichuan food was hard until I joined HomeBiz. Simply amazing.",
+    rating: 5,
+    location: "Scarborough",
+    kitchenOrdered: "Chef Wang's Spices",
+  },
+  {
+    id: "t3",
+    name: "Priya Sharma",
+    role: "Working Professional",
+    quote: "Perfect for my busy weeknights. Healthy, delicious, and supporting local chefs.",
+    rating: 5,
+    location: "Downtown",
+    kitchenOrdered: "Priya's Home Tiffin",
+  },
+];
 
 export function TestimonialsSection() {
   const [currentIndex, setCurrentIndex] = useState(0);

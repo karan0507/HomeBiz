@@ -13,7 +13,28 @@
 
 import { motion } from "framer-motion";
 import { Heart, Users, Globe, Shield, ChefHat } from "lucide-react";
-import { benefits } from "@/lib/mock-data";
+const benefits = [
+  {
+    title: "Made with Love",
+    description: "Every meal is prepared by home chefs using traditional recipes and fresh, local ingredients.",
+    icon: "Heart",
+  },
+  {
+    title: "Built for Community",
+    description: "Support your neighbors and discover the diverse culinary talents right in your community.",
+    icon: "Users",
+  },
+  {
+    title: "Authentic Flavors",
+    description: "Experience genuine tastes from around the world, cooked exactly how they were meant to be.",
+    icon: "Globe",
+  },
+  {
+    title: "Safe and Trusted",
+    description: "All our chefs are verified and maintain strict food safety standards for your peace of mind.",
+    icon: "Shield",
+  },
+];
 
 // Icon mapping for dynamic rendering
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {

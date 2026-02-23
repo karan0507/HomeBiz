@@ -7,7 +7,28 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { mockServices } from "@/lib/mock-data"
+interface Service {
+  id: string;
+  businessId: string;
+  name: string;
+  description: string;
+  price: number;
+  prepTime: string;
+  available: boolean;
+}
+
+const demoServices: Service[] = [
+  {
+    id: "s1",
+    businessId: "kitchen-1",
+    name: "Standard Catering",
+    description: "Full catering service for small events and gatherings.",
+    price: 150.0,
+    prepTime: "2-3 days",
+    available: true,
+  }
+];
+
 import { Plus, MoreVertical, Clock, Search, Wrench, CheckCircle, XCircle } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { CardLoader } from "@/components/shared/table-loader"
@@ -16,7 +37,7 @@ import { Pagination } from "@/components/shared/pagination"
 import { toast } from "sonner"
 
 export default function BusinessServicesPage() {
-  const [services, setServices] = useState(mockServices.filter((s) => s.businessId === "kitchen-1"))
+  const [services, setServices] = useState<Service[]>(demoServices)
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [availabilityFilter, setAvailabilityFilter] = useState<"all" | "available" | "unavailable">("all")
@@ -32,7 +53,7 @@ export default function BusinessServicesPage() {
 
   // Filter services
   const filteredServices = useMemo(() => {
-    return services.filter(service => {
+    return services.filter((service: Service) => {
       const matchesSearch =
         service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         service.description.toLowerCase().includes(searchQuery.toLowerCase())
@@ -54,18 +75,18 @@ export default function BusinessServicesPage() {
   // Stats
   const stats = useMemo(() => ({
     total: services.length,
-    available: services.filter(s => s.available).length,
-    unavailable: services.filter(s => !s.available).length,
+    available: services.filter((s: Service) => s.available).length,
+    unavailable: services.filter((s: Service) => !s.available).length,
   }), [services])
 
   const handleDeleteService = (serviceId: string) => {
-    setServices(prev => prev.filter(s => s.id !== serviceId))
+    setServices(prev => prev.filter((s: Service) => s.id !== serviceId))
     toast.success("Service deleted successfully")
   }
 
   const handleToggleAvailability = (serviceId: string) => {
-    setServices(prev =>
-      prev.map(s =>
+    setServices((prev: Service[]) =>
+      prev.map((s: Service) =>
         s.id === serviceId ? { ...s, available: !s.available } : s
       )
     )
@@ -178,7 +199,7 @@ export default function BusinessServicesPage() {
           ) : (
             <>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {paginatedServices.map((service) => (
+                {paginatedServices.map((service: Service) => (
                   <Card key={service.id}>
                     <CardHeader className="pb-2">
                       <div className="flex items-start justify-between">
