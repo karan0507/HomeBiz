@@ -25,8 +25,8 @@ function mapKitchen(k: any): Kitchen {
     is_verified: k.verification_status === 'approved',
     isVerified: k.verification_status === 'approved',
     acceptingOrders: k.accepting_orders ?? false,
-    cuisineTypes: mapJoinedItems(k.cuisine_types),
-    dietaryOptions: mapJoinedItems(k.dietary_options),
+    cuisineTypes: k.cuisineTypes || mapJoinedItems(k.cuisine_types),
+    dietaryOptions: k.dietaryOptions || mapJoinedItems(k.dietary_options),
     // Ensure numeric fields are numbers
     rating: Number(k.rating || 0),
     reviewCount: Number(k.review_count || 0),
@@ -34,7 +34,13 @@ function mapKitchen(k: any): Kitchen {
     totalOrders: Number(k.total_orders || 0),
     prep_time_min: Number(k.prep_time_min || 30),
     prep_time_max: Number(k.prep_time_max || 45),
+    prepTimeMin: Number(k.prep_time_min || 30),
+    prepTimeMax: Number(k.prep_time_max || 45),
     preparationTime: k.prep_time_min ? `${k.prep_time_min}-${k.prep_time_max} mins` : k.preparation_time,
+    // New fields
+    logoUrl: k.logo_url,
+    coverImageUrl: k.cover_image_url,
+    isActive: k.is_active,
   };
 }
 

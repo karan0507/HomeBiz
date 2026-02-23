@@ -103,7 +103,7 @@ function KitchensContent() {
     let result = [...apiKitchens];
 
     if (priceRange[0] > 0 || priceRange[1] < 50) {
-      result = result.filter((k) => k.minimumOrder >= priceRange[0] && k.minimumOrder <= priceRange[1]);
+      result = result.filter((k) => (k.minimumOrder || 0) >= priceRange[0] && (k.minimumOrder || 0) <= priceRange[1]);
     }
 
     switch (sortBy) {
@@ -111,7 +111,7 @@ function KitchensContent() {
         result.sort((a, b) => b.rating - a.rating);
         break;
       case "orders":
-        result.sort((a, b) => b.totalOrders - a.totalOrders);
+        result.sort((a, b) => (b.totalOrders || 0) - (a.totalOrders || 0));
         break;
       case "name":
         result.sort((a, b) => a.name.localeCompare(b.name));
@@ -472,7 +472,7 @@ function KitchensContent() {
                         {kitchen.name}
                       </h3>
                       <p className="text-sm text-muted-foreground truncate mt-0.5">
-                        {kitchen.cuisineTypes.slice(0, 2).join(" • ")}
+                        {kitchen.cuisineTypes?.slice(0, 2).join(" • ") || ""}
                       </p>
 
                       <div className="flex items-center gap-3 mt-3 text-sm">
@@ -488,7 +488,7 @@ function KitchensContent() {
 
                       <div className="flex items-center justify-between mt-3 pt-3 border-t">
                         <div className="flex gap-1">
-                          {kitchen.dietaryOptions.slice(0, 2).map((opt: string) => (
+                          {kitchen.dietaryOptions?.slice(0, 2).map((opt: string) => (
                             <Badge key={opt} variant="outline" className="text-[10px] h-5 px-1.5">
                               {opt}
                             </Badge>
@@ -496,12 +496,12 @@ function KitchensContent() {
                         </div>
                         <Badge
                           className={
-                            kitchen.acceptingOrders
+                            kitchen.accepting_orders
                               ? "bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px]"
                               : "bg-red-100 text-red-700 border-red-200 text-[10px]"
                           }
                         >
-                          {kitchen.acceptingOrders ? "Open" : "Closed"}
+                          {kitchen.accepting_orders ? "Open" : "Closed"}
                         </Badge>
                       </div>
                     </CardContent>
@@ -526,12 +526,12 @@ function KitchensContent() {
                             <div className="min-w-0">
                               <div className="flex items-center gap-2">
                                 <h3 className="font-semibold truncate">{kitchen.name}</h3>
-                                {kitchen.isVerified && (
+                                {kitchen.is_verified && (
                                   <BadgeCheck className="w-4 h-4 text-primary shrink-0" />
                                 )}
                               </div>
                               <p className="text-sm text-muted-foreground truncate">
-                                {kitchen.cuisineTypes.slice(0, 3).join(" • ")}
+                                {kitchen.cuisineTypes?.slice(0, 3).join(" • ") || ""}
                               </p>
                             </div>
                             <Button
@@ -568,14 +568,14 @@ function KitchensContent() {
                           </div>
 
                           <div className="flex items-center gap-2 mt-2">
-                            {kitchen.dietaryOptions.slice(0, 3).map((opt: string) => (
+                            {kitchen.dietaryOptions?.slice(0, 3).map((opt: string) => (
                               <Badge key={opt} variant="outline" className="text-xs h-6">
                                 {opt}
                               </Badge>
                             ))}
                             <Badge
                               className={`ml-auto ${
-                                kitchen.acceptingOrders
+                                kitchen.accepting_orders
                                   ? "bg-emerald-100 text-emerald-700"
                                   : "bg-red-100 text-red-700"
                               }`}

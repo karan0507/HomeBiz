@@ -85,8 +85,9 @@ export interface UpdateProfilePayload {
 /**
  * Transform API profile to frontend format
  */
-function transformProfile(p: ApiProfile): Profile {
+function transformProfile(p: any): Profile {
   return {
+    ...p,
     id: p.id,
     email: p.email,
     name: p.name,
@@ -95,7 +96,6 @@ function transformProfile(p: ApiProfile): Profile {
     phone: p.phone,
     avatarUrl: p.avatar_url,
     role: p.role,
-    address: p.address,
     addressLine1: p.address_line1,
     addressLine2: p.address_line2,
     city: p.city,

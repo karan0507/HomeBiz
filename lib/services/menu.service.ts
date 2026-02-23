@@ -148,8 +148,9 @@ function transformVariant(v: ApiMenuItemVariant): MenuItemVariant {
 /**
  * Transform API menu item to frontend format
  */
-function transformMenuItem(item: ApiMenuItem): MenuItem {
+function transformMenuItem(item: any): MenuItem {
   return {
+    ...item,
     id: item.id,
     kitchenId: item.kitchen_id,
     name: item.name,
@@ -162,8 +163,10 @@ function transformMenuItem(item: ApiMenuItem): MenuItem {
     imageUrl: item.image_url,
     isAvailable: item.is_available,
     availableQuantity: item.available_quantity,
+    stockQuantity: item.stock_quantity,
     prepTimeMin: item.prep_time_min || 30,
     prepTimeMax: item.prep_time_max || 45,
+    preparationTime: item.prep_time_min ? `${item.prep_time_min}-${item.prep_time_max} mins` : item.preparation_time,
     serves: item.serves,
     spiceLevel: item.spice_level,
     orderCount: item.order_count,
@@ -172,7 +175,13 @@ function transformMenuItem(item: ApiMenuItem): MenuItem {
     displayOrder: item.display_order,
     createdAt: item.created_at,
     updatedAt: item.updated_at,
-    variants: item.variants?.map(transformVariant),
+    quantityUnit: item.quantity_unit,
+    variants: item.variants?.map((v: any) => ({
+      ...v,
+      menuItemId: v.menu_item_id,
+      isRequired: v.is_required,
+      maxSelections: v.max_selections,
+    })),
   };
 }
 

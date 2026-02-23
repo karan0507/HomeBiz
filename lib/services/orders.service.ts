@@ -182,8 +182,9 @@ function transformOrderItem(item: ApiOrderItem): OrderItem {
 /**
  * Transform API order to frontend format
  */
-export function transformOrder(order: ApiOrder): Order {
+export function transformOrder(order: any): Order {
   return {
+    ...order,
     id: order.id,
     orderNumber: order.order_number,
     customerId: order.customer_id,
@@ -194,6 +195,7 @@ export function transformOrder(order: ApiOrder): Order {
     status: order.status,
     statusHistory: order.status_history,
     pickupTime: order.pickup_time,
+    fulfillmentType: order.fulfillment_type,
     estimatedReadyTime: order.estimated_ready_time,
     actualReadyTime: order.actual_ready_time,
     pickedUpAt: order.picked_up_at,
@@ -212,8 +214,27 @@ export function transformOrder(order: ApiOrder): Order {
     isRated: order.is_rated,
     createdAt: order.created_at,
     updatedAt: order.updated_at,
-    items: order.items?.map(transformOrderItem),
-    kitchen: order.kitchen,
+    items: order.items?.map((item: any) => ({
+      ...item,
+      orderId: item.order_id,
+      menuItemId: item.menu_item_id,
+      itemName: item.item_name,
+      itemDescription: item.item_description,
+      itemImageUrl: item.item_image_url,
+      unitPrice: item.unit_price,
+      totalPrice: item.total_price,
+      selectedVariants: item.selected_variants?.map((v: any) => ({
+        variantName: v.variant_name,
+        optionName: v.option_name,
+        price: v.price
+      })) || null,
+      specialInstructions: item.special_instructions,
+      createdAt: item.created_at,
+    })),
+    kitchen: order.kitchen ? {
+      ...order.kitchen,
+      logoUrl: order.kitchen.logo_url,
+    } : undefined,
   };
 }
 

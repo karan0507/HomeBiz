@@ -12,10 +12,10 @@
 import type React from "react";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/lib/auth-context";
 import { CartProvider } from "@/lib/cart-context";
+import { NavigationCacheHandler } from "@/components/providers/navigation-cache-handler";
 import "./globals.css";
 
 // Configure Inter font with all weights for flexibility
@@ -140,6 +140,7 @@ export default function RootLayout({
         {/* Auth Provider wraps entire app for session management */}
         <AuthProvider>
           <CartProvider>
+            <NavigationCacheHandler />
             {children}
           </CartProvider>
           {/* Toast notifications for user feedback */}
@@ -151,8 +152,6 @@ export default function RootLayout({
             className="sm:top-right"
           />
         </AuthProvider>
-        {/* Vercel Analytics for performance monitoring */}
-        <Analytics />
       </body>
     </html>
   );

@@ -11,7 +11,15 @@ const getBaseApiUrl = () => {
 const API_URL = getBaseApiUrl();
 
 // In-flight request cache for deduplication
-const inFlightRequests = new Map<string, Promise<any>>();
+let inFlightRequests = new Map<string, Promise<any>>();
+
+/**
+ * Clear the global API cache
+ * Call this on page transitions or meaningful state resets
+ */
+export function clearApiCache() {
+  inFlightRequests.clear();
+}
 
 export class APIError extends Error {
   status: number;
@@ -32,12 +40,14 @@ export async function fetchAPI<T>(endpoint: string, options?: RequestInit): Prom
     throw new APIError('Internal call blocked', 0, 'INTERNAL');
   }
 
-  // Create cache key from endpoint + method
+  // Create cache key from endpoint + method + body (if POST/PATCH)
   const method = options?.method || 'GET';
-  const cacheKey = `${method}:${endpoint}`;
+  const bodyKey = options?.body ? `:${(options.body as string).length}` : '';
+  const cacheKey = `${method}:${endpoint}${bodyKey}`;
 
-  // Deduplicate: return existing in-flight request for GET
-  if (method === 'GET' && inFlightRequests.has(cacheKey)) {
+  // Deduplicate: return existing in-flight request
+  // Only deduplicate GET and strictly identical POST/PATCH if body is stable
+  if (inFlightRequests.has(cacheKey)) {
     return inFlightRequests.get(cacheKey)!;
   }
 
@@ -108,14 +118,13 @@ export async function fetchAPI<T>(endpoint: string, options?: RequestInit): Prom
     }
   })();
 
-  // Cache GET requests only
-  if (method === 'GET') {
-    inFlightRequests.set(cacheKey, requestPromise);
-    requestPromise.finally(() => {
-      // Remove from cache after 100ms to allow brief deduplication window
-      setTimeout(() => inFlightRequests.delete(cacheKey), 100);
-    });
-  }
+  // Track the request
+  inFlightRequests.set(cacheKey, requestPromise);
+
+  requestPromise.finally(() => {
+    // Remove from in-flight cache shortly after completion to allow batching but ensure fresh subsequent calls
+    setTimeout(() => inFlightRequests.delete(cacheKey), 500);
+  });
 
   return requestPromise;
 }
