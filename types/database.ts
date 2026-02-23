@@ -907,6 +907,12 @@ export interface PaginationMeta {
   total_pages: number;
 }
 
+export interface Province {
+  code: string       // e.g. "ON", "BC"
+  name: string       // e.g. "Ontario", "British Columbia"
+  display_order?: number
+}
+
 export interface Category {
   id: string;
   name: string;
