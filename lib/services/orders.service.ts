@@ -4,6 +4,18 @@
  */
 
 import { fetchAPI } from './api.client';
+import type {
+  Order,
+  OrderWithItems,
+  OrderItem,
+  OrderCreate as CreateOrderPayload,
+  OrderItemCreate,
+  SelectedVariant,
+  OrderStatus,
+  PaymentMethod,
+  PaymentStatus,
+  Kitchen
+} from '@/types/database';
 
 // API response types (snake_case from backend)
 interface ApiOrderItem {
@@ -33,18 +45,19 @@ interface ApiOrder {
   customer_name: string;
   customer_phone: string;
   customer_email: string | null;
-  status: 'placed' | 'confirmed' | 'preparing' | 'ready' | 'picked_up' | 'completed' | 'cancelled';
+  status: OrderStatus;
   status_history: Array<{
     status: string;
     timestamp: string;
     note?: string;
   }>;
+  fulfillment_type?: 'pickup' | 'delivery' | null;
   pickup_time: string | null;
   estimated_ready_time: string | null;
   actual_ready_time: string | null;
   picked_up_at: string | null;
-  payment_method: 'cash' | 'etransfer' | 'card';
-  payment_status: 'pending' | 'paid' | 'refunded' | 'failed';
+  payment_method: PaymentMethod;
+  payment_status: PaymentStatus;
   payment_reference: string | null;
   subtotal: number;
   tax_rate: number;
@@ -70,188 +83,123 @@ interface ApiOrder {
   };
 }
 
-// Frontend types (camelCase)
-export interface OrderItem {
-  id: string;
-  orderId: string;
-  menuItemId: string | null;
-  itemName: string;
-  itemDescription: string | null;
-  itemImageUrl: string | null;
-  unitPrice: number;
-  quantity: number;
-  totalPrice: number;
-  selectedVariants: Array<{
-    variantName: string;
-    optionName: string;
-    price: number;
-  }> | null;
-  specialInstructions: string | null;
-  createdAt: string;
-}
-
-export interface Order {
-  id: string;
-  orderNumber: string;
-  customerId: string;
-  kitchenId: string;
-  customerName: string;
-  customerPhone: string;
-  customerEmail: string | null;
-  status: 'placed' | 'confirmed' | 'preparing' | 'ready' | 'picked_up' | 'completed' | 'cancelled';
-  statusHistory: Array<{
-    status: string;
-    timestamp: string;
-    note?: string;
-  }>;
-  pickupTime: string | null;
-  estimatedReadyTime: string | null;
-  actualReadyTime: string | null;
-  pickedUpAt: string | null;
-  paymentMethod: 'cash' | 'etransfer' | 'card';
-  paymentStatus: 'pending' | 'paid' | 'refunded' | 'failed';
-  paymentReference: string | null;
-  subtotal: number;
-  taxRate: number;
-  taxAmount: number;
-  tipAmount: number;
-  discountAmount: number;
-  total: number;
-  specialInstructions: string | null;
-  kitchenNotes: string | null;
-  cancellationReason: string | null;
-  isRated: boolean;
-  createdAt: string;
-  updatedAt: string;
-  items?: OrderItem[];
-  kitchen?: {
-    id: string;
-    name: string;
-    slug: string;
-    phone: string;
-    email: string | null;
-    address: string | null;
-    neighborhood: string;
-  };
-}
-
-// Create order payload
-export interface CreateOrderPayload {
-  kitchen_id: string;
-  payment_method: 'cash' | 'etransfer' | 'card';
-  items: Array<{
-    menu_item_id: string;
-    quantity: number;
-    selected_variants?: Array<{
-      variant_name: string;
-      option_name: string;
-      price: number;
-    }>;
-    special_instructions?: string;
-  }>;
-  pickup_time?: string;
-  tip_amount?: number;
-  discount_amount?: number;
-  special_instructions?: string;
-}
-
 /**
  * Transform API order item to frontend format
  */
 function transformOrderItem(item: ApiOrderItem): OrderItem {
   return {
     id: item.id,
-    orderId: item.order_id,
-    menuItemId: item.menu_item_id,
-    itemName: item.item_name,
-    itemDescription: item.item_description,
-    itemImageUrl: item.item_image_url,
-    unitPrice: item.unit_price,
+    order_id: item.order_id,
+    menu_item_id: item.menu_item_id ?? undefined,
+    item_name: item.item_name,
+    item_description: item.item_description ?? undefined,
+    item_image_url: item.item_image_url ?? undefined,
+    unit_price: item.unit_price,
     quantity: item.quantity,
-    totalPrice: item.total_price,
-    selectedVariants: item.selected_variants?.map(v => ({
-      variantName: v.variant_name,
-      optionName: v.option_name,
+    total_price: item.total_price,
+    selected_variants: item.selected_variants?.map(v => ({
+      variant_name: v.variant_name,
+      option_name: v.option_name,
       price: v.price
-    })) || null,
-    specialInstructions: item.special_instructions,
-    createdAt: item.created_at,
+    })) as SelectedVariant[] | undefined,
+    special_instructions: item.special_instructions ?? undefined,
+    created_at: item.created_at,
   };
 }
 
 /**
  * Transform API order to frontend format
  */
-export function transformOrder(order: any): Order {
+export function transformOrder(order: ApiOrder): Order & { kitchen?: Kitchen } {
   return {
-    ...order,
     id: order.id,
+    order_number: order.order_number,
     orderNumber: order.order_number,
+    customer_id: order.customer_id,
     customerId: order.customer_id,
+    kitchen_id: order.kitchen_id,
     kitchenId: order.kitchen_id,
+    customer_name: order.customer_name,
     customerName: order.customer_name,
+    customer_phone: order.customer_phone,
     customerPhone: order.customer_phone,
-    customerEmail: order.customer_email,
+    customer_email: order.customer_email ?? undefined,
+    customerEmail: order.customer_email ?? undefined,
     status: order.status,
-    statusHistory: order.status_history,
-    pickupTime: order.pickup_time,
-    fulfillmentType: order.fulfillment_type,
-    estimatedReadyTime: order.estimated_ready_time,
-    actualReadyTime: order.actual_ready_time,
-    pickedUpAt: order.picked_up_at,
+    status_history: order.status_history.map(h => ({
+      status: h.status as any,
+      timestamp: h.timestamp,
+      note: h.note
+    })),
+    statusHistory: order.status_history.map(h => ({
+      status: h.status as any,
+      timestamp: h.timestamp,
+      note: h.note
+    })),
+    pickup_time: order.pickup_time ?? undefined,
+    pickupTime: order.pickup_time ?? undefined,
+    estimated_ready_time: order.estimated_ready_time ?? undefined,
+    estimatedReadyTime: order.estimated_ready_time ?? undefined,
+    actual_ready_time: order.actual_ready_time ?? undefined,
+    actualReadyTime: order.actual_ready_time ?? undefined,
+    picked_up_at: order.picked_up_at ?? undefined,
+    pickedUpAt: order.picked_up_at ?? undefined,
+    payment_method: order.payment_method,
     paymentMethod: order.payment_method,
+    payment_status: order.payment_status,
     paymentStatus: order.payment_status,
-    paymentReference: order.payment_reference,
+    payment_reference: order.payment_reference ?? undefined,
+    paymentReference: order.payment_reference ?? undefined,
     subtotal: order.subtotal,
+    tax_rate: order.tax_rate,
     taxRate: order.tax_rate,
+    tax_amount: order.tax_amount,
     taxAmount: order.tax_amount,
+    tip_amount: order.tip_amount,
     tipAmount: order.tip_amount,
+    discount_amount: order.discount_amount,
     discountAmount: order.discount_amount,
     total: order.total,
-    specialInstructions: order.special_instructions,
-    kitchenNotes: order.kitchen_notes,
-    cancellationReason: order.cancellation_reason,
+    special_instructions: order.special_instructions ?? undefined,
+    specialInstructions: order.special_instructions ?? undefined,
+    kitchen_notes: order.kitchen_notes ?? undefined,
+    kitchenNotes: order.kitchen_notes ?? undefined,
+    cancellation_reason: order.cancellation_reason ?? undefined,
+    cancellationReason: order.cancellation_reason ?? undefined,
+    is_rated: order.is_rated,
     isRated: order.is_rated,
+    created_at: order.created_at,
     createdAt: order.created_at,
+    updated_at: order.updated_at,
     updatedAt: order.updated_at,
-    items: order.items?.map((item: any) => ({
-      ...item,
-      orderId: item.order_id,
-      menuItemId: item.menu_item_id,
-      itemName: item.item_name,
-      itemDescription: item.item_description,
-      itemImageUrl: item.item_image_url,
-      unitPrice: item.unit_price,
-      totalPrice: item.total_price,
-      selectedVariants: item.selected_variants?.map((v: any) => ({
-        variantName: v.variant_name,
-        optionName: v.option_name,
-        price: v.price
-      })) || null,
-      specialInstructions: item.special_instructions,
-      createdAt: item.created_at,
-    })),
     kitchen: order.kitchen ? {
       ...order.kitchen,
-      logoUrl: order.kitchen.logo_url,
-    } : undefined,
+      logo_url: (order.kitchen as any).logo_url ?? undefined,
+    } as Kitchen : undefined,
   };
 }
 
 /**
  * Get all orders for current user
  */
-export async function getOrders(): Promise<Order[]> {
+export async function getOrders(): Promise<OrderWithItems[]> {
   const orders = await fetchAPI<ApiOrder[]>('/orders');
-  return orders.map(transformOrder);
+  return orders.map(order => ({
+    ...transformOrder(order),
+    items: order.items?.map(transformOrderItem) || [],
+  } as OrderWithItems));
 }
 
 /**
  * Get order by ID
  */
-export async function getOrderById(orderId: string): Promise<Order> {
+export async function getOrderById(orderId: string): Promise<OrderWithItems> {
   const order = await fetchAPI<ApiOrder>(`/orders/${orderId}`);
-  return transformOrder(order);
+  const baseOrder = transformOrder(order);
+  return {
+    ...baseOrder,
+    items: order.items?.map(transformOrderItem) || [],
+  } as OrderWithItems;
 }
 
 /**

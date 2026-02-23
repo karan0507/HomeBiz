@@ -160,10 +160,12 @@ function KitchenCard({ kitchen, index }: { kitchen: Kitchen; index: number }) {
   const isWishlisted = isHydrated && isInWishlist(kitchen.id);
 
   // Get cuisine emoji from first cuisine type
-  const cuisineEmoji = cuisineEmojiMap[kitchen.cuisineTypes[0]] || "🍽️";
+  const firstCuisine = kitchen.cuisineTypes?.[0] || "";
+  const cuisineEmoji = cuisineEmojiMap[firstCuisine] || "🍽️";
 
   // Format minimum order as price range indicator
-  const priceRange = kitchen.minimumOrder >= 25 ? "$$" : kitchen.minimumOrder >= 15 ? "$" : "$";
+  const minOrder = kitchen.minimum_order || kitchen.minimumOrder || 0;
+  const priceRange = minOrder >= 25 ? "$$" : minOrder >= 15 ? "$" : "$";
 
   // Get combined tags text
   const allTags = (kitchen.specialties || []).join(", ");
@@ -187,7 +189,7 @@ function KitchenCard({ kitchen, index }: { kitchen: Kitchen; index: number }) {
                   <span className="text-4xl">{cuisineEmoji}</span>
                 </div>
                 <span className="text-sm font-medium text-emerald-700/70">
-                  {kitchen.cuisineTypes[0]}
+                  {kitchen.cuisineTypes?.[0] || "Home Kitchen"}
                 </span>
               </div>
             </div>
@@ -249,7 +251,7 @@ function KitchenCard({ kitchen, index }: { kitchen: Kitchen; index: number }) {
 
             {/* Cuisine & Location */}
             <div className="flex items-center gap-1.5 mt-1.5 text-xs text-muted-foreground">
-              <span>{kitchen.cuisineTypes.slice(0, 2).join(" • ")}</span>
+              <span>{kitchen.cuisineTypes?.slice(0, 2).join(" • ") || ""}</span>
               <span>•</span>
               <MapPin className="w-3 h-3" />
               <span>{kitchen.neighborhood}</span>
@@ -278,10 +280,10 @@ function KitchenCard({ kitchen, index }: { kitchen: Kitchen; index: number }) {
             {/* Footer */}
             <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
               <span className="text-xs text-muted-foreground">
-                Min ${kitchen.minimumOrder}
+                Min ${kitchen.minimum_order || kitchen.minimumOrder || 0}
               </span>
-              <span className={`text-xs font-medium ${kitchen.acceptingOrders ? "text-green-600" : "text-muted-foreground"}`}>
-                {kitchen.acceptingOrders ? "Open" : "Closed"}
+              <span className={`text-xs font-medium ${kitchen.accepting_orders ? "text-green-600" : "text-muted-foreground"}`}>
+                {kitchen.accepting_orders ? "Open" : "Closed"}
               </span>
             </div>
           </div>

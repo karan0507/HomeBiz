@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll"
 import { ProtectedRoute } from "@/components/protected-route"
 import { BusinessLayout } from "@/components/business/business-layout"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -12,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { fetchAPI } from "@/lib/services/api.client"
 import { showError } from "@/lib/notifications"
-import { Plus, MoreVertical, Search, Package, CheckCircle, XCircle, Clock } from "lucide-react"
+import { Plus, MoreVertical, Search, Package, CheckCircle, XCircle, Clock, Loader2 } from "lucide-react"
 import Image from "next/image"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
@@ -82,6 +83,8 @@ export default function BusinessProductsPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const itemsPerPage = 6
+  // Mobile infinite scroll
+  const [visibleCount, setVisibleCount] = useState(itemsPerPage)
 
   // Dialog states
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -110,10 +113,8 @@ export default function BusinessProductsPage() {
   })
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
 
-  // Authentication check - Moved after hooks to avoid hook errors
-  if (!user) {
-    return null
-  }
+  // !! Bug fix: auth guard moved AFTER all hooks to respect Rules of Hooks
+  // (was on line 114, between state declarations and useEffect calls)
 
   useEffect(() => {
     if (!user) return
@@ -167,12 +168,27 @@ export default function BusinessProductsPage() {
     })
   }, [products, searchQuery, availabilityFilter])
 
-  // Pagination
+  // Reset visible count when filters change
+  useEffect(() => { setVisibleCount(itemsPerPage); setCurrentPage(1) }, [searchQuery, availabilityFilter])
+
+  // Pagination (desktop)
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
   const paginatedProducts = filteredProducts.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   )
+  // Mobile: show first visibleCount items
+  const mobileProducts = filteredProducts.slice(0, visibleCount)
+  const mobileHasMore = visibleCount < filteredProducts.length
+
+  const mobileSentinelRef = useInfiniteScroll({
+    hasMore: mobileHasMore,
+    isLoading: loading,
+    onLoadMore: () => setVisibleCount((v) => v + itemsPerPage),
+  })
+
+  // Auth guard — AFTER all hooks (Rules of Hooks)
+  if (!user) return null
 
   // Stats
   const stats = useMemo(() => ({
@@ -282,7 +298,7 @@ export default function BusinessProductsPage() {
     } catch (err) {
       showError(err)
     } finally {
-      setIsSubmitting(true) // Should be false but following original pattern check... wait line 232 says false. Correcting.
+      // Bug fix: was setIsSubmitting(true) — button would stay locked on error
       setIsSubmitting(false)
     }
   }
@@ -515,7 +531,8 @@ export default function BusinessProductsPage() {
             </Card>
           ) : (
             <>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Desktop: paginated grid */}
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 hidden md:grid">
                 {paginatedProducts.map((product) => (
                   <Card key={product.id} className="overflow-hidden">
                     <div className="relative h-48 w-full overflow-hidden">
@@ -578,7 +595,7 @@ export default function BusinessProductsPage() {
                         )}
                         {product.spiceLevel && product.spiceLevel > 0 && (
                           <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded-md">
-                            <span>{"🌶️".repeat(product.spiceLevel)}</span>
+                            <span>{"\uD83C\uDF36\uFE0F".repeat(product.spiceLevel)}</span>
                           </div>
                         )}
                       </div>
@@ -593,13 +610,103 @@ export default function BusinessProductsPage() {
                 ))}
               </div>
 
-              {/* Pagination */}
+              {/* Mobile: infinite scroll grid */}
+              <div className="grid grid-cols-1 gap-4 md:hidden">
+                {mobileProducts.map((product) => (
+                  <Card key={product.id} className="overflow-hidden">
+                    <div className="relative h-48 w-full overflow-hidden">
+                      <Image
+                        src={product.images[0] || "/placeholder.svg"}
+                        alt={product.name}
+                        fill
+                        className="object-cover"
+                      />
+                      <Badge
+                        className={`absolute top-3 right-3 ${
+                          product.available
+                            ? "bg-green-100 text-green-800 hover:bg-green-100"
+                            : "bg-gray-100 text-gray-800 hover:bg-gray-100"
+                        }`}
+                      >
+                        {product.available ? "Available" : "Unavailable"}
+                      </Badge>
+                    </div>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold truncate">{product.name}</h3>
+                          <p className="text-sm text-muted-foreground mt-1">{product.category}</p>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => openEditDialog(product)}>
+                              Edit Product
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleToggleAvailability(product.id)}>
+                              {product.available ? "Mark Unavailable" : "Mark Available"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => openDeleteDialog(product)}
+                            >
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{product.description}</p>
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded-md">
+                          <Clock className="w-3 h-3" />
+                          <span>{product.prepTimeMin}-{product.prepTimeMax} min</span>
+                        </div>
+                        {product.serves && (
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded-md">
+                            <span className="font-medium">Serves {product.serves}</span>
+                          </div>
+                        )}
+                        {product.spiceLevel && product.spiceLevel > 0 && (
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded-md">
+                            <span>{"\uD83C\uDF36\uFE0F".repeat(product.spiceLevel)}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xl font-bold">${product.price.toFixed(2)}</span>
+                        <Button size="sm" variant="outline" onClick={() => openEditDialog(product)}>
+                          Edit
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Mobile scroll sentinel — detaches when no more items */}
+              {mobileHasMore && (
+                <div ref={mobileSentinelRef} className="h-4 w-full md:hidden" aria-hidden="true" />
+              )}
+              {!mobileHasMore && mobileProducts.length > 0 && (
+                <p className="text-center text-sm text-muted-foreground py-4 md:hidden">
+                  All {filteredProducts.length} products shown
+                </p>
+              )}
+
+              {/* Desktop pagination — hidden on mobile */}
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
                 totalItems={filteredProducts.length}
                 itemsPerPage={itemsPerPage}
                 onPageChange={setCurrentPage}
+                className="hidden md:flex"
               />
             </>
           )}

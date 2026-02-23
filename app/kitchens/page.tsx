@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, Suspense, useEffect, useRef } from "react";
+import { useState, useMemo, Suspense, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -15,6 +15,7 @@ import {
   BadgeCheck,
   Grid3X3,
   List,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,9 +30,12 @@ import {
 } from "@/components/ui/sheet";
 import { MainLayout } from "@/components/layout/main-layout";
 import { useCart } from "@/lib/cart-context";
-import { useKitchens } from "@/hooks/useKitchens";
+import { getKitchens } from "@/lib/services/kitchens.service";
 import { getCachedCuisineTypes } from "@/lib/services/data.service";
-import type { CuisineType, Kitchen } from "@/types/database";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
+import type { CuisineType, Kitchen, KitchenFilters } from "@/types/database";
+
+const PER_PAGE = 12;
 
 function KitchensContent() {
   const searchParams = useSearchParams();
@@ -49,41 +53,35 @@ function KitchensContent() {
   const [maxDistance, setMaxDistance] = useState(10);
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
 
+  // Infinite scroll state
+  const [page, setPage] = useState(1);
+  const [allKitchens, setAllKitchens] = useState<Kitchen[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Stable filter snapshot — changes reset to page 1
+  const filtersRef = useRef<KitchenFilters>({});
+
   const { isInWishlist, toggleWishlist, isHydrated } = useCart();
 
   const dietaryOptions = ["Vegetarian", "Vegan", "Halal", "Gluten-Free", "Dairy-Free"];
   const ratingOptions = [4.5, 4.0, 3.5, 3.0];
 
-  // Fetch user location
+  // Fetch user location once
   useEffect(() => {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lon: position.coords.longitude,
-          });
+          setUserLocation({ lat: position.coords.latitude, lon: position.coords.longitude });
         },
-        (error) => {
-          console.warn("Geolocation error:", error.message);
-        },
+        (err) => { console.warn("Geolocation error:", err.message); },
         { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
       );
     }
   }, []);
 
-  // Fetch kitchens from API with filters - only when filters change
-  const { kitchens: apiKitchens, loading: kitchensLoading, error: kitchensError } = useKitchens({
-    query: searchQuery || undefined,
-    cuisines: selectedCuisine ? [selectedCuisine] : undefined,
-    dietary: selectedDietary.length > 0 ? selectedDietary : undefined,
-    min_rating: minRating > 0 ? minRating : undefined,
-    lat: userLocation?.lat,
-    lon: userLocation?.lon,
-    radius: maxDistance,
-  });
-
-  // Fetch cuisine types for filters
+  // Fetch cuisine types once
   const [cuisineTypes, setCuisineTypes] = useState<CuisineType[]>([]);
   const [cuisinesLoading, setCuisinesLoading] = useState(true);
   const hasFetchedCuisines = useRef(false);
@@ -91,35 +89,95 @@ function KitchensContent() {
   useEffect(() => {
     if (hasFetchedCuisines.current) return;
     hasFetchedCuisines.current = true;
-
     getCachedCuisineTypes()
       .then(setCuisineTypes)
       .catch(() => setCuisineTypes([]))
       .finally(() => setCuisinesLoading(false));
   }, []);
 
-  // Apply client-side filters (price range) and sorting
-  const filteredKitchens = useMemo(() => {
-    let result = [...apiKitchens];
+  // Build current filter object (stable for the current render)
+  const currentFilters = useMemo<KitchenFilters>(() => ({
+    query: searchQuery || undefined,
+    cuisines: selectedCuisine ? [selectedCuisine] : undefined,
+    dietary: selectedDietary.length > 0 ? selectedDietary : undefined,
+    min_rating: minRating > 0 ? minRating : undefined,
+    lat: userLocation?.lat,
+    lon: userLocation?.lon,
+    radius: maxDistance,
+    sort: sortBy === "rating" ? "rating" : sortBy === "orders" ? "orders" : undefined,
+    per_page: PER_PAGE,
+  }), [searchQuery, selectedCuisine, selectedDietary, minRating, userLocation, maxDistance, sortBy]);
 
-    if (priceRange[0] > 0 || priceRange[1] < 50) {
-      result = result.filter((k) => (k.minimumOrder || 0) >= priceRange[0] && (k.minimumOrder || 0) <= priceRange[1]);
-    }
+  // When filters change → reset to page 1 and clear accumulated list
+  const prevFiltersKey = useRef("");
+  const filtersKey = useMemo(() => JSON.stringify(currentFilters), [currentFilters]);
 
-    switch (sortBy) {
-      case "rating":
-        result.sort((a, b) => b.rating - a.rating);
-        break;
-      case "orders":
-        result.sort((a, b) => (b.totalOrders || 0) - (a.totalOrders || 0));
-        break;
-      case "name":
+  useEffect(() => {
+    if (filtersKey === prevFiltersKey.current) return;
+    prevFiltersKey.current = filtersKey;
+    filtersRef.current = currentFilters;
+    setPage(1);
+    setAllKitchens([]);
+    setHasMore(true);
+  }, [filtersKey, currentFilters]);
+
+  // Fetch a single page — append or replace based on page number
+  const fetchPage = useCallback(async (pageNum: number, signal?: AbortSignal) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const filters: KitchenFilters = { ...filtersRef.current, page: pageNum };
+      const data = await getKitchens(filters, signal);
+
+      if (signal?.aborted) return;
+
+      // Apply client-side price filter + name sort (server handles rating/orders sort)
+      let result = [...data];
+      if (priceRange[0] > 0 || priceRange[1] < 50) {
+        result = result.filter((k) => {
+          const min = k.minimum_order || k.minimumOrder || 0;
+          return min >= priceRange[0] && min <= priceRange[1];
+        });
+      }
+      if (sortBy === "name") {
         result.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-    }
+      }
 
-    return result;
-  }, [apiKitchens, sortBy, priceRange]);
+      if (pageNum === 1) {
+        setAllKitchens(result);
+      } else {
+        setAllKitchens((prev) => {
+          // Deduplicate by id (safety net)
+          const existingIds = new Set(prev.map((k) => k.id));
+          const newItems = result.filter((k) => !existingIds.has(k.id));
+          return [...prev, ...newItems];
+        });
+      }
+
+      // If we got fewer than PER_PAGE — no more pages
+      setHasMore(data.length === PER_PAGE);
+    } catch (err: any) {
+      if (err.name === "AbortError") return;
+      setError("Error loading kitchens. Please try again.");
+      setHasMore(false);
+    } finally {
+      if (!signal?.aborted) setLoading(false);
+    }
+  }, [priceRange, sortBy]); // These are client-side only — safe to keep
+
+  // Trigger fetch whenever page or filter-reset changes
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchPage(page, controller.signal);
+    return () => controller.abort();
+  }, [page, filtersKey]); // filtersKey change resets page → triggers this too
+
+  // Infinite scroll sentinel — mobile only (md+ uses native scrolling in desktop layout)
+  const sentinelRef = useInfiniteScroll({
+    hasMore,
+    isLoading: loading,
+    onLoadMore: () => setPage((p) => p + 1),
+  });
 
   const clearFilters = () => {
     setSearchQuery("");
@@ -140,11 +198,13 @@ function KitchensContent() {
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold">Find Home Kitchens</h1>
           <p className="text-muted-foreground mt-1">
-            {kitchensLoading ? "Loading..." : `${filteredKitchens.length} home chefs ready to cook for you in Toronto`}
+            {loading && page === 1
+              ? "Loading..."
+              : `${allKitchens.length} home chefs ready to cook for you in Toronto`}
           </p>
-          {kitchensError && (
+          {error && (
             <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
-              Error loading kitchens. Please try again.
+              {error}
             </div>
           )}
         </div>
@@ -169,7 +229,7 @@ function KitchensContent() {
             )}
           </div>
 
-          {/* View Toggle (Desktop) */}
+          {/* View Toggle (Desktop only) */}
           <div className="hidden md:flex border rounded-md overflow-hidden">
             <button
               onClick={() => setViewMode("grid")}
@@ -332,8 +392,11 @@ function KitchensContent() {
                   <Button variant="outline" className="flex-1" onClick={clearFilters}>
                     Clear All
                   </Button>
-                  <Button className="flex-1 bg-gradient-to-r from-primary to-emerald-600" onClick={() => setFilterOpen(false)}>
-                    Show {filteredKitchens.length} Results
+                  <Button
+                    className="flex-1 bg-gradient-to-r from-primary to-emerald-600"
+                    onClick={() => setFilterOpen(false)}
+                  >
+                    Show {allKitchens.length} Results
                   </Button>
                 </div>
               </div>
@@ -388,7 +451,8 @@ function KitchensContent() {
         )}
 
         {/* Kitchen Grid/List */}
-        {kitchensLoading ? (
+        {loading && page === 1 ? (
+          // Initial skeleton
           <div className={viewMode === "grid"
             ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
             : "space-y-3"
@@ -404,7 +468,7 @@ function KitchensContent() {
               </Card>
             ))}
           </div>
-        ) : filteredKitchens.length === 0 ? (
+        ) : allKitchens.length === 0 && !loading ? (
           <div className="text-center py-16">
             <div className="w-20 h-20 rounded-full bg-muted mx-auto flex items-center justify-center mb-4">
               <ChefHat className="w-10 h-10 text-muted-foreground" />
@@ -418,22 +482,22 @@ function KitchensContent() {
             ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
             : "space-y-3"
           }>
-            {filteredKitchens.map((kitchen) => (
+            {allKitchens.map((kitchen) =>
               viewMode === "grid" ? (
                 // Grid View Card
                 <Card key={kitchen.id} className="overflow-hidden group hover:shadow-lg transition-all hover:border-primary/50">
                   <Link href={`/kitchens/${kitchen.id}`}>
                     <div className="h-32 relative overflow-hidden">
                       {kitchen.cover_image_url ? (
-                        <img 
-                          src={kitchen.cover_image_url} 
-                          alt={kitchen.name} 
+                        <img
+                          src={kitchen.cover_image_url}
+                          alt={kitchen.name}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         />
                       ) : (
                         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/10 to-emerald-500/10" />
                       )}
-                      
+
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="w-16 h-16 rounded-2xl overflow-hidden bg-white flex items-center justify-center shadow-lg relative border-2 border-background">
                           {kitchen.logo_url ? (
@@ -589,8 +653,27 @@ function KitchensContent() {
                   </Link>
                 </Card>
               )
-            ))}
+            )}
           </div>
+        )}
+
+        {/* Infinite scroll sentinel (mobile) — hidden on md+ */}
+        {hasMore && (
+          <div ref={sentinelRef} className="h-4 w-full md:hidden" aria-hidden="true" />
+        )}
+
+        {/* Bottom spinner — loading next page (mobile) */}
+        {loading && page > 1 && (
+          <div className="flex justify-center py-6 md:hidden">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          </div>
+        )}
+
+        {/* End of results message (mobile) — only when explicitly no more data */}
+        {!hasMore && allKitchens.length > 0 && (
+          <p className="text-center text-sm text-muted-foreground py-6 md:hidden">
+            You&apos;ve seen all {allKitchens.length} kitchens
+          </p>
         )}
       </div>
     </MainLayout>

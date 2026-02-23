@@ -4,8 +4,7 @@
  */
 
 import { fetchAPI } from './api.client';
-import type { Profile } from './profile.service';
-import type { Kitchen } from '@/types/database';
+import type { Profile, Kitchen, Order, Category, Review, PaginationMeta } from '@/types/database';
 
 // Admin user list response
 export interface AdminUser extends Profile {
@@ -23,14 +22,7 @@ export interface AdminKitchen extends Kitchen {
 }
 
 // Admin order response
-export interface AdminOrder {
-  id: string;
-  order_number: string;
-  customer_id: string;
-  kitchen_id: string;
-  status: string;
-  total: number;
-  created_at: string;
+export interface AdminOrder extends Order {
   kitchen: {
     id: string;
     name: string;
@@ -44,16 +36,7 @@ export interface AdminOrder {
 }
 
 // Admin review response
-export interface AdminReview {
-  id: string;
-  kitchen_id: string;
-  customer_id: string;
-  rating: number;
-  comment: string | null;
-  is_approved: boolean;
-  is_flagged: boolean;
-  flag_reason: string | null;
-  created_at: string;
+export interface AdminReview extends Review {
   customer: {
     id: string;
     email: string;
@@ -126,15 +109,14 @@ export interface ReviewFilters {
 /**
  * Get all users (paginated)
  */
-export async function getUsers(filters?: UserFilters): Promise<{ users: AdminUser[]; meta: any }> {
+export async function getUsers(filters?: UserFilters): Promise<{ users: AdminUser[]; meta: PaginationMeta }> {
   const params = new URLSearchParams();
   if (filters?.page) params.append('page', filters.page.toString());
   if (filters?.per_page) params.append('per_page', filters.per_page.toString());
   if (filters?.role) params.append('role', filters.role);
   if (filters?.search) params.append('search', filters.search);
 
-  const response = await fetchAPI<any>(`/admin/users?${params.toString()}`);
-  return response;
+  return await fetchAPI<{ users: AdminUser[]; meta: PaginationMeta }>(`/admin/users?${params.toString()}`);
 }
 
 /**
@@ -164,14 +146,13 @@ export async function deleteUser(userId: string): Promise<{ message: string }> {
 /**
  * Get all kitchens (including unverified)
  */
-export async function getKitchens(filters?: KitchenFilters): Promise<{ kitchens: AdminKitchen[]; meta: any }> {
+export async function getKitchens(filters?: KitchenFilters): Promise<{ kitchens: AdminKitchen[]; meta: PaginationMeta }> {
   const params = new URLSearchParams();
   if (filters?.page) params.append('page', filters.page.toString());
   if (filters?.per_page) params.append('per_page', filters.per_page.toString());
   if (filters?.status) params.append('status', filters.status);
 
-  const response = await fetchAPI<any>(`/admin/kitchens?${params.toString()}`);
-  return response;
+  return await fetchAPI<{ kitchens: AdminKitchen[]; meta: PaginationMeta }>(`/admin/kitchens?${params.toString()}`);
 }
 
 /**
@@ -192,7 +173,7 @@ export async function verifyKitchen(
 /**
  * Get all orders
  */
-export async function getOrders(filters?: OrderFilters): Promise<{ orders: AdminOrder[]; meta: any }> {
+export async function getOrders(filters?: OrderFilters): Promise<{ orders: AdminOrder[]; meta: PaginationMeta }> {
   const params = new URLSearchParams();
   if (filters?.page) params.append('page', filters.page.toString());
   if (filters?.per_page) params.append('per_page', filters.per_page.toString());
@@ -200,8 +181,7 @@ export async function getOrders(filters?: OrderFilters): Promise<{ orders: Admin
   if (filters?.date_from) params.append('date_from', filters.date_from);
   if (filters?.date_to) params.append('date_to', filters.date_to);
 
-  const response = await fetchAPI<any>(`/admin/orders?${params.toString()}`);
-  return response;
+  return await fetchAPI<{ orders: AdminOrder[]; meta: PaginationMeta }>(`/admin/orders?${params.toString()}`);
 }
 
 // ============ REVIEW MODERATION ============
@@ -209,14 +189,13 @@ export async function getOrders(filters?: OrderFilters): Promise<{ orders: Admin
 /**
  * Get all reviews
  */
-export async function getReviews(filters?: ReviewFilters): Promise<{ reviews: AdminReview[]; meta: any }> {
+export async function getReviews(filters?: ReviewFilters): Promise<{ reviews: AdminReview[]; meta: PaginationMeta }> {
   const params = new URLSearchParams();
   if (filters?.page) params.append('page', filters.page.toString());
   if (filters?.per_page) params.append('per_page', filters.per_page.toString());
   if (filters?.flagged !== undefined) params.append('flagged', filters.flagged.toString());
 
-  const response = await fetchAPI<any>(`/admin/reviews?${params.toString()}`);
-  return response;
+  return await fetchAPI<{ reviews: AdminReview[]; meta: PaginationMeta }>(`/admin/reviews?${params.toString()}`);
 }
 
 /**
@@ -246,8 +225,8 @@ export async function createCategory(payload: {
   image_url?: string;
   display_order?: number;
   is_active?: boolean;
-}): Promise<any> {
-  return await fetchAPI<any>('/admin/categories', {
+}): Promise<Category> {
+  return await fetchAPI<Category>('/admin/categories', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -256,8 +235,16 @@ export async function createCategory(payload: {
 /**
  * Update category
  */
-export async function updateCategory(categoryId: string, payload: any): Promise<any> {
-  return await fetchAPI<any>(`/admin/categories/${categoryId}`, {
+export async function updateCategory(categoryId: string, payload: Partial<{
+  name: string;
+  slug: string;
+  description: string;
+  icon: string;
+  image_url: string;
+  display_order: number;
+  is_active: boolean;
+}>): Promise<Category> {
+  return await fetchAPI<Category>(`/admin/categories/${categoryId}`, {
     method: 'PATCH',
     body: JSON.stringify(payload),
   });

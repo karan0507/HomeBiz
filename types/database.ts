@@ -896,3 +896,26 @@ export interface DeliveryPartner {
   total_deliveries: number
   created_at: string
 }
+// ============================================================================
+// SHARED / UTILITY TYPES
+// ============================================================================
+
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  icon?: string;
+  image_url?: string;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
+}

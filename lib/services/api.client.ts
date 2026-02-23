@@ -74,10 +74,22 @@ export async function fetchAPI<T>(endpoint: string, options?: RequestInit): Prom
         const errorData = await response.json().catch(() => ({}));
         // Backend envelope: { success: false, error: { code, message, details? } }
         const backendError = errorData.error || {};
-        const errorMessage = backendError.message || errorData.message || 'Request failed';
+        let errorMessage = backendError.message || errorData.message;
         const errorCode = backendError.code || 'API_ERROR';
 
-        // Suppress expected 401 from /auth/me validation checks
+        // Map status codes if message is missing
+        if (!errorMessage) {
+          switch (response.status) {
+            case 400: errorMessage = 'Invalid request data'; break;
+            case 401: errorMessage = 'Please sign in to continue'; break;
+            case 403: errorMessage = 'You do not have permission'; break;
+            case 404: errorMessage = 'Resource not found'; break;
+            case 500: errorMessage = 'Server error. Please try again later'; break;
+            default: errorMessage = 'Request failed';
+          }
+        }
+
+        // Suppress expected 401 from /auth/me verification
         if (!(response.status === 401 && endpoint === '/auth/me')) {
           if (response.status >= 500) {
             console.error(`[API] ${response.status} ${errorCode}:`, errorMessage);

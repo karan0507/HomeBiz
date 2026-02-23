@@ -9,6 +9,8 @@ interface PaginationProps {
   onPageChange: (page: number) => void
   totalItems?: number
   itemsPerPage?: number
+  /** Additional class names — use "hidden md:flex" to hide on mobile when infinite scroll is active */
+  className?: string
 }
 
 export function Pagination({
@@ -17,6 +19,7 @@ export function Pagination({
   onPageChange,
   totalItems,
   itemsPerPage = 10,
+  className,
 }: PaginationProps) {
   if (totalPages <= 1) return null
 
@@ -60,7 +63,7 @@ export function Pagination({
   }
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
+    <div className={`flex flex-col sm:flex-row items-center justify-between gap-4 pt-4${className ? ` ${className}` : ''}`}>
       {/* Item count */}
       {totalItems !== undefined && (
         <p className="text-sm text-muted-foreground order-2 sm:order-1">
