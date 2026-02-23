@@ -5,31 +5,51 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
+import { fetchAPI, APIError } from "@/lib/services/api.client";
+import { showError, showSuccess } from "@/lib/notifications";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ChefHat, Lock, Mail } from "lucide-react";
 
 export default function BusinessLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { loginWithSession } = useAuth();
   const router = useRouter();
+
+  const canSubmit = email.trim().length > 0 && password.length > 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    if (!canSubmit) return;
     setIsLoading(true);
+    try {
+      const result = await fetchAPI<{
+        user: { id: string; email: string; name: string; role: string };
+        session: { access_token: string; refresh_token: string };
+      }>('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
 
-    const success = await login(email, password, "business");
-    if (success) {
+      if (!result.user) {
+        showError(new APIError("Login failed. Please try again.", 500, "SERVER_ERROR"));
+        return;
+      }
+      if (result.user.role !== 'business') {
+        showError(new APIError("This account is not a business account.", 403, "FORBIDDEN"));
+        return;
+      }
+
+      loginWithSession(result.user);
+      showSuccess("Welcome back!", "Redirecting to your dashboard...");
       router.push("/business/dashboard");
-    } else {
-      setError("Invalid email or password");
+    } catch (err) {
+      showError(err);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -46,12 +66,6 @@ export default function BusinessLoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-3">
-            {error && (
-              <Alert variant="destructive" className="py-2">
-                <AlertDescription className="text-sm">{error}</AlertDescription>
-              </Alert>
-            )}
-
             <div className="space-y-1.5">
               <Label htmlFor="email" className="text-sm">Email</Label>
               <div className="relative">
@@ -69,7 +83,12 @@ export default function BusinessLoginPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-sm">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-sm">Password</Label>
+                <Link href="/forgot-password" className="text-xs text-primary hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -84,12 +103,11 @@ export default function BusinessLoginPage() {
               </div>
             </div>
 
-            <Button type="submit" className="w-full h-9" disabled={isLoading}>
+            <Button type="submit" className="w-full h-9" disabled={isLoading || !canSubmit}>
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
 
             <div className="pt-3 text-center border-t">
-              <p className="text-xs text-muted-foreground mb-1">Demo: amma.kitchen@email.com / chef123</p>
               <div className="flex justify-center gap-4 mt-2">
                 <Link href="/business/signup" className="text-xs text-primary hover:underline">
                   Create account

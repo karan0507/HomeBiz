@@ -1,5 +1,5 @@
 {
-  "name": "my-v0-project",
+  "name": "homebiz",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -23,10 +23,6 @@
     "@radix-ui/react-slot": "1.1.1",
     "@radix-ui/react-switch": "1.1.2",
     "@radix-ui/react-tabs": "^1.1.13",
-    "@radix-ui/react-toast": "1.2.4",
-    "@react-three/drei": "^10.7.7",
-    "@react-three/fiber": "^9.5.0",
-    "@types/three": "^0.182.0",
     "@vercel/analytics": "1.3.1",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
@@ -39,8 +35,7 @@
     "react-dom": "19.2.0",
     "sonner": "^1.7.4",
     "tailwind-merge": "^3.3.1",
-    "tailwindcss-animate": "^1.0.7",
-    "three": "^0.182.0"
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.9",

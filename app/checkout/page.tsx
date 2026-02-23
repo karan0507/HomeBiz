@@ -4,13 +4,14 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Clock, MapPin, CreditCard, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { MainLayout } from "@/components/layout/main-layout";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth-context";
+import { fetchAPI } from "@/lib/services/api.client";
+import { showError } from "@/lib/notifications";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   // Handle redirects in useEffect to avoid setState during render
   useEffect(() => {
@@ -44,15 +46,33 @@ export default function CheckoutPage() {
   }
 
   const kitchenName = items[0]?.kitchenName || "Kitchen";
-  const tax = cartTotal * 0.13;
-  const total = cartTotal + tax;
+  const total = cartTotal; // No hardcoded tax per prompt rule
 
-  const handlePlaceOrder = async () => {
+  const handleConfirmOrder = async () => {
     setIsProcessing(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    const orderId = `HB${Date.now().toString().slice(-8)}`;
-    clearCart();
-    router.push(`/order-confirmation?id=${orderId}`);
+    try {
+      const pickup_time =
+        pickupTime === "1hr" ? new Date(Date.now() + 3600000).toISOString()
+        : pickupTime === "2hr" ? new Date(Date.now() + 7200000).toISOString()
+        : undefined;
+      const result = await fetchAPI<{ id: string }>("/orders", {
+        method: "POST",
+        body: JSON.stringify({
+          kitchen_id: items[0].kitchenId,
+          fulfillment_type: "pickup", // Required per spec
+          payment_method: paymentMethod === "interac" ? "etransfer" : paymentMethod,
+          items: items.map((i) => ({ menu_item_id: i.item.id, quantity: i.quantity })),
+          ...(pickup_time ? { pickup_time } : {}),
+        }),
+      });
+      clearCart();
+      router.push(`/order-confirmation?id=${result.id}`);
+    } catch (err) {
+      showError(err);
+      setShowConfirm(false);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -129,37 +149,24 @@ export default function CheckoutPage() {
                     }`}
                   >
                     <RadioGroupItem value="cash" id="cash" />
-                    <span>Pay at Pickup</span>
+                    <span>Cash at Pickup</span>
                   </Label>
                   <Label
-                    htmlFor="card"
+                    htmlFor="interac"
                     className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer text-sm ${
-                      paymentMethod === "card" ? "border-primary bg-primary/5" : ""
+                      paymentMethod === "interac" ? "border-primary bg-primary/5" : ""
                     }`}
                   >
-                    <RadioGroupItem value="card" id="card" />
-                    <span>Credit/Debit Card</span>
+                    <RadioGroupItem value="interac" id="interac" />
+                    <span>Interac e-Transfer</span>
                   </Label>
                 </div>
               </RadioGroup>
 
-              {paymentMethod === "card" && (
-                <div className="mt-3 space-y-3">
-                  <div>
-                    <Label className="text-xs">Card Number</Label>
-                    <Input placeholder="1234 5678 9012 3456" className="h-8 mt-1 text-sm" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label className="text-xs">Expiry</Label>
-                      <Input placeholder="MM/YY" className="h-8 mt-1 text-sm" />
-                    </div>
-                    <div>
-                      <Label className="text-xs">CVC</Label>
-                      <Input placeholder="123" className="h-8 mt-1 text-sm" />
-                    </div>
-                  </div>
-                </div>
+              {paymentMethod === "interac" && (
+                <p className="mt-3 text-xs text-muted-foreground bg-muted/50 p-2.5 rounded-lg">
+                  You will receive Interac transfer details from the chef after your order is confirmed.
+                </p>
               )}
             </CardContent>
           </Card>
@@ -176,32 +183,65 @@ export default function CheckoutPage() {
                   </div>
                 ))}
               </div>
-              <div className="border-t mt-3 pt-3 space-y-1 text-sm">
+              <div className="space-y-3 text-sm pt-3 border-t mt-3">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span>${cartTotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Tax (13%)</span>
-                  <span>${tax.toFixed(2)}</span>
+                  <span className="text-muted-foreground">Tax & Fees</span>
+                  <span className="text-xs text-amber-600 font-medium">Server Calculated</span>
                 </div>
-                <div className="flex justify-between font-bold pt-2">
-                  <span>Total</span>
+                <div className="flex justify-between font-bold pt-2 border-t mt-2">
+                  <span>Total (Estimated)</span>
                   <span>${total.toFixed(2)}</span>
                 </div>
+                <p className="text-[10px] text-muted-foreground mt-2 italic text-center">
+                  Final total including tax will be confirmed after kitchen approval.
+                </p>
               </div>
             </CardContent>
           </Card>
 
-          {/* Place Order */}
-          <Button
-            size="sm"
-            className="w-full"
-            onClick={handlePlaceOrder}
-            disabled={isProcessing}
-          >
-            {isProcessing ? "Processing..." : `Place Order - $${total.toFixed(2)}`}
-          </Button>
+          {/* Place Order / Confirmation */}
+          {!showConfirm ? (
+            <Button
+              size="sm"
+              className="w-full"
+              onClick={() => setShowConfirm(true)}
+              disabled={isProcessing}
+            >
+              Place Order - ${total.toFixed(2)}
+            </Button>
+          ) : (
+            <Card className="border-primary/40">
+              <CardContent className="p-4 space-y-3">
+                <p className="text-sm font-medium text-center">Confirm your order?</p>
+                <div className="text-sm text-muted-foreground text-center">
+                  {kitchenName} · {paymentMethod === "interac" ? "Interac e-Transfer" : "Cash at Pickup"} · ${total.toFixed(2)}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setShowConfirm(false)}
+                    disabled={isProcessing}
+                  >
+                    Go Back
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="flex-1"
+                    onClick={handleConfirmOrder}
+                    disabled={isProcessing}
+                  >
+                    {isProcessing ? "Placing..." : "Confirm Order"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <p className="text-xs text-muted-foreground text-center">
             By placing this order, you agree to our Terms of Service

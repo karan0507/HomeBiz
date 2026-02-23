@@ -2,16 +2,17 @@
  * Kitchens Hooks
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   getKitchens,
   getFeaturedKitchens,
   getKitchenBySlug,
   getKitchenById,
   searchKitchens,
-  Kitchen,
-  KitchenFilters
 } from '@/lib/services/kitchens.service';
+import { Kitchen, KitchenFilters } from '@/types/database';
+import { showError } from '@/lib/notifications';
+import { APIError } from '@/lib/services/api.client';
 
 interface UseKitchensResult {
   kitchens: Kitchen[];
@@ -28,25 +29,42 @@ export function useKitchens(filters: KitchenFilters = {}): UseKitchensResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchKitchens = async () => {
+  const fetchKitchens = async (signal?: AbortSignal) => {
     try {
       setLoading(true);
       setError(null);
-      const data = await getKitchens(filters);
+      const data = await getKitchens(filters, signal);
       setKitchens(data);
-    } catch (err) {
+    } catch (err: any) {
+      if (err.name === 'AbortError') return;
       setError(err as Error);
     } finally {
-      setLoading(false);
+      if (!signal || !signal.aborted) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    fetchKitchens();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.cuisines?.join(','), filters.dietary?.join(','), filters.neighborhood, filters.min_rating, filters.search, filters.page, filters.limit]);
+    const controller = new AbortController();
+    fetchKitchens(controller.signal);
 
-  return { kitchens, loading, error, refetch: fetchKitchens };
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    filters.cuisines?.join(','),
+    filters.dietary?.join(','),
+    filters.neighborhood,
+    filters.min_rating,
+    filters.query,
+    filters.page,
+    filters.per_page,
+    filters.lat,
+    filters.lon,
+    filters.radius
+  ]);
+
+  return { kitchens, loading, error, refetch: () => fetchKitchens() };
 }
 
 /**
@@ -57,24 +75,34 @@ export function useFeaturedKitchens(limit?: number): UseKitchensResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchKitchens = async () => {
+  const fetchKitchens = async (signal?: AbortSignal) => {
     try {
       setLoading(true);
       setError(null);
-      const data = await getFeaturedKitchens(limit);
+      const data = await getFeaturedKitchens(limit, signal);
       setKitchens(data);
-    } catch (err) {
-      setError(err as Error);
+    } catch (err: any) {
+      if (err.name === 'AbortError') return;
+      const error = err as Error;
+      setError(error);
+      if (error instanceof APIError && error.code !== 'NETWORK_ERROR' && error.code !== 'NOT_FOUND') {
+        showError(error);
+      }
     } finally {
-      setLoading(false);
+      if (!signal || !signal.aborted) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    fetchKitchens();
+    const controller = new AbortController();
+    fetchKitchens(controller.signal);
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [limit]);
 
-  return { kitchens, loading, error, refetch: fetchKitchens };
+  return { kitchens, loading, error, refetch: () => fetchKitchens() };
 }
 
 interface UseKitchenResult {
@@ -92,7 +120,7 @@ export function useKitchen(slug: string): UseKitchenResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchKitchen = async () => {
+  const fetchKitchen = async (signal?: AbortSignal) => {
     if (!slug) {
       setLoading(false);
       return;
@@ -101,21 +129,26 @@ export function useKitchen(slug: string): UseKitchenResult {
     try {
       setLoading(true);
       setError(null);
-      const data = await getKitchenBySlug(slug);
+      const data = await getKitchenBySlug(slug, signal);
       setKitchen(data);
-    } catch (err) {
+    } catch (err: any) {
+      if (err.name === 'AbortError') return;
       setError(err as Error);
     } finally {
-      setLoading(false);
+      if (!signal || !signal.aborted) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    fetchKitchen();
+    const controller = new AbortController();
+    fetchKitchen(controller.signal);
+    return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
-  return { kitchen, loading, error, refetch: fetchKitchen };
+  return { kitchen, loading, error, refetch: () => fetchKitchen() };
 }
 
 /**
@@ -126,7 +159,7 @@ export function useKitchenById(id: string): UseKitchenResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchKitchen = async () => {
+  const fetchKitchen = async (signal?: AbortSignal) => {
     if (!id) {
       setLoading(false);
       return;
@@ -135,20 +168,25 @@ export function useKitchenById(id: string): UseKitchenResult {
     try {
       setLoading(true);
       setError(null);
-      const data = await getKitchenById(id);
+      const data = await getKitchenById(id, signal);
       setKitchen(data);
-    } catch (err) {
+    } catch (err: any) {
+      if (err.name === 'AbortError') return;
       setError(err as Error);
     } finally {
-      setLoading(false);
+      if (!signal || !signal.aborted) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    fetchKitchen();
+    const controller = new AbortController();
+    fetchKitchen(controller.signal);
+    return () => controller.abort();
   }, [id]);
 
-  return { kitchen, loading, error, refetch: fetchKitchen };
+  return { kitchen, loading, error, refetch: () => fetchKitchen() };
 }
 
 /**
@@ -159,7 +197,7 @@ export function useKitchenSearch(searchQuery: string, filters: KitchenFilters = 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchKitchens = async () => {
+  const fetchKitchens = async (signal?: AbortSignal) => {
     if (!searchQuery || searchQuery.length < 2) {
       setKitchens([]);
       return;
@@ -168,23 +206,30 @@ export function useKitchenSearch(searchQuery: string, filters: KitchenFilters = 
     try {
       setLoading(true);
       setError(null);
-      const data = await searchKitchens(searchQuery, filters);
+      const data = await searchKitchens(searchQuery, filters, signal);
       setKitchens(data);
-    } catch (err) {
+    } catch (err: any) {
+      if (err.name === 'AbortError') return;
       setError(err as Error);
     } finally {
-      setLoading(false);
+      if (!signal || !signal.aborted) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
+    const controller = new AbortController();
     const debounce = setTimeout(() => {
-      fetchKitchens();
+      fetchKitchens(controller.signal);
     }, 300);
 
-    return () => clearTimeout(debounce);
+    return () => {
+      clearTimeout(debounce);
+      controller.abort();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, filters.neighborhood, filters.min_rating]);
 
-  return { kitchens, loading, error, refetch: fetchKitchens };
+  return { kitchens, loading, error, refetch: () => fetchKitchens() };
 }

@@ -4,75 +4,70 @@
  */
 
 import { fetchAPI } from './api.client';
+import type { Kitchen, KitchenWithOwner, KitchenFilters, KitchenInput } from '@/types/database';
 
-export interface Kitchen {
-  id: string;
-  owner_id: string;
-  name: string;
-  slug: string;
-  description: string;
-  tagline: string | null;
-  phone: string;
-  email: string | null;
-  neighborhood: string;
-  city: string;
-  province: string;
-  postal_code: string | null;
-  address: string | null;
-  cover_image: string | null;
-  logo: string | null;
-  cuisine_types: string[];
-  dietary_options: string[];
-  specialties: string[];
-  accepting_orders: boolean;
-  preparation_time: string;
-  minimum_order: number;
-  rating: number;
-  review_count: number;
-  total_orders: number;
-  verification_status: 'pending' | 'approved' | 'rejected' | 'suspended';
-  is_verified: boolean;
-  food_handler_certificate: boolean;
-  is_featured: boolean;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
+export type { Kitchen, KitchenWithOwner, KitchenFilters, KitchenInput };
 
-export interface KitchenFilters {
-  cuisines?: string[];
-  dietary?: string[];
-  neighborhood?: string;
-  min_rating?: number;
-  accepting_orders?: boolean;
-  search?: string;
-  page?: number;
-  limit?: number;
+/**
+ * Helper to map database kitchen to frontend kitchen type
+ */
+function mapKitchen(k: any): Kitchen {
+  const mapJoinedItems = (items: any[]) => {
+    if (!items || !Array.isArray(items)) return [];
+    return items.map((item: any) => {
+      if (typeof item === 'object') return item.name || 'Unknown';
+      return String(item);
+    });
+  };
+
+  return {
+    ...k,
+    is_verified: k.verification_status === 'approved',
+    isVerified: k.verification_status === 'approved',
+    acceptingOrders: k.accepting_orders ?? false,
+    cuisineTypes: mapJoinedItems(k.cuisine_types),
+    dietaryOptions: mapJoinedItems(k.dietary_options),
+    // Ensure numeric fields are numbers
+    rating: Number(k.rating || 0),
+    reviewCount: Number(k.review_count || 0),
+    minimumOrder: Number(k.minimum_order || 0),
+    totalOrders: Number(k.total_orders || 0),
+    prep_time_min: Number(k.prep_time_min || 30),
+    prep_time_max: Number(k.prep_time_max || 45),
+    preparationTime: k.prep_time_min ? `${k.prep_time_min}-${k.prep_time_max} mins` : k.preparation_time,
+  };
 }
 
 /**
  * Get all approved kitchens with filters
+ * NOTE: cuisines/dietary filters must be UUID arrays
  */
-export async function getKitchens(filters: KitchenFilters = {}): Promise<Kitchen[]> {
+export async function getKitchens(filters: KitchenFilters = {}, signal?: AbortSignal): Promise<Kitchen[]> {
   const params = new URLSearchParams();
 
   if (filters.cuisines?.length) params.append('cuisines', filters.cuisines.join(','));
   if (filters.dietary?.length) params.append('dietary', filters.dietary.join(','));
   if (filters.neighborhood) params.append('neighborhood', filters.neighborhood);
   if (filters.min_rating) params.append('min_rating', filters.min_rating.toString());
-  if (filters.search) params.append('search', filters.search);
+  if (filters.query) params.append('query', filters.query);
   if (filters.page) params.append('page', filters.page.toString());
-  if (filters.limit) params.append('limit', filters.limit.toString());
+  if (filters.per_page) params.append('per_page', filters.per_page.toString());
+  if (filters.lat !== undefined) params.append('lat', filters.lat.toString());
+  if (filters.lon !== undefined) params.append('lon', filters.lon.toString());
+  if (filters.radius !== undefined) params.append('radius', filters.radius.toString());
+  if (filters.sort) params.append('sort', filters.sort);
 
-  return fetchAPI<Kitchen[]>(`/kitchens?${params.toString()}`);
+  const kitchens = await fetchAPI<any[]>(`/kitchens?${params.toString()}`, { signal });
+  return kitchens.map(mapKitchen);
 }
 
 /**
  * Get kitchen by slug
  */
-export async function getKitchenBySlug(slug: string): Promise<Kitchen | null> {
+export async function getKitchenBySlug(slug: string, signal?: AbortSignal): Promise<Kitchen | null> {
   try {
-    return await fetchAPI<Kitchen>(`/kitchens/${slug}`);
+    const kitchen = await fetchAPI<any>(`/kitchens/${slug}`, { signal });
+    return mapKitchen(kitchen);
   } catch {
     return null;
   }
@@ -81,9 +76,10 @@ export async function getKitchenBySlug(slug: string): Promise<Kitchen | null> {
 /**
  * Get kitchen by ID
  */
-export async function getKitchenById(id: string): Promise<Kitchen | null> {
+export async function getKitchenById(id: string, signal?: AbortSignal): Promise<Kitchen | null> {
   try {
-    return await fetchAPI<Kitchen>(`/kitchens/${id}`);
+    const kitchen = await fetchAPI<any>(`/kitchens/${id}`, { signal });
+    return mapKitchen(kitchen);
   } catch {
     return null;
   }
@@ -92,35 +88,56 @@ export async function getKitchenById(id: string): Promise<Kitchen | null> {
 /**
  * Get featured kitchens
  */
-export async function getFeaturedKitchens(limit: number = 6): Promise<Kitchen[]> {
-  return fetchAPI<Kitchen[]>(`/kitchens?featured=true&limit=${limit}`);
+export async function getFeaturedKitchens(limit: number = 6, signal?: AbortSignal): Promise<Kitchen[]> {
+  const kitchens = await fetchAPI<any[]>(`/kitchens/featured?limit=${limit}`, { signal });
+  return kitchens.map(mapKitchen);
 }
 
 /**
- * Get kitchens by owner
+ * Get current user's kitchen (business owner)
  */
-export async function getMyKitchens(ownerId: string): Promise<Kitchen[]> {
-  return fetchAPI<Kitchen[]>(`/business/kitchens`);
+export async function getMyKitchen(): Promise<Kitchen | null> {
+  try {
+    const kitchen = await fetchAPI<any>(`/business/kitchen`);
+    return mapKitchen(kitchen);
+  } catch {
+    return null;
+  }
 }
 
 /**
- * Create kitchen
+ * Create kitchen (during signup)
+ * NOTE: Must send cuisine_type_ids and dietary_option_ids as UUID arrays
  */
-export async function createKitchen(kitchen: Partial<Kitchen>): Promise<Kitchen> {
-  return fetchAPI<Kitchen>('/kitchens', {
+export async function createKitchen(input: KitchenInput): Promise<Kitchen> {
+  const kitchen = await fetchAPI<any>('/kitchens', {
     method: 'POST',
-    body: JSON.stringify(kitchen),
+    body: JSON.stringify(input),
   });
+  return mapKitchen(kitchen);
 }
 
 /**
  * Update kitchen
+ * NOTE: cuisine_type_ids and dietary_option_ids must be UUID arrays
  */
-export async function updateKitchen(id: string, updates: Partial<Kitchen>): Promise<Kitchen> {
-  return fetchAPI<Kitchen>(`/kitchens/${id}`, {
+export async function updateKitchen(id: string, updates: KitchenInput): Promise<Kitchen> {
+  const kitchen = await fetchAPI<any>(`/kitchens/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(updates),
   });
+  return mapKitchen(kitchen);
+}
+
+/**
+ * Update current user's kitchen (business owner)
+ */
+export async function updateMyKitchen(updates: KitchenInput): Promise<Kitchen> {
+  const kitchen = await fetchAPI<any>(`/business/kitchen`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+  return mapKitchen(kitchen);
 }
 
 /**
@@ -140,10 +157,6 @@ export async function getKitchenHours(kitchenId: string) {
 /**
  * Search kitchens
  */
-export async function searchKitchens(searchQuery: string, filters: KitchenFilters = {}): Promise<Kitchen[]> {
-  const params = new URLSearchParams({ search: searchQuery });
-  if (filters.neighborhood) params.append('neighborhood', filters.neighborhood);
-  if (filters.min_rating) params.append('min_rating', filters.min_rating.toString());
-
-  return fetchAPI<Kitchen[]>(`/kitchens?${params.toString()}`);
+export async function searchKitchens(searchQuery: string, filters: KitchenFilters = {}, signal?: AbortSignal): Promise<Kitchen[]> {
+  return getKitchens({ ...filters, query: searchQuery }, signal);
 }

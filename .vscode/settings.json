@@ -1,4 +1,5 @@
 {
-  "docwriter.style": "Auto-detect",
-  "CodeGPT.apiKey": "Claude Code"
+  "docwriter.style": "Google",
+  "CodeGPT.apiKey": "Claude Code",
+  "css.lint.unknownAtRules": "ignore"
 }

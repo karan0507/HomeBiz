@@ -1,0 +1,14 @@
+# LOCKED FILES - DO NOT MODIFY
+
+The following files are production-ready and locked from changes:
+
+1. lib/services/api.client.ts
+2. hooks/useCategories.ts
+3. hooks/useKitchens.ts
+4. lib/notifications.tsx
+
+These files have been finalized for landing page integration.
+Only modify if backend API contracts change.
+
+Last locked: 2026-02-13
+By: Claude Code

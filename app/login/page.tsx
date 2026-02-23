@@ -1,36 +1,55 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import React, { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
+import { fetchAPI, APIError } from "@/lib/services/api.client";
+import { showError, showSuccess } from "@/lib/notifications";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ChefHat, Lock, Mail, ArrowLeft } from "lucide-react";
 
 function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { loginWithSession } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/account";
 
+  const canSubmit = email.trim().length > 0 && password.length > 0;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    if (!canSubmit) return;
     setIsLoading(true);
+    try {
+      const result = await fetchAPI<{
+        user: { id: string; email: string; name: string; role: string };
+        session: { access_token: string; refresh_token: string };
+      }>('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
 
-    const success = await login(email, password, "customer");
-    if (success) {
-      router.push(redirect);
-    } else {
-      setError("Invalid email or password");
+      if (!result.user) {
+        showError(new APIError("Login failed. Please try again.", 500, "SERVER_ERROR"));
+        return;
+      }
+      if (result.user.role === 'admin') {
+        showError(new APIError("Use the admin portal to sign in.", 403, "FORBIDDEN"));
+        return;
+      }
+      loginWithSession(result.user);
+      showSuccess("Welcome back!", "You're now signed in.");
+      router.push(result.user.role === 'business' ? '/business/dashboard' : redirect);
+    } catch (err) {
+      showError(err);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -52,12 +71,6 @@ function LoginForm() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-3">
-            {error && (
-              <Alert variant="destructive" className="py-2">
-                <AlertDescription className="text-sm">{error}</AlertDescription>
-              </Alert>
-            )}
-
             <div className="space-y-1.5">
               <Label htmlFor="email" className="text-sm">Email</Label>
               <div className="relative">
@@ -98,15 +111,12 @@ function LoginForm() {
             <Button
               type="submit"
               className="w-full h-9 bg-gradient-to-r from-primary to-accent text-white"
-              disabled={isLoading}
+              disabled={isLoading || !canSubmit}
             >
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
 
             <div className="pt-3 text-center border-t">
-              <p className="text-xs text-muted-foreground mb-2">
-                Demo: customer@test.com / customer123
-              </p>
               <div className="flex justify-center gap-4">
                 <Link href="/signup" className="text-xs text-primary hover:underline">
                   Create account

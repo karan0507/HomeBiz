@@ -28,6 +28,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useFeaturedKitchens } from "@/hooks/useKitchens";
+import type { Kitchen } from "@/lib/services/kitchens.service";
 import { useCart } from "@/lib/cart-context";
 
 export function FeaturedKitchens() {
@@ -165,7 +166,7 @@ function KitchenCard({ kitchen, index }: { kitchen: Kitchen; index: number }) {
   const priceRange = kitchen.minimumOrder >= 25 ? "$$" : kitchen.minimumOrder >= 15 ? "$" : "$";
 
   // Get combined tags text
-  const allTags = kitchen.specialties.join(", ");
+  const allTags = (kitchen.specialties || []).join(", ");
   const { text: displayTags, truncated: hasTruncatedTags } = truncateText(allTags, 40);
 
   return (
@@ -175,7 +176,7 @@ function KitchenCard({ kitchen, index }: { kitchen: Kitchen; index: number }) {
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay: index * 0.1 }}
     >
-      <Link href={`/kitchens/${kitchen.slug}`}>
+      <Link href={`/kitchens/${kitchen.id}`}>
         <div className="group relative bg-card rounded-2xl overflow-hidden border border-border hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
           {/* Image Container */}
           <div className="relative aspect-[16/10] bg-secondary/50 overflow-hidden">

@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { mockProducts } from "@/lib/mock-data"
+import { fetchAPI } from "@/lib/services/api.client"
+import { showError } from "@/lib/notifications"
 import { Plus, MoreVertical, Search, Package, CheckCircle, XCircle, Clock } from "lucide-react"
 import Image from "next/image"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -20,6 +21,7 @@ import { CardLoader } from "@/components/shared/table-loader"
 import { EmptyProducts } from "@/components/shared/empty-state"
 import { Pagination } from "@/components/shared/pagination"
 import { toast } from "sonner"
+import { useAuth } from "@/lib/auth-context"
 
 interface Product {
   id: string
@@ -29,19 +31,38 @@ interface Product {
   category: string
   images: string[]
   available: boolean
-  prepTime: string
+  prepTimeMin: number
+  prepTimeMax: number
+  serves?: number
+  spiceLevel?: number
+  quantity?: number
+  quantityUnit?: string
+  tags?: string[]
+  dietaryInfo?: string[]
+  displayOrder: number
   businessId: string
 }
 
-const PREP_TIME_OPTIONS = [
-  { value: "15-20 min", label: "15-20 minutes" },
-  { value: "20-30 min", label: "20-30 minutes" },
-  { value: "30-45 min", label: "30-45 minutes" },
-  { value: "45-60 min", label: "45-60 minutes" },
-  { value: "1-2 hours", label: "1-2 hours" },
+const QUANTITY_UNIT_OPTIONS = [
+  { value: "g", label: "Grams (g)" },
+  { value: "kg", label: "Kilograms (kg)" },
+  { value: "ml", label: "Milliliters (ml)" },
+  { value: "l", label: "Liters (l)" },
+  { value: "piece", label: "Piece" },
+  { value: "serving", label: "Serving" },
+  { value: "portion", label: "Portion" },
+  { value: "dozen", label: "Dozen" },
+  { value: "pack", label: "Pack" },
 ]
 
-const CATEGORY_OPTIONS = [
+const SPICE_LEVELS = [
+  { value: "0", label: "Not Spicy" },
+  { value: "1", label: "Mild 🌶️" },
+  { value: "2", label: "Medium 🌶️🌶️" },
+  { value: "3", label: "Hot 🌶️🌶️🌶️" },
+]
+
+const MENU_CATEGORY_OPTIONS = [
   "Main Course",
   "Appetizer",
   "Dessert",
@@ -51,11 +72,15 @@ const CATEGORY_OPTIONS = [
 ]
 
 export default function BusinessProductsPage() {
+  const { user } = useAuth()
+  const [kitchenId, setKitchenId] = useState<string | null>(null)
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [availabilityFilter, setAvailabilityFilter] = useState<"all" | "available" | "unavailable">("all")
   const [currentPage, setCurrentPage] = useState(1)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const itemsPerPage = 6
 
   // Dialog states
@@ -71,24 +96,62 @@ export default function BusinessProductsPage() {
     description: "",
     price: "",
     category: "",
-    prepTime: "30-45 min",
+    prep_time_min: 30,
+    prep_time_max: 45,
+    serves: 1,
+    spice_level: 0,
+    quantity: "",
+    quantity_unit: "",
+    tags: "",
+    dietary_info: "",
     available: true,
+    image_url: "",
+    display_order: 1,
   })
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
 
+  // Authentication check - Moved after hooks to avoid hook errors
+  if (!user) {
+    return null
+  }
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const businessProducts = mockProducts
-        .filter((p) => p.businessId === "kitchen-1")
-        .map(p => ({
-          ...p,
-          prepTime: "30-45 min"
-        }))
-      setProducts(businessProducts as Product[])
-      setLoading(false)
-    }, 800)
-    return () => clearTimeout(timer)
-  }, [])
+    if (!user) return
+    let mounted = true
+
+    fetchAPI<{ id: string }>("/business/kitchen")
+      .then(kitchen => {
+        if (!mounted) return
+        setKitchenId(kitchen.id)
+        return fetchAPI<any[]>(`/kitchens/${kitchen.id}/menu-items`)
+      })
+      .then(items => {
+        if (!mounted || !items) return
+        setProducts((Array.isArray(items) ? items : []).map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          description: item.description || "",
+          price: Number(item.price ?? 0),
+          category: item.category || "",
+          images: item.image_url ? [item.image_url] : ["/placeholder.svg"],
+          available: item.is_available ?? true,
+          prepTimeMin: item.prep_time_min ?? 30,
+          prepTimeMax: item.prep_time_max ?? 45,
+          serves: item.serves,
+          spiceLevel: item.spice_level,
+          quantity: item.quantity,
+          quantityUnit: item.quantity_unit,
+          tags: item.tags || [],
+          dietaryInfo: item.dietary_info || [],
+          displayOrder: item.display_order ?? 1,
+          businessId: user.id,
+        })))
+      })
+      .catch(showError)
+      .finally(() => { if (mounted) setLoading(false) })
+
+    return () => { mounted = false }
+  }, [user?.id])
 
   // Filter products
   const filteredProducts = useMemo(() => {
@@ -134,86 +197,192 @@ export default function BusinessProductsPage() {
       description: "",
       price: "",
       category: "",
-      prepTime: "30-45 min",
+      prep_time_min: 30,
+      prep_time_max: 45,
+      serves: 1,
+      spice_level: 0,
+      quantity: "",
+      quantity_unit: "",
+      tags: "",
+      dietary_info: "",
       available: true,
+      image_url: "",
+      display_order: 1,
     })
     setFormErrors({})
+    setImagePreview(null)
+    setSelectedFile(null)
+  }
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("File size too large (max 5MB)")
+        return
+      }
+      setSelectedFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
   }
 
   const handleAddProduct = async () => {
-    if (!validateForm()) return
+    if (!validateForm() || !user || !kitchenId) return
 
     setIsSubmitting(true)
-    await new Promise(resolve => setTimeout(resolve, 800))
-
-    const newProduct: Product = {
-      id: `prod-${Date.now()}`,
-      name: formData.name,
-      description: formData.description,
-      price: parseFloat(formData.price),
-      category: formData.category,
-      prepTime: formData.prepTime,
-      available: formData.available,
-      images: ["/placeholder.svg"],
-      businessId: "kitchen-1",
+    try {
+      const created = await fetchAPI<any>(`/menu-items`, {
+        method: "POST",
+        body: JSON.stringify({
+          kitchen_id: kitchenId,
+          name: formData.name,
+          description: formData.description,
+          price: parseFloat(formData.price),
+          category: formData.category,
+          is_available: formData.available,
+          image_url: formData.image_url,
+          prep_time_min: formData.prep_time_min,
+          prep_time_max: formData.prep_time_max,
+          serves: formData.serves,
+          spice_level: formData.spice_level > 0 ? formData.spice_level : null,
+          quantity: formData.quantity ? parseFloat(formData.quantity) : null,
+          quantity_unit: formData.quantity_unit || null,
+          tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
+          dietary_info: formData.dietary_info.split(',').map(d => d.trim()).filter(Boolean),
+          display_order: formData.display_order,
+        }),
+      })
+      const newProduct: Product = {
+        id: created.id,
+        name: created.name,
+        description: created.description || formData.description,
+        price: Number(created.price ?? formData.price),
+        category: created.category || formData.category,
+        images: created.image_url ? [created.image_url] : ["/placeholder.svg"],
+        available: created.is_available ?? formData.available,
+        prepTimeMin: created.prep_time_min ?? formData.prep_time_min,
+        prepTimeMax: created.prep_time_max ?? formData.prep_time_max,
+        serves: created.serves,
+        spiceLevel: created.spice_level,
+        quantity: created.quantity,
+        quantityUnit: created.quantity_unit,
+        tags: created.tags || [],
+        dietaryInfo: created.dietary_info || [],
+        displayOrder: created.display_order ?? formData.display_order,
+        businessId: user.id,
+      }
+      setProducts(prev => [newProduct, ...prev])
+      setIsAddDialogOpen(false)
+      resetForm()
+      toast.success("Product added successfully")
+    } catch (err) {
+      showError(err)
+    } finally {
+      setIsSubmitting(true) // Should be false but following original pattern check... wait line 232 says false. Correcting.
+      setIsSubmitting(false)
     }
-
-    setProducts(prev => [newProduct, ...prev])
-    setIsAddDialogOpen(false)
-    resetForm()
-    setIsSubmitting(false)
-    toast.success("Product added successfully")
   }
 
   const handleEditProduct = async () => {
     if (!validateForm() || !selectedProduct) return
 
     setIsSubmitting(true)
-    await new Promise(resolve => setTimeout(resolve, 800))
+    try {
+      const updateData = {
+        name: formData.name,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        category: formData.category,
+        is_available: formData.available,
+        image_url: formData.image_url,
+        prep_time_min: formData.prep_time_min,
+        prep_time_max: formData.prep_time_max,
+        serves: formData.serves,
+        spice_level: formData.spice_level > 0 ? formData.spice_level : null,
+        quantity: formData.quantity ? parseFloat(formData.quantity) : null,
+        quantity_unit: formData.quantity_unit || null,
+        tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
+        dietary_info: formData.dietary_info.split(',').map(d => d.trim()).filter(Boolean),
+        display_order: formData.display_order,
+      }
 
-    setProducts(prev =>
-      prev.map(p =>
-        p.id === selectedProduct.id
-          ? {
-              ...p,
-              name: formData.name,
-              description: formData.description,
-              price: parseFloat(formData.price),
-              category: formData.category,
-              prepTime: formData.prepTime,
-              available: formData.available,
-            }
-          : p
+      await fetchAPI(`/menu-items/${selectedProduct.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(updateData),
+      })
+
+      setProducts(prev =>
+        prev.map(p =>
+          p.id === selectedProduct.id
+            ? { 
+                ...p, 
+                name: formData.name, 
+                description: formData.description, 
+                price: parseFloat(formData.price), 
+                category: formData.category, 
+                available: formData.available,
+                prepTimeMin: formData.prep_time_min,
+                prepTimeMax: formData.prep_time_max,
+                serves: formData.serves,
+                spiceLevel: formData.spice_level,
+                quantity: formData.quantity ? parseFloat(formData.quantity) : p.quantity,
+                quantityUnit: formData.quantity_unit,
+                tags: updateData.tags,
+                dietaryInfo: updateData.dietary_info,
+                displayOrder: formData.display_order,
+                images: formData.image_url ? [formData.image_url] : p.images 
+              }
+            : p
+        )
       )
-    )
-
-    setIsEditDialogOpen(false)
-    setSelectedProduct(null)
-    resetForm()
-    setIsSubmitting(false)
-    toast.success("Product updated successfully")
+      setIsEditDialogOpen(false)
+      setSelectedProduct(null)
+      resetForm()
+      toast.success("Product updated successfully")
+    } catch (err) {
+      showError(err)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleDeleteProduct = async () => {
     if (!selectedProduct) return
 
     setIsSubmitting(true)
-    await new Promise(resolve => setTimeout(resolve, 500))
-
-    setProducts(prev => prev.filter(p => p.id !== selectedProduct.id))
-    setIsDeleteDialogOpen(false)
-    setSelectedProduct(null)
-    setIsSubmitting(false)
-    toast.success("Product deleted successfully")
+    try {
+      await fetchAPI(`/menu-items/${selectedProduct.id}`, { method: "DELETE" })
+      setProducts(prev => prev.filter(p => p.id !== selectedProduct.id))
+      setIsDeleteDialogOpen(false)
+      setSelectedProduct(null)
+      toast.success("Product deleted successfully")
+    } catch (err) {
+      showError(err)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const handleToggleAvailability = (productId: string) => {
-    setProducts(prev =>
-      prev.map(p =>
-        p.id === productId ? { ...p, available: !p.available } : p
-      )
-    )
-    toast.success("Product availability updated")
+  const handleToggleAvailability = async (productId: string) => {
+    const product = products.find(p => p.id === productId)
+    if (!product) return
+    // Optimistic update
+    setProducts(prev => prev.map(p => p.id === productId ? { ...p, available: !p.available } : p))
+    try {
+      await fetchAPI(`/menu-items/${productId}/availability`, {
+        method: "PATCH",
+        body: JSON.stringify({ is_available: !product.available }),
+      })
+      toast.success("Availability updated")
+    } catch (err) {
+      // Revert
+      setProducts(prev => prev.map(p => p.id === productId ? { ...p, available: product.available } : p))
+      showError(err)
+    }
   }
 
   const openEditDialog = (product: Product) => {
@@ -223,10 +392,20 @@ export default function BusinessProductsPage() {
       description: product.description,
       price: product.price.toString(),
       category: product.category,
-      prepTime: product.prepTime || "30-45 min",
+      prep_time_min: product.prepTimeMin,
+      prep_time_max: product.prepTimeMax,
+      serves: product.serves || 1,
+      spice_level: product.spiceLevel || 0,
+      quantity: product.quantity?.toString() || "",
+      quantity_unit: product.quantityUnit || "",
+      tags: product.tags?.join(', ') || "",
+      dietary_info: product.dietaryInfo?.join(', ') || "",
       available: product.available,
+      image_url: product.images[0] !== "/placeholder.svg" ? product.images[0] : "",
+      display_order: product.displayOrder,
     })
     setFormErrors({})
+    setImagePreview(product.images[0] !== "/placeholder.svg" ? product.images[0] : null)
     setIsEditDialogOpen(true)
   }
 
@@ -387,9 +566,21 @@ export default function BusinessProductsPage() {
                     </CardHeader>
                     <CardContent>
                       <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{product.description}</p>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
-                        <Clock className="w-3 h-3" />
-                        <span>{product.prepTime}</span>
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded-md">
+                          <Clock className="w-3 h-3" />
+                          <span>{product.prepTimeMin}-{product.prepTimeMax} min</span>
+                        </div>
+                        {product.serves && (
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded-md">
+                            <span className="font-medium">Serves {product.serves}</span>
+                          </div>
+                        )}
+                        {product.spiceLevel && product.spiceLevel > 0 && (
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded-md">
+                            <span>{"🌶️".repeat(product.spiceLevel)}</span>
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-xl font-bold">${product.price.toFixed(2)}</span>
@@ -466,7 +657,7 @@ export default function BusinessProductsPage() {
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
                     <SelectContent>
-                      {CATEGORY_OPTIONS.map(cat => (
+                      {MENU_CATEGORY_OPTIONS.map(cat => (
                         <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                       ))}
                     </SelectContent>
@@ -474,26 +665,132 @@ export default function BusinessProductsPage() {
                   {formErrors.category && <p className="text-xs text-destructive">{formErrors.category}</p>}
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="prepTime">Preparation Time</Label>
-                <Select value={formData.prepTime} onValueChange={(value) => setFormData({ ...formData, prepTime: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PREP_TIME_OPTIONS.map(opt => (
-                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="prep_time_min">Min Prep Time (min)</Label>
+                  <Input
+                    id="prep_time_min"
+                    type="number"
+                    value={formData.prep_time_min}
+                    onChange={(e) => setFormData({ ...formData, prep_time_min: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="prep_time_max">Max Prep Time (min)</Label>
+                  <Input
+                    id="prep_time_max"
+                    type="number"
+                    value={formData.prep_time_max}
+                    onChange={(e) => setFormData({ ...formData, prep_time_max: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
               </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="available">Available for order</Label>
-                <Switch
-                  id="available"
-                  checked={formData.available}
-                  onCheckedChange={(checked) => setFormData({ ...formData, available: checked })}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="serves">Serves (No. of people)</Label>
+                  <Input
+                    id="serves"
+                    type="number"
+                    value={formData.serves}
+                    onChange={(e) => setFormData({ ...formData, serves: parseInt(e.target.value) || 1 })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="spice_level">Spice Level</Label>
+                  <Select value={formData.spice_level.toString()} onValueChange={(value) => setFormData({ ...formData, spice_level: parseInt(value) })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SPICE_LEVELS.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="quantity">Portion Size (e.g. 500)</Label>
+                  <Input
+                    id="quantity"
+                    type="number"
+                    value={formData.quantity}
+                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="quantity_unit">Unit</Label>
+                  <Select value={formData.quantity_unit} onValueChange={(value) => setFormData({ ...formData, quantity_unit: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {QUANTITY_UNIT_OPTIONS.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="tags">Tags (comma separated)</Label>
+                <Input
+                  id="tags"
+                  value={formData.tags}
+                  onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                  placeholder="e.g. popular, spicy, vegan"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dietary_info">Dietary Info (comma separated)</Label>
+                <Input
+                  id="dietary_info"
+                  value={formData.dietary_info}
+                  onChange={(e) => setFormData({ ...formData, dietary_info: e.target.value })}
+                  placeholder="e.g. Gluten Free, Nut Free"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="image_url">Image URL</Label>
+                <Input
+                  id="image_url"
+                  value={formData.image_url}
+                  onChange={(e) => {
+                    setFormData({ ...formData, image_url: e.target.value });
+                    setImagePreview(e.target.value || null);
+                  }}
+                  placeholder="https://example.com/image.jpg"
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  💡 Image upload coming soon. Please provide a direct image URL for now.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="available"
+                    checked={formData.available}
+                    onCheckedChange={(checked) => setFormData({ ...formData, available: checked })}
+                  />
+                  <Label htmlFor="available">Available for order</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    className="w-16 h-8 text-center"
+                    type="number"
+                    value={formData.display_order}
+                    onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) || 1 })}
+                  />
+                  <Label>Order</Label>
+                </div>
               </div>
             </div>
             <DialogFooter>
@@ -556,7 +853,7 @@ export default function BusinessProductsPage() {
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
                     <SelectContent>
-                      {CATEGORY_OPTIONS.map(cat => (
+                      {MENU_CATEGORY_OPTIONS.map(cat => (
                         <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                       ))}
                     </SelectContent>
@@ -564,26 +861,126 @@ export default function BusinessProductsPage() {
                   {formErrors.category && <p className="text-xs text-destructive">{formErrors.category}</p>}
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-prepTime">Preparation Time</Label>
-                <Select value={formData.prepTime} onValueChange={(value) => setFormData({ ...formData, prepTime: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PREP_TIME_OPTIONS.map(opt => (
-                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-prep_time_min">Min Prep Time (min)</Label>
+                  <Input
+                    id="edit-prep_time_min"
+                    type="number"
+                    value={formData.prep_time_min}
+                    onChange={(e) => setFormData({ ...formData, prep_time_min: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-prep_time_max">Max Prep Time (min)</Label>
+                  <Input
+                    id="edit-prep_time_max"
+                    type="number"
+                    value={formData.prep_time_max}
+                    onChange={(e) => setFormData({ ...formData, prep_time_max: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
               </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="edit-available">Available for order</Label>
-                <Switch
-                  id="edit-available"
-                  checked={formData.available}
-                  onCheckedChange={(checked) => setFormData({ ...formData, available: checked })}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-serves">Serves (No. of people)</Label>
+                  <Input
+                    id="edit-serves"
+                    type="number"
+                    value={formData.serves}
+                    onChange={(e) => setFormData({ ...formData, serves: parseInt(e.target.value) || 1 })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-spice_level">Spice Level</Label>
+                  <Select value={formData.spice_level.toString()} onValueChange={(value) => setFormData({ ...formData, spice_level: parseInt(value) })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SPICE_LEVELS.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-quantity">Portion Size (e.g. 500)</Label>
+                  <Input
+                    id="edit-quantity"
+                    type="number"
+                    value={formData.quantity}
+                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-quantity_unit">Unit</Label>
+                  <Select value={formData.quantity_unit} onValueChange={(value) => setFormData({ ...formData, quantity_unit: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {QUANTITY_UNIT_OPTIONS.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-tags">Tags (comma separated)</Label>
+                <Input
+                  id="edit-tags"
+                  value={formData.tags}
+                  onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-dietary_info">Dietary Info (comma separated)</Label>
+                <Input
+                  id="edit-dietary_info"
+                  value={formData.dietary_info}
+                  onChange={(e) => setFormData({ ...formData, dietary_info: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-image_url">Image URL</Label>
+                <Input
+                  id="edit-image_url"
+                  value={formData.image_url}
+                  onChange={(e) => {
+                    setFormData({ ...formData, image_url: e.target.value });
+                    setImagePreview(e.target.value || null);
+                  }}
+                />
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="edit-available"
+                    checked={formData.available}
+                    onCheckedChange={(checked) => setFormData({ ...formData, available: checked })}
+                  />
+                  <Label htmlFor="edit-available">Available for order</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    className="w-16 h-8 text-center"
+                    type="number"
+                    value={formData.display_order}
+                    onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) || 1 })}
+                  />
+                  <Label>Order</Label>
+                </div>
               </div>
             </div>
             <DialogFooter>

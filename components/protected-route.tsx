@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -15,27 +15,38 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children, requireAdmin, requireBusiness }: ProtectedRouteProps) {
   const { isAuthenticated, isAdmin, isBusiness, user } = useAuth()
   const router = useRouter()
+  const [isChecking, setIsChecking] = useState(true)
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      if (requireAdmin) {
-        router.push("/admin/login")
-      } else if (requireBusiness) {
-        router.push("/business/login")
+    const checkAuth = () => {
+      if (!isAuthenticated) {
+        if (requireAdmin) {
+          router.push("/admin/login")
+        } else if (requireBusiness) {
+          router.push("/business/login")
+        } else {
+          router.push("/login")
+        }
+        return
       }
-      return
+
+      if (requireAdmin && !isAdmin) {
+        router.push("/admin/login")
+        return
+      }
+
+      if (requireBusiness && !isBusiness) {
+        router.push("/business/login")
+        return
+      }
+
+      setIsChecking(false)
     }
 
-    if (requireAdmin && !isAdmin) {
-      router.push("/admin/login")
-    }
+    checkAuth()
+  }, [isAuthenticated, isAdmin, isBusiness, requireAdmin, requireBusiness, router])
 
-    if (requireBusiness && !isBusiness) {
-      router.push("/business/login")
-    }
-  }, [isAuthenticated, isAdmin, isBusiness, requireAdmin, requireBusiness, router, user])
-
-  if (!isAuthenticated) {
+  if (isChecking || !isAuthenticated) {
     return null
   }
 

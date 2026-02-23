@@ -52,7 +52,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
 }
 
 // User status badge
-type UserStatus = "active" | "suspended" | "pending"
+type UserStatus = "active" | "suspended" | "pending" | "inactive"
 
 export function UserStatusBadge({ status }: { status: UserStatus }) {
   const config: Record<UserStatus, { label: string; className: string }> = {
@@ -68,6 +68,10 @@ export function UserStatusBadge({ status }: { status: UserStatus }) {
       label: "Pending",
       className: "bg-amber-100 text-amber-800 hover:bg-amber-100",
     },
+    inactive: {
+      label: "Inactive",
+      className: "bg-gray-100 text-gray-600 hover:bg-gray-100",
+    },
   }
 
   const statusConfig = config[status] || config.active
@@ -80,7 +84,7 @@ export function UserStatusBadge({ status }: { status: UserStatus }) {
 }
 
 // Verification status badge
-type VerificationStatus = "pending" | "approved" | "rejected"
+type VerificationStatus = "pending" | "approved" | "rejected" | "suspended"
 
 export function VerificationBadge({ status }: { status: VerificationStatus }) {
   const config: Record<VerificationStatus, { label: string; className: string }> = {
@@ -95,6 +99,10 @@ export function VerificationBadge({ status }: { status: VerificationStatus }) {
     rejected: {
       label: "Rejected",
       className: "bg-red-100 text-red-800 hover:bg-red-100",
+    },
+    suspended: {
+      label: "Suspended",
+      className: "bg-orange-100 text-orange-800 hover:bg-orange-100",
     },
   }
 

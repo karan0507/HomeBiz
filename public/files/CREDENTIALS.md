@@ -15,6 +15,7 @@ postgres
 
 postgresql://postgres:[YOUR-PASSWORD]@db.vjafstxtjxfeaumyxakl.supabase.co:5432/postgres
 
+<!-- b9e118f1 -->
 <!-- env local -->
 
 NEXT_PUBLIC_SUPABASE_URL=https://vjafstxtjxfeaumyxakl.supabase.co

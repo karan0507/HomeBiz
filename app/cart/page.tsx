@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, ChefHat, Star, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,13 +11,30 @@ import { Input } from "@/components/ui/input";
 import { MainLayout } from "@/components/layout/main-layout";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth-context";
-import { mockBusinesses, mockProducts } from "@/lib/mock-data";
+import { fetchAPI } from "@/lib/services/api.client";
 
 export default function CartPage() {
   const router = useRouter();
   const { items, removeFromCart, updateQuantity, clearCart, cartTotal, addToCart } = useCart();
   const { user } = useAuth();
   const [deliveryInstructions, setDeliveryInstructions] = useState("");
+  const [kitchenMenuItems, setKitchenMenuItems] = useState<any[]>([]);
+
+  const kitchenId = items[0]?.kitchenId;
+  const kitchenName = items[0]?.kitchenName || "Kitchen";
+
+  useEffect(() => {
+    if (!kitchenId) return;
+    fetchAPI<any[]>(`/kitchens/${kitchenId}/menu-items`)
+      .then(data =>
+        setKitchenMenuItems((Array.isArray(data) ? data : []).map(i => ({
+          ...i,
+          available: i.is_available,
+          dietaryInfo: i.dietary_info ?? [],
+        })))
+      )
+      .catch(() => setKitchenMenuItems([]));
+  }, [kitchenId]);
 
   const handleCheckout = () => {
     if (!user) {
@@ -46,12 +63,9 @@ export default function CartPage() {
     );
   }
 
-  const kitchenId = items[0]?.kitchenId;
-  const kitchenName = items[0]?.kitchenName || "Kitchen";
-  const kitchen = mockBusinesses.find((k) => k.id === kitchenId);
-  const kitchenMenuItems = mockProducts.filter((p) => p.kitchenId === kitchenId);
   const itemsInCart = items.map((i) => i.item.id);
   const availableItems = kitchenMenuItems.filter((item) => !itemsInCart.includes(item.id));
+  const kitchenSlug = kitchenId;
 
   const tax = cartTotal * 0.13;
   const total = cartTotal + tax;
@@ -78,7 +92,7 @@ export default function CartPage() {
             <div>
               <h2 className="font-semibold mb-3 flex items-center gap-2">
                 <ChefHat className="w-4 h-4 text-primary" />
-                Add More from {kitchen?.name || kitchenName}
+                Add More from {kitchenName}
               </h2>
               {availableItems.length > 0 ? (
                 <div className="space-y-3 max-h-[600px] overflow-y-auto">
@@ -132,7 +146,7 @@ export default function CartPage() {
                   </CardContent>
                 </Card>
               )}
-              <Link href={`/kitchens/${kitchen?.slug}`}>
+              <Link href={`/kitchens/${kitchenSlug}`}>
                 <Button variant="outline" size="sm" className="w-full mt-3">
                   View Full Menu
                 </Button>
@@ -208,7 +222,7 @@ export default function CartPage() {
             <div className="lg:hidden">
               <h2 className="font-semibold mb-3 text-sm flex items-center gap-2">
                 <ChefHat className="w-4 h-4 text-primary" />
-                Add More from {kitchen?.name || kitchenName}
+                Add More from {kitchenName}
               </h2>
               {availableItems.length > 0 ? (
                 <div className="space-y-2">
@@ -252,7 +266,7 @@ export default function CartPage() {
                   </CardContent>
                 </Card>
               )}
-              <Link href={`/kitchens/${kitchen?.slug}`}>
+              <Link href={`/kitchens/${kitchenSlug}`}>
                 <Button variant="outline" size="sm" className="w-full mt-3">
                   View Full Menu
                 </Button>

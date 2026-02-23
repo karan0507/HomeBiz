@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
+import { useState, useMemo, Suspense, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -29,7 +29,9 @@ import {
 } from "@/components/ui/sheet";
 import { MainLayout } from "@/components/layout/main-layout";
 import { useCart } from "@/lib/cart-context";
-import { mockBusinesses, mockCategories } from "@/lib/mock-data";
+import { useKitchens } from "@/hooks/useKitchens";
+import { getCachedCuisineTypes } from "@/lib/services/data.service";
+import type { CuisineType, Kitchen } from "@/types/database";
 
 function KitchensContent() {
   const searchParams = useSearchParams();
@@ -45,40 +47,60 @@ function KitchensContent() {
   const [minRating, setMinRating] = useState(0);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 50]);
   const [maxDistance, setMaxDistance] = useState(10);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
 
   const { isInWishlist, toggleWishlist, isHydrated } = useCart();
 
   const dietaryOptions = ["Vegetarian", "Vegan", "Halal", "Gluten-Free", "Dairy-Free"];
   const ratingOptions = [4.5, 4.0, 3.5, 3.0];
 
+  // Fetch user location
+  useEffect(() => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lon: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.warn("Geolocation error:", error.message);
+        },
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      );
+    }
+  }, []);
+
+  // Fetch kitchens from API with filters - only when filters change
+  const { kitchens: apiKitchens, loading: kitchensLoading, error: kitchensError } = useKitchens({
+    query: searchQuery || undefined,
+    cuisines: selectedCuisine ? [selectedCuisine] : undefined,
+    dietary: selectedDietary.length > 0 ? selectedDietary : undefined,
+    min_rating: minRating > 0 ? minRating : undefined,
+    lat: userLocation?.lat,
+    lon: userLocation?.lon,
+    radius: maxDistance,
+  });
+
+  // Fetch cuisine types for filters
+  const [cuisineTypes, setCuisineTypes] = useState<CuisineType[]>([]);
+  const [cuisinesLoading, setCuisinesLoading] = useState(true);
+  const hasFetchedCuisines = useRef(false);
+
+  useEffect(() => {
+    if (hasFetchedCuisines.current) return;
+    hasFetchedCuisines.current = true;
+
+    getCachedCuisineTypes()
+      .then(setCuisineTypes)
+      .catch(() => setCuisineTypes([]))
+      .finally(() => setCuisinesLoading(false));
+  }, []);
+
+  // Apply client-side filters (price range) and sorting
   const filteredKitchens = useMemo(() => {
-    let result = [...mockBusinesses];
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (k) =>
-          k.name.toLowerCase().includes(query) ||
-          k.cuisineTypes.some((c) => c.toLowerCase().includes(query)) ||
-          k.neighborhood.toLowerCase().includes(query)
-      );
-    }
-
-    if (selectedCuisine) {
-      result = result.filter((k) =>
-        k.cuisineTypes.some((c) => c.toLowerCase().includes(selectedCuisine.toLowerCase()))
-      );
-    }
-
-    if (selectedDietary.length > 0) {
-      result = result.filter((k) =>
-        selectedDietary.some((d) => k.dietaryOptions.includes(d))
-      );
-    }
-
-    if (minRating > 0) {
-      result = result.filter((k) => k.rating >= minRating);
-    }
+    let result = [...apiKitchens];
 
     if (priceRange[0] > 0 || priceRange[1] < 50) {
       result = result.filter((k) => k.minimumOrder >= priceRange[0] && k.minimumOrder <= priceRange[1]);
@@ -97,7 +119,7 @@ function KitchensContent() {
     }
 
     return result;
-  }, [searchQuery, selectedCuisine, selectedDietary, sortBy, minRating, priceRange]);
+  }, [apiKitchens, sortBy, priceRange]);
 
   const clearFilters = () => {
     setSearchQuery("");
@@ -118,8 +140,13 @@ function KitchensContent() {
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold">Find Home Kitchens</h1>
           <p className="text-muted-foreground mt-1">
-            {filteredKitchens.length} home chefs ready to cook for you in Toronto
+            {kitchensLoading ? "Loading..." : `${filteredKitchens.length} home chefs ready to cook for you in Toronto`}
           </p>
+          {kitchensError && (
+            <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
+              Error loading kitchens. Please try again.
+            </div>
+          )}
         </div>
 
         {/* Search & Filter Bar */}
@@ -173,19 +200,23 @@ function KitchensContent() {
                 <div>
                   <label className="text-sm font-medium mb-3 block">Cuisine Type</label>
                   <div className="flex flex-wrap gap-2">
-                    {mockCategories.slice(0, 10).map((cat) => (
-                      <Button
-                        key={cat.id}
-                        variant={selectedCuisine === cat.slug ? "default" : "outline"}
-                        size="sm"
-                        className="h-9"
-                        onClick={() =>
-                          setSelectedCuisine(selectedCuisine === cat.slug ? "" : cat.slug)
-                        }
-                      >
-                        {cat.name}
-                      </Button>
-                    ))}
+                    {cuisinesLoading ? (
+                      <div className="text-sm text-muted-foreground">Loading...</div>
+                    ) : (
+                      cuisineTypes.slice(0, 10).map((cat) => (
+                        <Button
+                          key={cat.id}
+                          variant={selectedCuisine === cat.slug ? "default" : "outline"}
+                          size="sm"
+                          className="h-9"
+                          onClick={() =>
+                            setSelectedCuisine(selectedCuisine === cat.slug ? "" : cat.slug)
+                          }
+                        >
+                          {cat.name}
+                        </Button>
+                      ))
+                    )}
                   </div>
                 </div>
 
@@ -274,7 +305,6 @@ function KitchensContent() {
                       </Button>
                     ))}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">Location services coming soon</p>
                 </div>
 
                 <div>
@@ -312,23 +342,25 @@ function KitchensContent() {
         </div>
 
         {/* Quick Filters */}
-        <div className="relative mb-4">
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
-            {mockCategories.slice(0, 8).map((cat) => (
-              <Button
-                key={cat.id}
-                variant={selectedCuisine === cat.slug ? "default" : "secondary"}
-                size="sm"
-                className={`shrink-0 h-8 gap-1 transition-all text-xs ${selectedCuisine === cat.slug ? "bg-gradient-to-r from-primary to-emerald-600 shadow-sm" : "hover:bg-muted"}`}
-                onClick={() => setSelectedCuisine(selectedCuisine === cat.slug ? "" : cat.slug)}
-              >
-                <span className="text-sm">{cat.icon}</span>
-                {cat.name}
-              </Button>
-            ))}
+        {!cuisinesLoading && cuisineTypes.length > 0 && (
+          <div className="relative mb-4">
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+              {cuisineTypes.slice(0, 8).map((cat) => (
+                <Button
+                  key={cat.id}
+                  variant={selectedCuisine === cat.slug ? "default" : "secondary"}
+                  size="sm"
+                  className={`shrink-0 h-8 gap-1 transition-all text-xs ${selectedCuisine === cat.slug ? "bg-gradient-to-r from-primary to-emerald-600 shadow-sm" : "hover:bg-muted"}`}
+                  onClick={() => setSelectedCuisine(selectedCuisine === cat.slug ? "" : cat.slug)}
+                >
+                  <span className="text-sm">{cat.icon}</span>
+                  {cat.name}
+                </Button>
+              ))}
+            </div>
+            <div className="absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none md:hidden" />
           </div>
-          <div className="absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none md:hidden" />
-        </div>
+        )}
 
         {/* Active Filters */}
         {hasFilters && (
@@ -356,7 +388,23 @@ function KitchensContent() {
         )}
 
         {/* Kitchen Grid/List */}
-        {filteredKitchens.length === 0 ? (
+        {kitchensLoading ? (
+          <div className={viewMode === "grid"
+            ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+            : "space-y-3"
+          }>
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Card key={i} className="overflow-hidden">
+                <div className="h-32 bg-muted animate-pulse" />
+                <CardContent className="p-4 space-y-3">
+                  <div className="h-4 bg-muted rounded animate-pulse" />
+                  <div className="h-3 bg-muted rounded w-2/3 animate-pulse" />
+                  <div className="h-3 bg-muted rounded w-1/2 animate-pulse" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : filteredKitchens.length === 0 ? (
           <div className="text-center py-16">
             <div className="w-20 h-20 rounded-full bg-muted mx-auto flex items-center justify-center mb-4">
               <ChefHat className="w-10 h-10 text-muted-foreground" />
@@ -374,11 +422,27 @@ function KitchensContent() {
               viewMode === "grid" ? (
                 // Grid View Card
                 <Card key={kitchen.id} className="overflow-hidden group hover:shadow-lg transition-all hover:border-primary/50">
-                  <Link href={`/kitchens/${kitchen.slug}`}>
-                    <div className="h-32 bg-gradient-to-br from-primary/20 via-primary/10 to-emerald-500/10 relative">
+                  <Link href={`/kitchens/${kitchen.id}`}>
+                    <div className="h-32 relative overflow-hidden">
+                      {kitchen.cover_image_url ? (
+                        <img 
+                          src={kitchen.cover_image_url} 
+                          alt={kitchen.name} 
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/10 to-emerald-500/10" />
+                      )}
+                      
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary via-primary to-emerald-600 flex items-center justify-center shadow-lg">
-                          <ChefHat className="w-8 h-8 text-white" />
+                        <div className="w-16 h-16 rounded-2xl overflow-hidden bg-white flex items-center justify-center shadow-lg relative border-2 border-background">
+                          {kitchen.logo_url ? (
+                            <img src={kitchen.logo_url} alt={kitchen.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-primary via-primary to-emerald-600 flex items-center justify-center">
+                              <ChefHat className="w-8 h-8 text-white" />
+                            </div>
+                          )}
                         </div>
                       </div>
                       {kitchen.isVerified && (
@@ -424,7 +488,7 @@ function KitchensContent() {
 
                       <div className="flex items-center justify-between mt-3 pt-3 border-t">
                         <div className="flex gap-1">
-                          {kitchen.dietaryOptions.slice(0, 2).map((opt) => (
+                          {kitchen.dietaryOptions.slice(0, 2).map((opt: string) => (
                             <Badge key={opt} variant="outline" className="text-[10px] h-5 px-1.5">
                               {opt}
                             </Badge>
@@ -446,11 +510,15 @@ function KitchensContent() {
               ) : (
                 // List View Card
                 <Card key={kitchen.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                  <Link href={`/kitchens/${kitchen.slug}`}>
+                  <Link href={`/kitchens/${kitchen.id}`}>
                     <CardContent className="p-4">
                       <div className="flex gap-4">
-                        <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-primary/20 to-emerald-500/10 flex items-center justify-center shrink-0">
-                          <ChefHat className="w-10 h-10 text-primary" />
+                        <div className="w-20 h-20 rounded-xl overflow-hidden bg-gradient-to-br from-primary/20 to-emerald-500/10 flex items-center justify-center shrink-0 relative">
+                          {kitchen.logo_url ? (
+                            <img src={kitchen.logo_url} alt={kitchen.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <ChefHat className="w-10 h-10 text-primary" />
+                          )}
                         </div>
 
                         <div className="flex-1 min-w-0">
@@ -500,7 +568,7 @@ function KitchensContent() {
                           </div>
 
                           <div className="flex items-center gap-2 mt-2">
-                            {kitchen.dietaryOptions.slice(0, 3).map((opt) => (
+                            {kitchen.dietaryOptions.slice(0, 3).map((opt: string) => (
                               <Badge key={opt} variant="outline" className="text-xs h-6">
                                 {opt}
                               </Badge>

@@ -119,7 +119,7 @@ export function HeroSection() {
                 <Button
                   type="submit"
                   size="sm"
-                  className="h-10 px-5 rounded-xl bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90 gap-2 shadow-md"
+                  className="h-10 px-5 rounded-xl bg-gradient-to-r from-primary to-emerald-600 hover:opacity-90 transition-opacity gap-2 shadow-md"
                 >
                   <span className="hidden sm:inline">Find Food</span>
                   <ArrowRight className="w-4 h-4" />

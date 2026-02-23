@@ -13,7 +13,12 @@
       "Bash(curl:*)",
       "Bash(lsof:*)",
       "Bash(npm audit:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(netstat:*)",
+      "Bash(ss:*)",
+      "Bash(pkill:*)",
+      "Bash(python3:*)"
     ]
   }
 }

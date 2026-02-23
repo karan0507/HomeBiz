@@ -38,8 +38,12 @@ function OrderConfirmationContent() {
             transition={{ delay: 0.2 }}
           >
             <h1 className="text-2xl font-bold mb-2">Order Placed!</h1>
-            <p className="text-muted-foreground mb-6">
-              Your order has been confirmed and will be ready for pickup soon.
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-sm font-medium mb-4">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+              Waiting for kitchen approval
+            </div>
+            <p className="text-muted-foreground mb-4 text-sm">
+              Your order has been submitted. The chef will confirm it shortly.
             </p>
           </motion.div>
 

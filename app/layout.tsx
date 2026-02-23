@@ -123,7 +123,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
       <head>
         {/* Preconnect to external domains for performance */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -144,14 +144,11 @@ export default function RootLayout({
           </CartProvider>
           {/* Toast notifications for user feedback */}
           <Toaster
-            position="top-right"
-            toastOptions={{
-              style: {
-                background: "hsl(var(--card))",
-                border: "1px solid hsl(var(--border))",
-                color: "hsl(var(--foreground))",
-              },
-            }}
+            position="top-center"
+            richColors
+            closeButton
+            duration={4000}
+            className="sm:top-right"
           />
         </AuthProvider>
         {/* Vercel Analytics for performance monitoring */}

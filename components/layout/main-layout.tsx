@@ -31,9 +31,10 @@ interface MainLayoutProps {
   children: React.ReactNode;
   hideNav?: boolean;
   hideFooter?: boolean;
+  fullWidth?: boolean;
 }
 
-export function MainLayout({ children, hideNav, hideFooter }: MainLayoutProps) {
+export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -104,18 +105,18 @@ export function MainLayout({ children, hideNav, hideFooter }: MainLayoutProps) {
                   variant="ghost"
                   size="sm"
                   className={cn(
-                    isActive("/kitchens") && "bg-primary/10 text-primary",
+                      isActive("/kitchens") && "bg-zinc-100 text-zinc-900 font-medium dark:bg-zinc-800 dark:text-zinc-50",
                   )}
                 >
                   Browse Kitchens
                 </Button>
               </Link>
-              <Link href="/categories">
+              <Link href="/kitchens">
                 <Button
                   variant="ghost"
                   size="sm"
                   className={cn(
-                    isActive("/categories") && "bg-primary/10 text-primary",
+                    isActive("/kitchens") && "bg-zinc-100 text-zinc-900 font-medium dark:bg-zinc-800 dark:text-zinc-50",
                   )}
                 >
                   Cuisines
@@ -126,7 +127,7 @@ export function MainLayout({ children, hideNav, hideFooter }: MainLayoutProps) {
                   variant="ghost"
                   size="sm"
                   className={cn(
-                    isActive("/how-it-works") && "bg-primary/10 text-primary",
+                    isActive("/how-it-works") && "bg-zinc-100 text-zinc-900 font-medium dark:bg-zinc-800 dark:text-zinc-50",
                   )}
                 >
                   How It Works
@@ -137,7 +138,7 @@ export function MainLayout({ children, hideNav, hideFooter }: MainLayoutProps) {
                   variant="ghost"
                   size="sm"
                   className={cn(
-                    isActive("/contact") && "bg-primary/10 text-primary",
+                    isActive("/contact") && "bg-zinc-100 text-zinc-900 font-medium dark:bg-zinc-800 dark:text-zinc-50",
                   )}
                 >
                   Contact
@@ -271,7 +272,7 @@ export function MainLayout({ children, hideNav, hideFooter }: MainLayoutProps) {
                     Browse Kitchens
                   </Button>
                 </Link>
-                <Link href="/categories" className="block">
+                <Link href="/kitchens" className="block">
                   <Button variant="ghost" className="w-full justify-start h-11">
                     Cuisines
                   </Button>
@@ -334,7 +335,7 @@ export function MainLayout({ children, hideNav, hideFooter }: MainLayoutProps) {
 
       {/* Main Content */}
       <main className={cn("flex-1", !hideNav && "pt-14 pb-16 md:pb-0")}>
-        <div className="px-2 md:px-4 lg:px-8">{children}</div>
+        <div className={cn("px-2 md:px-4 lg:px-8", fullWidth && "px-0 max-w-none w-full")}>{children}</div>
       </main>
 
       {/* Mobile Bottom Navigation */}
@@ -361,7 +362,7 @@ export function MainLayout({ children, hideNav, hideFooter }: MainLayoutProps) {
                   />
                 </div>
                 <span className="text-[10px] font-medium">{item.label}</span>
-                {item.badge && item.badge > 0 && (
+                {!!item.badge && item.badge > 0 && (
                   <span className="absolute top-1 left-1/2 translate-x-1 w-4 h-4 bg-primary text-white text-[10px] rounded-full flex items-center justify-center font-medium">
                     {item.badge}
                   </span>
@@ -424,7 +425,7 @@ export function MainLayout({ children, hideNav, hideFooter }: MainLayoutProps) {
                 <ul className="space-y-3">
                   {[
                     { href: "/kitchens", label: "Browse Kitchens" },
-                    { href: "/categories", label: "All Cuisines" },
+                    { href: "/kitchens", label: "All Cuisines" },
                     { href: "/how-it-works", label: "How It Works" },
                     { href: "/pricing", label: "Pricing" },
                   ].map((link) => (

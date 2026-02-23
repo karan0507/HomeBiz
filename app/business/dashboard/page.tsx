@@ -1,53 +1,98 @@
 "use client"
 
-import { ProtectedRoute } from "@/components/protected-route"
+import { useState, useEffect } from "react"
 import { BusinessLayout } from "@/components/business/business-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { mockOrders, mockProducts, mockServices, mockReviews } from "@/lib/mock-data"
-import { ShoppingCart, Package, DollarSign, Star, TrendingUp, Eye } from "lucide-react"
+import { Alert } from "@/components/ui/alert"
+import { ShoppingCart, Package, DollarSign, Star, TrendingUp, TrendingDown, Eye, AlertCircle } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
+import { ProtectedRoute } from "@/components/protected-route"
+import { fetchAPI } from "@/lib/services/api.client"
+import { showError } from "@/lib/notifications"
 
 export default function BusinessDashboardPage() {
-  const { user } = useAuth()
-  const businessOrders = mockOrders.filter((o) => o.businessId === "1")
-  const businessProducts = mockProducts.filter((p) => p.businessId === "1")
-  const businessServices = mockServices.filter((s) => s.businessId === "1")
-  const businessReviews = mockReviews.filter((r) => r.businessId === "1")
+  const { user } = useAuth();
 
-  const totalRevenue = businessOrders.reduce((sum, order) => sum + order.total, 0)
-  const avgRating =
-    businessReviews.length > 0 ? businessReviews.reduce((sum, r) => sum + r.rating, 0) / businessReviews.length : 0
+  // State for data with safe defaults (0/"")
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState([
+    { title: "Total Orders", value: 0, icon: ShoppingCart, trend: "+0%", trendUp: true },
+    { title: "Products & Services", value: 0, icon: Package, trend: "+0", trendUp: true },
+    { title: "Revenue", value: "$0", icon: DollarSign, trend: "+0%", trendUp: true },
+    { title: "Avg Rating", value: "0.0", icon: Star, trend: "+0.0", trendUp: true },
+  ]);
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
 
-  const stats = [
-    {
-      title: "Total Orders",
-      value: businessOrders.length,
-      icon: ShoppingCart,
-      trend: "+12%",
-      trendUp: true,
-    },
-    {
-      title: "Products & Services",
-      value: businessProducts.length + businessServices.length,
-      icon: Package,
-      trend: "+2",
-      trendUp: true,
-    },
-    {
-      title: "Revenue",
-      value: `$${totalRevenue}`,
-      icon: DollarSign,
-      trend: "+18%",
-      trendUp: true,
-    },
-    {
-      title: "Avg Rating",
-      value: avgRating.toFixed(1),
-      icon: Star,
-      trend: "+0.3",
-      trendUp: true,
-    },
-  ]
+  // Fetch data safely
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const controller = new AbortController();
+
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Attempt to fetch real data
+        const [statsData, ordersData] = await Promise.allSettled([
+           fetchAPI<any>('/business/dashboard', { signal: controller.signal }),
+           fetchAPI<any>('/business/orders', { signal: controller.signal })
+        ]);
+
+        if (controller.signal.aborted) return;
+
+        // Check for critical failures
+        if (statsData.status === 'rejected' && ordersData.status === 'rejected') {
+          setError('Unable to load dashboard data. Please check your connection.');
+          showError(statsData.reason);
+          return;
+        }
+
+        // Process Stats — merge API values into frontend shape (icons/titles stay local)
+        // Backend: { total_orders, pending_orders, revenue_today, revenue_month, avg_rating, total_reviews, badges }
+        if (statsData.status === 'fulfilled' && statsData.value) {
+            const d = statsData.value as any;
+            const ordBadge = d.badges?.orders || {};
+            const revBadge = d.badges?.revenue || {};
+            setStats(prev => [
+                { ...prev[0], value: d.total_orders ?? prev[0].value, trend: ordBadge.text ?? prev[0].trend, trendUp: ordBadge.trend === 'up' },
+                { ...prev[1], value: d.total_reviews ?? prev[1].value, trend: prev[1].trend },
+                { ...prev[2], value: d.revenue_month != null ? `$${Number(d.revenue_month).toFixed(0)}` : prev[2].value, trend: revBadge.text ?? prev[2].trend, trendUp: revBadge.trend === 'up' },
+                { ...prev[3], value: d.avg_rating != null ? Number(d.avg_rating).toFixed(1) : prev[3].value, trend: prev[3].trend },
+            ]);
+        } else if (statsData.status === 'rejected') {
+            setError('Unable to load statistics. Showing default values.');
+        }
+
+        // Process Orders — normalise snake_case from backend
+        if (ordersData.status === 'fulfilled' && Array.isArray(ordersData.value)) {
+            setRecentOrders(ordersData.value.slice(0, 5).map((o: any) => ({
+                ...o,
+                customerName: o.customer_name || o.customerName || "Customer",
+                total: o.total_amount ?? o.total ?? 0,
+            })));
+        } else if (ordersData.status === 'rejected') {
+            if (!error) setError('Unable to load recent orders.');
+        }
+
+      } catch (err: any) {
+        if (err.name === 'AbortError') return;
+        console.error("Dashboard error:", err);
+        setError('An unexpected error occurred.');
+        showError(err);
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      controller.abort();
+    };
+  }, [user?.id]); // Only re-run if USER ID changes, not the whole user object
 
   return (
     <ProtectedRoute requireBusiness>
@@ -62,8 +107,19 @@ export default function BusinessDashboardPage() {
             </div>
           </div>
 
+          {/* Error Alert */}
+          {error && (
+            <Alert variant="destructive" className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 mt-0.5" />
+              <div className="flex-1">
+                <p className="font-medium">Dashboard Error</p>
+                <p className="text-sm mt-1">{error}</p>
+              </div>
+            </Alert>
+          )}
+
             {/* Stats Grid */}
-            <div className="grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-4">
               {stats.map((stat, index) => {
                 const Icon = stat.icon
                 const gradients = [
@@ -73,7 +129,7 @@ export default function BusinessDashboardPage() {
                   "from-pink-500/10 to-purple-500/10"
                 ]
                 return (
-                  <Card key={stat.title} className="overflow-hidden hover:shadow-lg transition-all hover:-translate-y-1">
+                  <Card key={stat.title} className="relative overflow-hidden transition-all md:hover:shadow-lg md:hover:-translate-y-1 min-w-0">
                     <div className={`absolute inset-0 bg-gradient-to-br ${gradients[index]} opacity-50`} />
                     <CardHeader className="flex flex-row items-center justify-between pb-2 relative">
                       <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
@@ -82,10 +138,10 @@ export default function BusinessDashboardPage() {
                       </div>
                     </CardHeader>
                     <CardContent className="relative">
-                      <div className="text-2xl md:text-3xl font-bold">{stat.value}</div>
+                      <div className="text-2xl md:text-3xl font-bold">{loading ? "..." : stat.value}</div>
                       <div className="flex items-center gap-1 mt-2">
-                        <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                          <TrendingUp className="h-3 w-3" />
+                        <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${stat.trendUp ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                          {stat.trendUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                           <span className="text-xs font-medium">{stat.trend}</span>
                         </div>
                         <span className="text-xs text-muted-foreground">from last month</span>
@@ -96,9 +152,8 @@ export default function BusinessDashboardPage() {
               })}
             </div>
 
-            <div className="grid gap-4 md:gap-6 lg:grid-cols-2">
-              {/* Recent Orders */}
-              <Card className="hover:shadow-lg transition-all">
+            <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-2">
+              <Card className="relative transition-all md:hover:shadow-lg min-w-0">
                 <CardHeader className="border-b border-border/50">
                   <CardTitle className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center">
@@ -108,9 +163,11 @@ export default function BusinessDashboardPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
-                  {businessOrders.length > 0 ? (
+                  {loading ? (
+                    <div className="text-center py-4">Loading orders...</div>
+                  ) : recentOrders.length > 0 ? (
                     <div className="space-y-3">
-                      {businessOrders.map((order) => (
+                      {recentOrders.map((order: any) => (
                         <div key={order.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
                           <div className="flex-1 min-w-0">
                             <p className="font-medium truncate">Order #{order.id}</p>
@@ -146,8 +203,7 @@ export default function BusinessDashboardPage() {
                 </CardContent>
               </Card>
 
-              {/* Performance Metrics */}
-              <Card className="hover:shadow-lg transition-all">
+              <Card className="relative transition-all md:hover:shadow-lg min-w-0">
                 <CardHeader className="border-b border-border/50">
                   <CardTitle className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
@@ -161,42 +217,13 @@ export default function BusinessDashboardPage() {
                     <div className="p-3 rounded-xl bg-muted/30">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium">Profile Views</span>
-                        <span className="text-sm font-bold text-primary">2,543</span>
+                        <span className="text-sm font-bold text-primary">0</span>
                       </div>
                       <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
-                        <div className="bg-gradient-to-r from-primary to-emerald-500 h-2.5 rounded-full transition-all" style={{ width: "75%" }} />
+                        <div className="bg-gradient-to-r from-primary to-emerald-500 h-2.5 rounded-full transition-all" style={{ width: "0%" }} />
                       </div>
                     </div>
-
-                    <div className="p-3 rounded-xl bg-muted/30">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium">Click-through Rate</span>
-                        <span className="text-sm font-bold text-accent">18.5%</span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
-                        <div className="bg-gradient-to-r from-accent to-blue-400 h-2.5 rounded-full transition-all" style={{ width: "60%" }} />
-                      </div>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-muted/30">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium">Customer Engagement</span>
-                        <span className="text-sm font-bold text-green-600">89%</span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
-                        <div className="bg-gradient-to-r from-green-500 to-emerald-400 h-2.5 rounded-full transition-all" style={{ width: "89%" }} />
-                      </div>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-muted/30">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium">Review Response Rate</span>
-                        <span className="text-sm font-bold text-blue-600">95%</span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
-                        <div className="bg-gradient-to-r from-blue-500 to-cyan-400 h-2.5 rounded-full transition-all" style={{ width: "95%" }} />
-                      </div>
-                    </div>
+                    {/* Simplified for now */}
                   </div>
                 </CardContent>
               </Card>

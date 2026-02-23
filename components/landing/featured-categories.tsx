@@ -1,10 +1,12 @@
 "use client";
 
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, Utensils } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useFeaturedCategories } from "@/hooks/useCategories";
+import { getCachedCuisineTypes } from "@/lib/services/data.service";
+import type { CuisineType } from "@/types/database";
 
 const cuisineEmojis: Record<string, string> = {
   "south-indian": "🇮🇳", "italian": "🇮🇹", "jamaican": "🇯🇲", "chinese": "🇨🇳",
@@ -14,7 +16,19 @@ const cuisineEmojis: Record<string, string> = {
 };
 
 export function FeaturedCategories() {
-  const { categories, loading } = useFeaturedCategories();
+  const [cuisineTypes, setCuisineTypes] = useState<CuisineType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const hasFetched = useRef(false);
+
+  useEffect(() => {
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+
+    getCachedCuisineTypes()
+      .then((types) => setCuisineTypes(types.slice(0, 12))) // Show first 12
+      .catch(() => setCuisineTypes([]))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <section className="py-16 md:py-24 bg-gradient-to-b from-background to-secondary/20">
@@ -37,7 +51,7 @@ export function FeaturedCategories() {
               From South Indian dosas to Italian pasta - discover 25+ cuisines from talented home chefs across Toronto.
             </p>
           </div>
-          <Link href="/categories" className="mt-6 md:mt-0">
+          <Link href="/kitchens" className="mt-6 md:mt-0">
             <Button variant="outline" className="gap-2 group">
               All Cuisines
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -55,7 +69,7 @@ export function FeaturedCategories() {
               </div>
             ))}
           </div>
-        ) : categories.length === 0 ? (
+        ) : cuisineTypes.length === 0 ? (
           <div className="text-center py-16">
             <Utensils className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-xl font-semibold mb-2">Coming Soon</h3>
@@ -63,17 +77,17 @@ export function FeaturedCategories() {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            {categories.map((category, index) => {
-              const emoji = cuisineEmojis[category.slug] || "🍽️";
+            {cuisineTypes.map((ct, index) => {
+              const emoji = ct.icon || cuisineEmojis[ct.slug] || "🍽️";
               return (
                 <motion.div
-                  key={category.id}
+                  key={ct.id}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.05 }}
                 >
-                  <Link href={`/kitchens?cuisine=${category.slug}`}>
+                  <Link href={`/kitchens?cuisines=${ct.id}`}>
                     <div className="group p-6 rounded-3xl glass hover-lift cursor-pointer text-center">
                       <motion.div
                         whileHover={{ scale: 1.1, rotate: 5 }}
@@ -83,11 +97,8 @@ export function FeaturedCategories() {
                         {emoji}
                       </motion.div>
                       <h3 className="font-bold text-lg group-hover:text-gradient transition-all mb-1">
-                        {category.name}
+                        {ct.name}
                       </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {category.kitchen_count} {category.kitchen_count === 1 ? 'kitchen' : 'kitchens'}
-                      </p>
                       <motion.div
                         initial={{ width: 0 }}
                         whileInView={{ width: "2rem" }}
@@ -103,28 +114,7 @@ export function FeaturedCategories() {
           </div>
         )}
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="mt-12 text-center"
-        >
-          <p className="text-sm text-muted-foreground mb-4">
-            Looking for specific dietary options?
-          </p>
-          <div className="flex flex-wrap gap-3 justify-center">
-            {["Vegetarian", "Vegan", "Halal", "Gluten-Free", "Keto"].map((diet) => (
-              <Link
-                key={diet}
-                href={`/kitchens?dietary=${diet.toLowerCase()}`}
-                className="px-4 py-2 rounded-full glass hover:bg-primary/10 transition-colors text-sm font-medium"
-              >
-                {diet}
-              </Link>
-            ))}
-          </div>
-        </motion.div>
+        {/* TODO: Dietary options section - requires fetching dietary options and mapping to UUIDs */}
       </div>
     </section>
   );

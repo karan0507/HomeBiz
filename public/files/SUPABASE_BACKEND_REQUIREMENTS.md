@@ -1062,3 +1062,294 @@ It provides everything you need:
 *Document Version: 1.0*
 *Last Updated: 2024*
 *For HomeBiz Toronto*
+
+---
+
+## CRITICAL FRONTEND REQUIREMENTS (2026-02-13)
+
+### 1. Auth Signup Validation
+**Route:** `POST /api/auth/signup`
+**Required:** Check email & phone existence BEFORE creating account
+**Response on conflict:**
+```json
+{
+  "success": false,
+  "error": {
+    "code": "CONFLICT",
+    "message": "Email already registered. Please sign in or use different email."
+  }
+}
+```
+
+### 2. Address Storage with Coordinates
+**For:** Both customers & businesses (mandatory in signup)
+**Fields Required:**
+```sql
+address_line_1 TEXT NOT NULL
+address_line_2 TEXT
+street_number TEXT
+street_name TEXT
+building_name TEXT
+city TEXT NOT NULL CHECK (city = 'North York')
+province TEXT NOT NULL
+postal_code TEXT NOT NULL
+country TEXT DEFAULT 'Canada'
+latitude DECIMAL(10, 8) NOT NULL
+longitude DECIMAL(11, 8) NOT NULL
+```
+**Validation:** Only allow North York addresses
+**Get coordinates from:** Google Geocoding API
+
+### 3. Dashboard Stats (Real-time)
+**Route:** `GET /api/business/dashboard`
+**Dynamic fields needed:**
+```json
+{
+  "total_orders": "COUNT from orders",
+  "pending_orders": "COUNT WHERE status IN ('placed', 'confirmed')",
+  "revenue_today": "SUM(total) WHERE DATE(created_at) = TODAY",
+  "revenue_month": "SUM(total) WHERE MONTH(created_at) = CURRENT_MONTH",
+  "avg_rating": "AVG(rating) from reviews",
+  "total_reviews": "COUNT from reviews"
+}
+```
+
+### 4. Role Encryption
+**Required:** Encrypt role field in transit
+**Implementation:**
+- Frontend: Encrypt before sending
+- Backend: Decrypt on receive, store plaintext
+- Return encrypted in response
+**Algorithm:** AES-256-GCM
+**Key:** Store in backend env only
+
+### 5. Province Dropdown
+**Route:** `GET /api/provinces`
+**Response:**
+```json
+{
+  "success": true,
+  "data": ["Ontario", "Quebec", "British Columbia", ...]
+}
+```
+
+### 6. Cuisine Types (Admin Managed)
+**Current:** Static in frontend
+**Required:** From `GET /api/categories` (admin-created)
+**Business signup:** Select from this list only
+
+### 7. Dietary Options
+**Current:** Hardcoded in frontend
+**Required:** From backend (admin-managed or static table)
+**Suggested table:**
+```sql
+CREATE TABLE dietary_options (
+  id UUID PRIMARY KEY,
+  name TEXT UNIQUE NOT NULL,
+  display_order INTEGER,
+  is_active BOOLEAN DEFAULT TRUE
+);
+```
+
+### 8. Radius-based Kitchen Search
+**Route:** `GET /api/kitchens`
+**New parameters:**
+```
+?lat=43.7615&lon=-79.4111&radius=5
+&min_price=10&max_price=30
+&sort=distance|rating|price
+```
+**Logic:** Calculate distance using coordinates stored in profiles
+**Formula:** Haversine or PostGIS ST_Distance
+
+### 9. Badges Dynamic Status
+**For:** Dashboard stats cards
+**Required:** Return badge data with each stat
+```json
+{
+  "total_orders": 156,
+  "badge": {
+    "text": "+12%",
+    "variant": "success",
+    "trend": "up"
+  }
+}
+```
+
+### 10. Search Bar API
+**For:** Dashboard panels
+**Implementation:** Later phase
+
+---
+
+## UPDATED API CONTRACTS
+
+### Auth Signup (Updated)
+```typescript
+POST /api/auth/signup
+
+Request:
+{
+  name: string,
+  email: string,
+  phone: string,
+  password: string,
+  role: string (encrypted),
+  address: {
+    line1: string,
+    line2?: string,
+    city: string,
+    province: string,
+    postal_code: string,
+    latitude: number,
+    longitude: number
+  },
+  kitchen?: { ... } // For business role
+}
+
+Response (Success):
+{
+  success: true,
+  data: {
+    user: { id, email, name, role (encrypted) },
+    session: { access_token, refresh_token }
+  }
+}
+
+Response (Conflict):
+{
+  success: false,
+  error: {
+    code: "CONFLICT",
+    message: "Email/phone already exists"
+  }
+}
+```
+
+### Kitchen Search with Radius
+```typescript
+GET /api/kitchens?lat=43.7615&lon=-79.4111&radius=5&min_price=10&max_price=30&sort=distance
+
+Response:
+{
+  success: true,
+  data: {
+    kitchens: [
+      {
+        ...kitchen fields,
+        distance_km: 2.3,
+        estimated_prep_time: "30-45 min"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## PRIORITY ORDER
+
+1. **P0 (Immediate):**
+   - Email/phone conflict check in signup
+   - Address with coordinates storage
+   - Dashboard dynamic stats
+
+2. **P1 (High):**
+   - Role encryption
+   - Province dropdown
+   - Radius-based search
+
+3. **P2 (Medium):**
+   - Cuisine/dietary from backend
+   - Badge dynamic data
+   - Distance calculation optimization
+
+---
+
+*Document updated: 2026-02-17*
+
+---
+
+## INTEGRATION STATUS (Frontend ↔ Backend)
+
+### Frontend Wired (service files calling real API)
+
+| Endpoint | Status | Fallback |
+|---|---|---|
+| `GET /categories` | Wired | mock |
+| `GET /categories?featured=true` | Wired | mock |
+| `GET /categories/:slug` | Wired | null |
+| `GET /kitchens` | Wired | — |
+| `GET /kitchens?featured=true` | Wired | mock |
+| `GET /kitchens/:slug` | Wired | null |
+| `GET /kitchens/:id` | Wired | null |
+| `GET /business/kitchens` | Wired | — |
+| `POST /kitchens` | Wired | — |
+| `PATCH /kitchens/:id` | Wired | — |
+| `DELETE /kitchens/:id` | Wired | — |
+| `GET /kitchens/:id/hours` | Wired | — |
+
+### Not Yet Wired (missing service, still mock)
+
+| Endpoint | Priority |
+|---|---|
+| `POST /auth/signup` | P0 |
+| `POST /auth/login` | P0 |
+| `GET /profile` | P0 |
+| `GET /business/dashboard` | P0 |
+| `PUT /profile` | P1 |
+| `GET /orders` + `POST /orders` + `GET /orders/:id` | P1 |
+| `PUT /business/orders/:id/status` (Edge Function) | P1 |
+| `GET /business/menu` + CRUD | P1 |
+| `GET /admin/users` + `GET /admin/kitchens` + verify | P1 |
+| `GET /provinces` | P1 |
+| `GET /wishlist` + add/remove | P2 |
+| `POST /reviews` + business response | P2 |
+| `GET /business/analytics` + `GET /admin/analytics` | P2 |
+| `GET /dietary-options` | P2 |
+
+### Schema Gaps to Fix Before Integration
+
+| Frontend expects | Backend has | Fix |
+|---|---|---|
+| `cover_image` | `cover_image_url` | Rename or transform in service |
+| `logo` | `logo_url` | Rename or transform in service |
+| `is_verified` | Not in `kitchens` table | Add derived field or column |
+| `food_handler_certificate` | Not in `kitchens` table | Add column |
+| `tagline` | Not in `kitchens` table | Add column |
+| `lat/lon/radius` in KitchenFilters | Not in service | Add params + backend Haversine/PostGIS |
+| `dietary_options` table | Not in schema | Add table (see §1 below) |
+| `GET /provinces` | Not in schema | Add static endpoint or seed table |
+
+### New Tables Required (from frontend)
+
+```sql
+-- Dietary options (admin-managed)
+CREATE TABLE dietary_options (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT UNIQUE NOT NULL,
+  display_order INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT TRUE
+);
+
+-- Seed
+INSERT INTO dietary_options (name, display_order) VALUES
+('Vegetarian', 1), ('Vegan', 2), ('Halal', 3),
+('Kosher', 4), ('Gluten-Free', 5), ('Dairy-Free', 6), ('Nut-Free', 7);
+```
+
+### New Columns Required on `kitchens`
+
+```sql
+ALTER TABLE kitchens
+  ADD COLUMN tagline TEXT,
+  ADD COLUMN food_handler_certificate BOOLEAN DEFAULT FALSE;
+
+-- cover_image_url and logo_url already exist in schema
+-- Frontend service must be updated to use cover_image_url, logo_url
+```
+
+### Auth Token Note
+
+Frontend reads token from `localStorage.getItem('user').token`.
+Supabase returns `access_token` in session. Align on session storage strategy before wiring auth service.

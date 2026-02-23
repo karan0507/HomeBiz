@@ -26,7 +26,7 @@ interface AdminLayoutProps {
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" },
   { icon: Users, label: "Users", href: "/admin/users" },
-  { icon: FolderTree, label: "Categories", href: "/admin/categories" },
+  { icon: FolderTree, label: "Categories", href: "/admin/cuisine-types" },
   { icon: Building, label: "Businesses", href: "/admin/businesses" },
   { icon: Settings, label: "Settings", href: "/admin/settings" },
 ]
@@ -36,7 +36,7 @@ const bottomNavItems = [
   { icon: LayoutDashboard, label: "Home", href: "/admin/dashboard" },
   { icon: Users, label: "Users", href: "/admin/users" },
   { icon: Building, label: "Business", href: "/admin/businesses" },
-  { icon: FolderTree, label: "Categories", href: "/admin/categories" },
+  { icon: FolderTree, label: "Categories", href: "/admin/cuisine-types" },
   { icon: Settings, label: "Settings", href: "/admin/settings" },
 ]
 

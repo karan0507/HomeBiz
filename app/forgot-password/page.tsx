@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ChefHat, Mail, ArrowLeft } from "lucide-react";
+import { fetchAPI } from "@/lib/services/api.client";
+import { showError } from "@/lib/notifications";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -21,18 +23,14 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
 
     try {
-      // TODO: Connect to backend API
-      // const response = await fetch('/api/auth/forgot-password', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email })
-      // });
-
-      // Placeholder - remove when backend ready
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await fetchAPI('/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email: email.trim() })
+      });
       setSuccess(true);
     } catch (err) {
       setError("Failed to send reset email. Please try again.");
+      showError(err);
     } finally {
       setIsLoading(false);
     }

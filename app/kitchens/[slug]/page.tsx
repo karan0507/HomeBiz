@@ -23,15 +23,42 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { MainLayout } from "@/components/layout/main-layout";
 import { useCart } from "@/lib/cart-context";
-import { mockBusinesses, mockProducts, mockReviews } from "@/lib/mock-data";
+import { useKitchen } from "@/hooks/useKitchens";
+import { fetchAPI } from "@/lib/services/api.client";
 
 export default function KitchenDetailPage() {
   const params = useParams();
-  const slug = params.slug as string;
+  const kitchenId = params.slug as string;
 
-  const kitchen = mockBusinesses.find((k) => k.slug === slug);
-  const menuItems = mockProducts.filter((p) => p.kitchenId === kitchen?.id);
-  const reviews = mockReviews.filter((r) => r.kitchenId === kitchen?.id);
+  const { kitchen, loading, error } = useKitchen(kitchenId);
+  const [menuItems, setMenuItems] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!kitchen?.id) return;
+    fetchAPI<any[]>(`/kitchens/${kitchen.id}/menu-items`)
+      .then(data =>
+        setMenuItems((Array.isArray(data) ? data : []).map(i => ({
+          ...i,
+          available: i.is_available,
+          dietaryInfo: i.dietary_info ?? [],
+        })))
+      )
+      .catch(() => setMenuItems([]));
+    fetchAPI<any[]>(`/kitchens/${kitchen.id}/reviews`)
+      .then(data =>
+        setReviews((Array.isArray(data) ? data : []).map(r => {
+          const profile = r.customer || r.profile || {};
+          return {
+            id: r.id,
+            userName: profile.name || profile.full_name || `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || "Anonymous",
+            rating: Number(r.rating ?? 0),
+            comment: r.comment || r.body || "",
+          };
+        }))
+      )
+      .catch(() => setReviews([]));
+  }, [kitchen?.id]);
 
   const [visibleReviews, setVisibleReviews] = useState(2);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -46,28 +73,6 @@ export default function KitchenDetailPage() {
     toggleWishlist,
     isInWishlist,
   } = useCart();
-
-  if (!kitchen) {
-    return (
-      <MainLayout>
-        <div className="container mx-auto px-4 py-12 text-center">
-          <ChefHat className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
-          <h1 className="text-xl font-bold mb-2">Kitchen Not Found</h1>
-          <p className="text-muted-foreground mb-4">
-            The kitchen you&apos;re looking for doesn&apos;t exist.
-          </p>
-          <Link href="/kitchens">
-            <Button>Browse All Kitchens</Button>
-          </Link>
-        </div>
-      </MainLayout>
-    );
-  }
-
-  const getItemQuantity = (itemId: string) => {
-    const cartItem = items.find((c) => c.item.id === itemId);
-    return cartItem?.quantity || 0;
-  };
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -94,6 +99,46 @@ export default function KitchenDetailPage() {
     };
   }, [visibleReviews, reviews.length, isLoadingMore]);
 
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto px-4 py-12">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-muted rounded w-32" />
+            <div className="h-64 bg-muted rounded-lg" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-48 bg-muted rounded-lg" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (!kitchen || error) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto px-4 py-12 text-center">
+          <ChefHat className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
+          <h1 className="text-xl font-bold mb-2">Kitchen Not Found</h1>
+          <p className="text-muted-foreground mb-4">
+            The kitchen you&apos;re looking for doesn&apos;t exist.
+          </p>
+          <Link href="/kitchens">
+            <Button>Browse All Kitchens</Button>
+          </Link>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  const getItemQuantity = (itemId: string) => {
+    const cartItem = items.find((c) => c.item.id === itemId);
+    return cartItem?.quantity || 0;
+  };
+
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-4 max-w-6xl">
@@ -111,13 +156,32 @@ export default function KitchenDetailPage() {
           <div className="lg:col-span-2 space-y-6">
             {/* Kitchen Header */}
             <Card className="overflow-hidden">
-              <div className="h-32 bg-gradient-to-br from-primary/20 via-primary/10 to-emerald-500/10 relative">
+              <div className="h-32 relative overflow-hidden">
+                {kitchen.cover_image_url ? (
+                  <img 
+                    src={kitchen.cover_image_url} 
+                    alt={kitchen.name} 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/10 to-emerald-500/10" />
+                )}
                 <div className="absolute inset-0 bg-[url('/pattern.svg')] opacity-5" />
               </div>
               <CardContent className="p-5 -mt-10 relative">
                 <div className="flex gap-4">
-                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary via-primary to-emerald-600 flex items-center justify-center shrink-0 shadow-lg shadow-primary/25 border-4 border-background">
-                    <ChefHat className="w-10 h-10 text-white" />
+                  <div className="w-20 h-20 rounded-2xl overflow-hidden bg-white flex items-center justify-center shrink-0 shadow-lg shadow-primary/25 border-4 border-background relative">
+                    {kitchen.logo_url ? (
+                      <img 
+                        src={kitchen.logo_url} 
+                        alt={kitchen.name} 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-primary via-primary to-emerald-600 flex items-center justify-center">
+                        <ChefHat className="w-10 h-10 text-white" />
+                      </div>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0 pt-2">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -172,12 +236,12 @@ export default function KitchenDetailPage() {
                 </div>
 
                 <div className="flex gap-2 mt-4 flex-wrap">
-                  {kitchen.cuisineTypes.map((cuisine) => (
+                  {kitchen.cuisineTypes.map((cuisine: string) => (
                     <Badge key={cuisine} variant="secondary" className="text-xs">
                       {cuisine}
                     </Badge>
                   ))}
-                  {kitchen.dietaryOptions.slice(0, 3).map((opt) => (
+                  {kitchen.dietaryOptions.slice(0, 3).map((opt: string) => (
                     <Badge key={opt} variant="outline" className="text-xs">
                       {opt}
                     </Badge>
@@ -205,8 +269,12 @@ export default function KitchenDetailPage() {
                     <Card key={item.id} className="overflow-hidden hover:shadow-md transition-shadow">
                       <CardContent className="p-4">
                         <div className="flex gap-3">
-                          <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center text-3xl shrink-0">
-                            {isVeg ? "🥬" : "🍖"}
+                          <div className="w-20 h-20 rounded-xl overflow-hidden bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center text-3xl shrink-0 relative">
+                            {item.image_url ? (
+                              <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                            ) : (
+                              isVeg ? "🥬" : "🍖"
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2">
@@ -220,10 +288,12 @@ export default function KitchenDetailPage() {
                             <div className="flex items-center justify-between mt-3">
                               <div className="flex items-center gap-2">
                                 <span className="font-bold text-primary">${item.price.toFixed(2)}</span>
-                                <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
-                                  <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                                  {item.rating}
-                                </span>
+                                {item.rating && (
+                                  <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
+                                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                                    {item.rating}
+                                  </span>
+                                )}
                               </div>
                               {quantity > 0 ? (
                                 <div className="flex items-center gap-1.5">

@@ -10,8 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth-context";
-import { useCart } from "@/lib/cart-context";
-import { mockBusinesses } from "@/lib/mock-data";
+import { fetchAPI, APIError } from "@/lib/services/api.client";
+import { toast } from "sonner";
 import {
   User,
   Settings,
@@ -32,7 +32,6 @@ import {
 
 function AccountContent() {
   const { user, logout, isAuthenticated, isAdmin, isBusiness } = useAuth();
-  const { wishlist, toggleWishlist } = useCart();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "profile");
@@ -41,51 +40,95 @@ function AccountContent() {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewText, setReviewText] = useState("");
 
+  // Real data state
+  const [orders, setOrders] = useState<any[]>([]);
+  const [wishlist, setWishlist] = useState<any[]>([]);
+  const [profile, setProfile] = useState<any>(null);
+  const [profileForm, setProfileForm] = useState<any>({});
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
+
   useEffect(() => {
-    if (isAdmin) {
-      router.push("/admin/dashboard");
-    } else if (isBusiness) {
-      router.push("/business/dashboard");
-    }
+    if (isAdmin) router.push("/admin/dashboard");
+    else if (isBusiness) router.push("/business/dashboard");
   }, [isAdmin, isBusiness, router]);
 
-  const wishlistedKitchens = mockBusinesses.filter((k) => wishlist.includes(k.id));
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    // Fetch profile
+    setProfileLoading(true);
+    fetchAPI<any>("/profile")
+      .then(data => {
+        const p = data?.profile ?? data;
+        setProfile(p);
+        setProfileForm({
+          first_name: p?.first_name || "",
+          last_name: p?.last_name || "",
+          email: p?.email || user?.email || "",
+          phone: p?.phone || "",
+          address_line1: p?.address_line1 || "",
+          city: p?.city || "",
+          province: p?.province || "",
+          postal_code: p?.postal_code || "",
+        });
+      })
+      .catch(() => {})
+      .finally(() => setProfileLoading(false));
+  }, [isAuthenticated, user?.email]);
 
-  const mockOrders = [
-    {
-      id: "HB12345678",
-      date: "2024-01-15",
-      status: "delivered",
-      total: 45.99,
-      kitchen: "Amma's Kitchen",
-      kitchenSlug: "ammas-kitchen",
-      items: [
-        { name: "Butter Chicken", qty: 1, price: 14.99 },
-        { name: "Garlic Naan", qty: 3, price: 4.99 },
-        { name: "Mango Lassi", qty: 2, price: 3.99 },
-      ],
-      hasReview: false,
-    },
-    {
-      id: "HB12345679",
-      date: "2024-01-10",
-      status: "delivered",
-      total: 32.50,
-      kitchen: "Nonna's Table",
-      kitchenSlug: "nonnas-table",
-      items: [
-        { name: "Pasta Carbonara", qty: 2, price: 12.99 },
-        { name: "Tiramisu", qty: 1, price: 6.50 },
-      ],
-      hasReview: true,
-    },
-  ];
+  useEffect(() => {
+    if (!isAuthenticated || activeTab !== "orders") return;
+    setOrdersLoading(true);
+    fetchAPI<any[]>("/orders")
+      .then(data => setOrders(Array.isArray(data) ? data : []))
+      .catch(() => setOrders([]))
+      .finally(() => setOrdersLoading(false));
+  }, [isAuthenticated, activeTab]);
 
-  const handleReviewSubmit = (orderId: string) => {
-    console.log("Review submitted:", { orderId, rating: reviewRating, text: reviewText });
-    setReviewingOrder(null);
-    setReviewText("");
-    setReviewRating(5);
+  useEffect(() => {
+    if (!isAuthenticated || activeTab !== "wishlist") return;
+    setWishlistLoading(true);
+    fetchAPI<any[]>("/wishlist")
+      .then(data => setWishlist(Array.isArray(data) ? data : []))
+      .catch(() => setWishlist([]))
+      .finally(() => setWishlistLoading(false));
+  }, [isAuthenticated, activeTab]);
+
+  const handleProfileSave = async () => {
+    try {
+      await fetchAPI("/profile", { method: "PUT", body: JSON.stringify(profileForm) });
+      toast.success("Profile updated");
+      setEditingProfile(false);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update profile");
+    }
+  };
+
+  const handleReviewSubmit = async (orderId: string, kitchenId: string) => {
+    try {
+      await fetchAPI("/reviews", {
+        method: "POST",
+        body: JSON.stringify({ order_id: orderId, kitchen_id: kitchenId, rating: reviewRating, comment: reviewText }),
+      });
+      toast.success("Review submitted");
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, has_review: true } : o));
+    } catch (err: any) {
+      toast.error(err.message || "Failed to submit review");
+    } finally {
+      setReviewingOrder(null);
+      setReviewText("");
+      setReviewRating(5);
+    }
+  };
+
+  const handleRemoveWishlist = async (kitchenId: string) => {
+    try {
+      await fetchAPI(`/wishlist/${kitchenId}`, { method: "DELETE" });
+      setWishlist(prev => prev.filter(k => k.id !== kitchenId));
+    } catch (err: any) {
+      toast.error(err.message || "Failed to remove");
+    }
   };
 
   if (!isAuthenticated) {
@@ -115,9 +158,7 @@ function AccountContent() {
                 </Button>
               </Link>
               <div className="pt-3 border-t">
-                <p className="text-center text-xs text-muted-foreground mb-2">
-                  Are you a home chef?
-                </p>
+                <p className="text-center text-xs text-muted-foreground mb-2">Are you a home chef?</p>
                 <Link href="/business/login" className="block">
                   <Button variant="ghost" size="sm" className="w-full gap-2 text-xs">
                     <ChefHat className="w-3 h-3" />
@@ -132,10 +173,13 @@ function AccountContent() {
     );
   }
 
+  const displayName = profile
+    ? `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || profile.email
+    : user?.name || user?.email || "";
+
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-6 max-w-4xl">
-        {/* Profile Header */}
         <Card className="mb-6">
           <CardContent className="p-6">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
@@ -143,16 +187,16 @@ function AccountContent() {
                 <User className="w-10 h-10 text-white" />
               </div>
               <div className="flex-1 text-center sm:text-left">
-                <h1 className="text-2xl font-bold">{user?.name}</h1>
-                <p className="text-sm text-muted-foreground mt-1">{user?.email}</p>
+                <h1 className="text-2xl font-bold">{displayName}</h1>
+                <p className="text-sm text-muted-foreground mt-1">{profile?.email || user?.email}</p>
                 <div className="flex flex-wrap gap-2 mt-3 justify-center sm:justify-start">
                   <Badge variant="secondary" className="gap-1">
                     <ShoppingBag className="w-3 h-3" />
-                    {mockOrders.length} Orders
+                    {orders.length} Orders
                   </Badge>
                   <Badge variant="secondary" className="gap-1">
                     <Heart className="w-3 h-3" />
-                    {wishlistedKitchens.length} Favorites
+                    {wishlist.length} Favorites
                   </Badge>
                 </div>
               </div>
@@ -164,7 +208,6 @@ function AccountContent() {
           </CardContent>
         </Card>
 
-        {/* Tabs */}
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
           {[
             { id: "profile", label: "Profile", icon: User },
@@ -185,7 +228,6 @@ function AccountContent() {
           ))}
         </div>
 
-        {/* Tab Content */}
         {activeTab === "profile" && (
           <div className="space-y-4">
             <Card>
@@ -202,39 +244,41 @@ function AccountContent() {
                     onClick={() => setEditingProfile(!editingProfile)}
                   >
                     {editingProfile ? (
-                      <>
-                        <X className="w-4 h-4" />
-                        Cancel
-                      </>
+                      <><X className="w-4 h-4" />Cancel</>
                     ) : (
-                      <>
-                        <Edit className="w-4 h-4" />
-                        Edit
-                      </>
+                      <><Edit className="w-4 h-4" />Edit</>
                     )}
                   </Button>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {editingProfile ? (
+                {profileLoading ? (
+                  <p className="text-sm text-muted-foreground">Loading...</p>
+                ) : editingProfile ? (
                   <>
-                    <div>
-                      <Label htmlFor="name" className="text-sm">Full Name</Label>
-                      <Input id="name" defaultValue={user?.name} className="mt-1.5 h-9 text-sm" />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-sm">First Name</Label>
+                        <Input className="mt-1.5 h-9 text-sm" value={profileForm.first_name || ""} onChange={e => setProfileForm((p: any) => ({ ...p, first_name: e.target.value }))} />
+                      </div>
+                      <div>
+                        <Label className="text-sm">Last Name</Label>
+                        <Input className="mt-1.5 h-9 text-sm" value={profileForm.last_name || ""} onChange={e => setProfileForm((p: any) => ({ ...p, last_name: e.target.value }))} />
+                      </div>
                     </div>
                     <div>
-                      <Label htmlFor="email" className="text-sm">Email Address</Label>
-                      <Input id="email" type="email" defaultValue={user?.email} className="mt-1.5 h-9 text-sm" />
+                      <Label className="text-sm">Email Address</Label>
+                      <Input type="email" className="mt-1.5 h-9 text-sm" value={profileForm.email || ""} onChange={e => setProfileForm((p: any) => ({ ...p, email: e.target.value }))} />
                     </div>
                     <div>
-                      <Label htmlFor="phone" className="text-sm">Phone Number</Label>
-                      <Input id="phone" type="tel" defaultValue={user?.phone} placeholder="(416) 555-1234" className="mt-1.5 h-9 text-sm" />
+                      <Label className="text-sm">Phone Number</Label>
+                      <Input type="tel" className="mt-1.5 h-9 text-sm" value={profileForm.phone || ""} onChange={e => setProfileForm((p: any) => ({ ...p, phone: e.target.value }))} />
                     </div>
                     <div>
-                      <Label htmlFor="address" className="text-sm">Address</Label>
-                      <Input id="address" defaultValue={user?.address} placeholder="123 Main St, Toronto" className="mt-1.5 h-9 text-sm" />
+                      <Label className="text-sm">Address</Label>
+                      <Input className="mt-1.5 h-9 text-sm" value={profileForm.address_line1 || ""} onChange={e => setProfileForm((p: any) => ({ ...p, address_line1: e.target.value }))} />
                     </div>
-                    <Button size="sm" className="w-full gap-2 bg-gradient-to-r from-primary to-emerald-600">
+                    <Button size="sm" className="w-full gap-2 bg-gradient-to-r from-primary to-emerald-600" onClick={handleProfileSave}>
                       <Check className="w-4 h-4" />
                       Save Changes
                     </Button>
@@ -245,55 +289,32 @@ function AccountContent() {
                       <User className="w-5 h-5 text-muted-foreground" />
                       <div className="flex-1">
                         <p className="text-xs text-muted-foreground">Full Name</p>
-                        <p className="text-sm font-medium">{user?.name}</p>
+                        <p className="text-sm font-medium">{displayName || "Not set"}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 py-3 border-b">
                       <Mail className="w-5 h-5 text-muted-foreground" />
                       <div className="flex-1">
                         <p className="text-xs text-muted-foreground">Email Address</p>
-                        <p className="text-sm font-medium">{user?.email}</p>
+                        <p className="text-sm font-medium">{profile?.email || user?.email}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 py-3 border-b">
                       <Phone className="w-5 h-5 text-muted-foreground" />
                       <div className="flex-1">
                         <p className="text-xs text-muted-foreground">Phone Number</p>
-                        <p className="text-sm font-medium">{user?.phone || "Not set"}</p>
+                        <p className="text-sm font-medium">{profile?.phone || "Not set"}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 py-3">
                       <MapPin className="w-5 h-5 text-muted-foreground" />
                       <div className="flex-1">
                         <p className="text-xs text-muted-foreground">Address</p>
-                        <p className="text-sm font-medium">{user?.address || "Not set"}</p>
+                        <p className="text-sm font-medium">{profile?.address_line1 || "Not set"}</p>
                       </div>
                     </div>
                   </>
                 )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Membership</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Member Since</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {new Date(user?.createdAt || "").toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric"
-                      })}
-                    </p>
-                  </div>
-                  <Badge className="bg-gradient-to-r from-primary to-emerald-600 text-white">
-                    Active Member
-                  </Badge>
-                </div>
               </CardContent>
             </Card>
           </div>
@@ -301,14 +322,14 @@ function AccountContent() {
 
         {activeTab === "orders" && (
           <div className="space-y-4">
-            {mockOrders.length === 0 ? (
+            {ordersLoading ? (
+              <div className="text-center py-8 text-muted-foreground">Loading orders...</div>
+            ) : orders.length === 0 ? (
               <Card>
                 <CardContent className="p-12 text-center">
                   <Package className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
                   <h3 className="font-semibold mb-2">No orders yet</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Start exploring delicious home-cooked meals
-                  </p>
+                  <p className="text-sm text-muted-foreground mb-4">Start exploring delicious home-cooked meals</p>
                   <Link href="/kitchens">
                     <Button size="sm" className="gap-2">
                       <ChefHat className="w-4 h-4" />
@@ -318,127 +339,84 @@ function AccountContent() {
                 </CardContent>
               </Card>
             ) : (
-              mockOrders.map((order) => (
-                <Card key={order.id}>
-                  <CardContent className="p-5">
-                    <div className="flex items-start justify-between gap-3 mb-4">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold">{order.kitchen}</h3>
-                          <Badge
-                            className={
-                              order.status === "delivered"
-                                ? "bg-emerald-100 text-emerald-700 border-emerald-200 text-xs"
-                                : "bg-yellow-100 text-yellow-700 border-yellow-200 text-xs"
-                            }
-                          >
-                            {order.status}
-                          </Badge>
+              orders.map((order) => {
+                const kitchenName = order.kitchen?.name || order.kitchen_name || "Kitchen";
+                const kitchenId = order.kitchen?.id || order.kitchen_id;
+                const statusLabel = order.status || "placed";
+                const isCompleted = ["completed", "picked_up"].includes(statusLabel);
+                return (
+                  <Card key={order.id}>
+                    <CardContent className="p-5">
+                      <div className="flex items-start justify-between gap-3 mb-4">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold">{kitchenName}</h3>
+                            <Badge className={isCompleted ? "bg-emerald-100 text-emerald-700 border-emerald-200 text-xs" : "bg-yellow-100 text-yellow-700 border-yellow-200 text-xs"}>
+                              {statusLabel}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Order #{order.order_number || order.id} • {order.created_at ? new Date(order.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : ""}
+                          </p>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          Order #{order.id} • {new Date(order.date).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
-                        </p>
+                        <span className="font-bold text-lg">${Number(order.total_amount ?? order.total ?? 0).toFixed(2)}</span>
                       </div>
-                      <span className="font-bold text-lg">${order.total.toFixed(2)}</span>
-                    </div>
 
-                    <div className="space-y-2 mb-4 pb-4 border-b">
-                      {order.items.map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">
-                            {item.qty}x {item.name}
-                          </span>
-                          <span className="font-medium">${(item.qty * item.price).toFixed(2)}</span>
-                        </div>
-                      ))}
-                    </div>
+                      <div className="space-y-2 mb-4 pb-4 border-b">
+                        {(order.order_items || order.items || []).map((item: any, idx: number) => (
+                          <div key={idx} className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">{item.quantity}x {item.menu_item?.name || item.name}</span>
+                            <span className="font-medium">${(Number(item.unit_price ?? item.price ?? 0) * item.quantity).toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
 
-                    {order.status === "delivered" && (
-                      <div className="space-y-3">
-                        {!order.hasReview && reviewingOrder !== order.id ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full gap-2"
-                            onClick={() => setReviewingOrder(order.id)}
-                          >
-                            <Star className="w-4 h-4" />
-                            Write a Review
-                          </Button>
-                        ) : reviewingOrder === order.id ? (
-                          <div className="space-y-3 p-4 bg-muted/30 rounded-lg">
-                            <div>
-                              <Label className="text-sm mb-2 block">Rating</Label>
+                      {isCompleted && !order.has_review && (
+                        <div className="space-y-3">
+                          {reviewingOrder !== order.id ? (
+                            <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => setReviewingOrder(order.id)}>
+                              <Star className="w-4 h-4" />
+                              Write a Review
+                            </Button>
+                          ) : (
+                            <div className="space-y-3 p-4 bg-muted/30 rounded-lg">
+                              <div>
+                                <Label className="text-sm mb-2 block">Rating</Label>
+                                <div className="flex gap-2">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <button key={star} onClick={() => setReviewRating(star)} className="transition-transform hover:scale-110">
+                                      <Star className={`w-6 h-6 ${star <= reviewRating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"}`} />
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                              <div>
+                                <Label className="text-sm">Your Review</Label>
+                                <Input placeholder="Share your experience..." value={reviewText} onChange={(e) => setReviewText(e.target.value)} className="mt-1.5 h-9 text-sm" />
+                              </div>
                               <div className="flex gap-2">
-                                {[1, 2, 3, 4, 5].map((star) => (
-                                  <button
-                                    key={star}
-                                    onClick={() => setReviewRating(star)}
-                                    className="transition-transform hover:scale-110"
-                                  >
-                                    <Star
-                                      className={`w-6 h-6 ${
-                                        star <= reviewRating
-                                          ? "fill-yellow-400 text-yellow-400"
-                                          : "text-muted-foreground"
-                                      }`}
-                                    />
-                                  </button>
-                                ))}
+                                <Button size="sm" className="flex-1 gap-2 bg-gradient-to-r from-primary to-emerald-600" onClick={() => handleReviewSubmit(order.id, kitchenId)}>
+                                  <Check className="w-4 h-4" />
+                                  Submit Review
+                                </Button>
+                                <Button variant="outline" size="sm" onClick={() => { setReviewingOrder(null); setReviewText(""); setReviewRating(5); }}>
+                                  Cancel
+                                </Button>
                               </div>
                             </div>
-                            <div>
-                              <Label htmlFor={`review-${order.id}`} className="text-sm">Your Review</Label>
-                              <Input
-                                id={`review-${order.id}`}
-                                placeholder="Share your experience..."
-                                value={reviewText}
-                                onChange={(e) => setReviewText(e.target.value)}
-                                className="mt-1.5 h-9 text-sm"
-                              />
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                className="flex-1 gap-2 bg-gradient-to-r from-primary to-emerald-600"
-                                onClick={() => handleReviewSubmit(order.id)}
-                              >
-                                <Check className="w-4 h-4" />
-                                Submit Review
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  setReviewingOrder(null);
-                                  setReviewText("");
-                                  setReviewRating(5);
-                                }}
-                              >
-                                Cancel
-                              </Button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Check className="w-4 h-4 text-emerald-600" />
-                            Review submitted
-                          </div>
-                        )}
-                        <Link href={`/kitchens/${order.kitchenSlug}`}>
-                          <Button variant="ghost" size="sm" className="w-full">
-                            Order Again
-                          </Button>
-                        </Link>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))
+                          )}
+                        </div>
+                      )}
+                      {isCompleted && order.has_review && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Check className="w-4 h-4 text-emerald-600" />
+                          Review submitted
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })
             )}
           </div>
         )}
@@ -473,21 +451,9 @@ function AccountContent() {
               <div className="pt-4 border-t">
                 <h3 className="font-semibold mb-3">Quick Help</h3>
                 <div className="space-y-2">
-                  <Link href="/faq">
-                    <Button variant="outline" size="sm" className="w-full justify-start">
-                      View FAQ
-                    </Button>
-                  </Link>
-                  <Link href="/how-it-works">
-                    <Button variant="outline" size="sm" className="w-full justify-start">
-                      How It Works
-                    </Button>
-                  </Link>
-                  <Link href="/contact">
-                    <Button variant="outline" size="sm" className="w-full justify-start">
-                      Send Message
-                    </Button>
-                  </Link>
+                  <Link href="/faq"><Button variant="outline" size="sm" className="w-full justify-start">View FAQ</Button></Link>
+                  <Link href="/how-it-works"><Button variant="outline" size="sm" className="w-full justify-start">How It Works</Button></Link>
+                  <Link href="/contact"><Button variant="outline" size="sm" className="w-full justify-start">Send Message</Button></Link>
                 </div>
               </div>
             </CardContent>
@@ -496,14 +462,14 @@ function AccountContent() {
 
         {activeTab === "wishlist" && (
           <div className="space-y-4">
-            {wishlistedKitchens.length === 0 ? (
+            {wishlistLoading ? (
+              <div className="text-center py-8 text-muted-foreground">Loading wishlist...</div>
+            ) : wishlist.length === 0 ? (
               <Card>
                 <CardContent className="p-12 text-center">
                   <Heart className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
                   <h3 className="font-semibold mb-2">No favorites yet</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Save your favorite kitchens for quick access
-                  </p>
+                  <p className="text-sm text-muted-foreground mb-4">Save your favorite kitchens for quick access</p>
                   <Link href="/kitchens">
                     <Button size="sm" className="gap-2">
                       <ChefHat className="w-4 h-4" />
@@ -513,7 +479,7 @@ function AccountContent() {
                 </CardContent>
               </Card>
             ) : (
-              wishlistedKitchens.map((kitchen) => (
+              wishlist.map((kitchen) => (
                 <Card key={kitchen.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-5">
                     <div className="flex gap-4">
@@ -524,48 +490,31 @@ function AccountContent() {
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <div className="min-w-0">
                             <h3 className="font-semibold truncate">{kitchen.name}</h3>
-                            <p className="text-xs text-muted-foreground mt-0.5">{kitchen.tagline}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">{kitchen.tagline || kitchen.description}</p>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 shrink-0"
-                            onClick={() => toggleWishlist(kitchen.id)}
-                          >
+                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => handleRemoveWishlist(kitchen.id)}>
                             <Heart className="w-4 h-4 fill-red-500 text-red-500" />
                           </Button>
                         </div>
                         <div className="flex items-center gap-3 mb-3">
                           <span className="flex items-center gap-1 bg-yellow-50 text-yellow-700 px-2 py-1 rounded-full text-xs font-medium">
                             <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                            {kitchen.rating}
+                            {Number(kitchen.rating || 0).toFixed(1)}
                           </span>
-                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <MapPin className="w-3 h-3" />
-                            {kitchen.neighborhood}
-                          </span>
-                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Clock className="w-3 h-3" />
-                            {kitchen.preparationTime}
-                          </span>
+                          {kitchen.neighborhood && (
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <MapPin className="w-3 h-3" />
+                              {kitchen.neighborhood}
+                            </span>
+                          )}
+                          {kitchen.preparation_time && (
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Clock className="w-3 h-3" />
+                              {kitchen.preparation_time} min
+                            </span>
+                          )}
                         </div>
-                        <div className="flex items-center gap-2 mb-3">
-                          {kitchen.cuisineTypes.slice(0, 3).map((cuisine) => (
-                            <Badge key={cuisine} variant="secondary" className="text-xs">
-                              {cuisine}
-                            </Badge>
-                          ))}
-                          <Badge
-                            className={
-                              kitchen.acceptingOrders
-                                ? "bg-emerald-100 text-emerald-700 border-emerald-200 text-xs"
-                                : "bg-red-100 text-red-700 border-red-200 text-xs"
-                            }
-                          >
-                            {kitchen.acceptingOrders ? "Open Now" : "Closed"}
-                          </Badge>
-                        </div>
-                        <Link href={`/kitchens/${kitchen.slug}`}>
+                        <Link href={`/kitchens/${kitchen.id}`}>
                           <Button size="sm" className="w-full gap-2 bg-gradient-to-r from-primary to-emerald-600">
                             View Menu
                           </Button>

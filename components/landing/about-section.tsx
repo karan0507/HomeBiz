@@ -56,7 +56,7 @@ const values = [
 
 export function AboutSection() {
   return (
-    <section className="relative py-20 md:py-28 overflow-hidden">
+    <section className="relative py-20 md:py-28 overflow-hidden -mx-2 md:-mx-4 lg:-mx-8">
       {/* Dark Background with Gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-zinc-900 via-zinc-900 to-black" />
 

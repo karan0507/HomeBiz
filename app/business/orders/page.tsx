@@ -11,9 +11,11 @@ import { EmptyOrders } from "@/components/shared/empty-state"
 import { PageLoader } from "@/components/shared/table-loader"
 import { Pagination } from "@/components/shared/pagination"
 import { Badge } from "@/components/ui/badge"
+import { useAuth } from "@/lib/auth-context"
+import { fetchAPI } from "@/lib/services/api.client"
+import { showError } from "@/lib/notifications"
 import { toast } from "sonner"
 
-// Order status type
 type OrderStatus = "placed" | "confirmed" | "preparing" | "ready" | "picked_up" | "completed" | "cancelled"
 
 interface OrderItem {
@@ -40,85 +42,6 @@ interface Order {
   createdAt: string
 }
 
-// Mock orders with 3 pending orders as requested
-const mockOrders: Order[] = [
-  {
-    id: "ord-1",
-    orderNumber: "ORD-20240206-001",
-    customerName: "Sarah Johnson",
-    customerPhone: "+1 (416) 555-0123",
-    items: [
-      { name: "Butter Chicken", quantity: 2, price: 14.99 },
-      { name: "Garlic Naan (3pcs)", quantity: 1, price: 4.99 },
-      { name: "Mango Lassi", quantity: 2, price: 3.99 },
-    ],
-    subtotal: 42.95,
-    tax: 5.58,
-    total: 48.53,
-    status: "placed",
-    paymentMethod: "etransfer",
-    paymentStatus: "paid",
-    pickupTime: "Today, 6:30 PM",
-    createdAt: "10 minutes ago",
-  },
-  {
-    id: "ord-2",
-    orderNumber: "ORD-20240206-002",
-    customerName: "Michael Chen",
-    customerPhone: "+1 (647) 555-0456",
-    items: [
-      { name: "Vegetable Biryani", quantity: 1, price: 12.99 },
-      { name: "Samosa (4pcs)", quantity: 1, price: 6.99, specialInstructions: "Extra chutney please" },
-    ],
-    subtotal: 19.98,
-    tax: 2.60,
-    total: 22.58,
-    status: "placed",
-    paymentMethod: "cash",
-    paymentStatus: "pending",
-    pickupTime: "Today, 7:00 PM",
-    specialInstructions: "Please pack separately",
-    createdAt: "25 minutes ago",
-  },
-  {
-    id: "ord-3",
-    orderNumber: "ORD-20240206-003",
-    customerName: "Emily Davis",
-    customerPhone: "+1 (416) 555-0789",
-    items: [
-      { name: "Dal Makhani", quantity: 1, price: 11.99 },
-      { name: "Paneer Tikka", quantity: 1, price: 13.99 },
-      { name: "Basmati Rice", quantity: 2, price: 3.99 },
-    ],
-    subtotal: 33.96,
-    tax: 4.41,
-    total: 38.37,
-    status: "placed",
-    paymentMethod: "etransfer",
-    paymentStatus: "paid",
-    pickupTime: "Today, 7:30 PM",
-    createdAt: "40 minutes ago",
-  },
-  {
-    id: "ord-4",
-    orderNumber: "ORD-20240205-012",
-    customerName: "James Wilson",
-    customerPhone: "+1 (905) 555-0321",
-    items: [
-      { name: "Chicken Tikka Masala", quantity: 1, price: 15.99 },
-    ],
-    subtotal: 15.99,
-    tax: 2.08,
-    total: 18.07,
-    status: "completed",
-    paymentMethod: "cash",
-    paymentStatus: "paid",
-    pickupTime: "Yesterday, 6:00 PM",
-    createdAt: "Yesterday",
-  },
-]
-
-// Status flow for order actions
 const statusFlow: Record<OrderStatus, { next: OrderStatus | null; action: string }> = {
   placed: { next: "confirmed", action: "Confirm Order" },
   confirmed: { next: "preparing", action: "Start Preparing" },
@@ -129,7 +52,41 @@ const statusFlow: Record<OrderStatus, { next: OrderStatus | null; action: string
   cancelled: { next: null, action: "" },
 }
 
+function transformOrder(o: any): Order {
+  const customer = o.customer || o.profile || {}
+  const fullName = customer.name
+    || customer.full_name
+    || `${customer.first_name || ""} ${customer.last_name || ""}`.trim()
+    || "Customer"
+  return {
+    id: o.id,
+    orderNumber: o.order_number || `ORD-${String(o.id).slice(-8).toUpperCase()}`,
+    customerName: fullName,
+    customerPhone: customer.phone || "",
+    items: (o.order_items || o.items || []).map((item: any) => ({
+      name: item.menu_item?.name || item.name || "",
+      quantity: item.quantity,
+      price: Number(item.unit_price ?? item.price ?? 0),
+      specialInstructions: item.notes || item.special_instructions,
+    })),
+    subtotal: Number(o.subtotal ?? 0),
+    tax: Number(o.tax ?? 0),
+    total: Number(o.total_amount ?? o.total ?? 0),
+    status: o.status as OrderStatus,
+    paymentMethod: o.payment_method || "cash",
+    paymentStatus: o.payment_status || "pending",
+    pickupTime: o.pickup_time
+      ? new Date(o.pickup_time).toLocaleString("en-CA", { dateStyle: "medium", timeStyle: "short" })
+      : "",
+    specialInstructions: o.notes || o.special_instructions,
+    createdAt: o.created_at
+      ? new Date(o.created_at).toLocaleString("en-CA", { dateStyle: "short", timeStyle: "short" })
+      : "",
+  }
+}
+
 export default function BusinessOrdersPage() {
+  const { user } = useAuth()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all")
@@ -137,51 +94,69 @@ export default function BusinessOrdersPage() {
   const itemsPerPage = 10
 
   useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => {
-      setOrders(mockOrders)
-      setLoading(false)
-    }, 800)
-    return () => clearTimeout(timer)
-  }, [])
+    if (!user) return
+    const controller = new AbortController()
 
-  const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
-    setOrders(prev =>
-      prev.map(order =>
-        order.id === orderId ? { ...order, status: newStatus } : order
-      )
-    )
-    toast.success(`Order status updated to ${newStatus.replace("_", " ")}`)
+    fetchAPI<any[]>("/business/orders", { signal: controller.signal })
+      .then(data => {
+        setOrders((Array.isArray(data) ? data : []).map(transformOrder))
+      })
+      .catch(err => {
+        if (err.name === 'AbortError') return
+        showError(err)
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false)
+      })
+
+    return () => {
+      controller.abort()
+    }
+  }, [user?.id])
+
+  const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
+    // Optimistic update
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o))
+    try {
+      await fetchAPI(`/orders/${orderId}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: newStatus }),
+      })
+      toast.success(`Order ${newStatus.replace("_", " ")}`)
+    } catch (err) {
+      // Revert on failure
+      showError(err)
+      fetchAPI<any[]>("/business/orders")
+        .then(data => setOrders((Array.isArray(data) ? data : []).map(transformOrder)))
+        .catch(() => {})
+    }
   }
 
-  const handleReject = (orderId: string) => {
-    setOrders(prev =>
-      prev.map(order =>
-        order.id === orderId ? { ...order, status: "cancelled" } : order
-      )
-    )
-    toast.error("Order has been rejected")
+  const handleReject = async (orderId: string) => {
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: "cancelled" } : o))
+    try {
+      await fetchAPI(`/orders/${orderId}/reject`, { method: "PUT" })
+      toast.error("Order rejected")
+    } catch (err) {
+      showError(err)
+      fetchAPI<any[]>("/business/orders")
+        .then(data => setOrders((Array.isArray(data) ? data : []).map(transformOrder)))
+        .catch(() => {})
+    }
   }
 
-  // Filter orders
   const filteredOrders = orders.filter(order => {
-    if (filter === "active") {
-      return !["completed", "cancelled", "picked_up"].includes(order.status)
-    }
-    if (filter === "completed") {
-      return ["completed", "cancelled", "picked_up"].includes(order.status)
-    }
+    if (filter === "active") return !["completed", "cancelled", "picked_up"].includes(order.status)
+    if (filter === "completed") return ["completed", "cancelled", "picked_up"].includes(order.status)
     return true
   })
 
-  // Pagination
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage)
   const paginatedOrders = filteredOrders.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   )
 
-  // Stats
   const pendingCount = orders.filter(o => o.status === "placed").length
   const preparingCount = orders.filter(o => o.status === "preparing" || o.status === "confirmed").length
   const readyCount = orders.filter(o => o.status === "ready").length
@@ -190,13 +165,11 @@ export default function BusinessOrdersPage() {
     <ProtectedRoute requireBusiness>
       <BusinessLayout>
         <div className="space-y-6">
-          {/* Header */}
           <div>
             <h1 className="text-2xl md:text-3xl font-bold">Orders</h1>
             <p className="text-muted-foreground mt-1">Manage incoming orders</p>
           </div>
 
-          {/* Stats Cards */}
           <div className="grid grid-cols-3 gap-3 md:gap-4">
             <Card className="bg-blue-50 border-blue-200">
               <CardContent className="p-3 md:p-4">
@@ -241,7 +214,6 @@ export default function BusinessOrdersPage() {
             </Card>
           </div>
 
-          {/* Filter Tabs */}
           <div className="flex gap-2 border-b pb-2">
             {[
               { key: "all", label: "All Orders" },
@@ -252,17 +224,13 @@ export default function BusinessOrdersPage() {
                 key={tab.key}
                 variant={filter === tab.key ? "default" : "ghost"}
                 size="sm"
-                onClick={() => {
-                  setFilter(tab.key as typeof filter)
-                  setCurrentPage(1)
-                }}
+                onClick={() => { setFilter(tab.key as typeof filter); setCurrentPage(1) }}
               >
                 {tab.label}
               </Button>
             ))}
           </div>
 
-          {/* Orders List */}
           {loading ? (
             <PageLoader />
           ) : paginatedOrders.length === 0 ? (
@@ -294,22 +262,24 @@ export default function BusinessOrdersPage() {
                     </div>
                   </CardHeader>
                   <CardContent className="pt-4">
-                    {/* Customer Info */}
                     <div className="flex items-center justify-between mb-4 pb-4 border-b">
                       <div>
                         <p className="font-medium">{order.customerName}</p>
-                        <p className="text-sm text-muted-foreground flex items-center gap-1">
-                          <Phone className="w-3 h-3" />
-                          {order.customerPhone}
-                        </p>
+                        {order.customerPhone && (
+                          <p className="text-sm text-muted-foreground flex items-center gap-1">
+                            <Phone className="w-3 h-3" />
+                            {order.customerPhone}
+                          </p>
+                        )}
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm text-muted-foreground">Pickup Time</p>
-                        <p className="font-medium text-primary">{order.pickupTime}</p>
-                      </div>
+                      {order.pickupTime && (
+                        <div className="text-right">
+                          <p className="text-sm text-muted-foreground">Pickup Time</p>
+                          <p className="font-medium text-primary">{order.pickupTime}</p>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Order Items */}
                     <div className="space-y-2 mb-4">
                       {order.items.map((item, idx) => (
                         <div key={idx} className="flex justify-between text-sm">
@@ -326,7 +296,6 @@ export default function BusinessOrdersPage() {
                       ))}
                     </div>
 
-                    {/* Special Instructions */}
                     {order.specialInstructions && (
                       <div className="bg-amber-50 p-3 rounded-lg mb-4 text-sm">
                         <p className="font-medium text-amber-800">Special Instructions:</p>
@@ -334,7 +303,6 @@ export default function BusinessOrdersPage() {
                       </div>
                     )}
 
-                    {/* Total */}
                     <div className="flex justify-between items-center pt-3 border-t">
                       <div className="text-sm text-muted-foreground">
                         Subtotal: ${order.subtotal.toFixed(2)} + Tax: ${order.tax.toFixed(2)}
@@ -342,7 +310,6 @@ export default function BusinessOrdersPage() {
                       <div className="text-lg font-bold">${order.total.toFixed(2)}</div>
                     </div>
 
-                    {/* Actions */}
                     {order.status !== "completed" && order.status !== "cancelled" && (
                       <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t">
                         {order.status === "placed" && (
@@ -377,7 +344,6 @@ export default function BusinessOrdersPage() {
             </div>
           )}
 
-          {/* Pagination */}
           {!loading && filteredOrders.length > 0 && (
             <Pagination
               currentPage={currentPage}
