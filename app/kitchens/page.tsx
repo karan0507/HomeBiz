@@ -563,7 +563,7 @@ function KitchensContent() {
                             </span>
                             <span className="flex items-center gap-1 text-muted-foreground">
                               <Clock className="w-3.5 h-3.5" />
-                              {kitchen.preparationTime}
+                              {kitchen.preparation_time || kitchen.preparationTime}
                             </span>
                           </div>
 
@@ -580,7 +580,7 @@ function KitchensContent() {
                                   : "bg-red-100 text-red-700"
                               }`}
                             >
-                              {kitchen.acceptingOrders ? "Open Now" : "Closed"}
+                              {kitchen.accepting_orders ? "Open Now" : "Closed"}
                             </Badge>
                           </div>
                         </div>

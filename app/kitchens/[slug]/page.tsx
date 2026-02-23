@@ -191,12 +191,12 @@ export default function KitchenDetailPage() {
                       )}
                       <Badge
                         className={
-                          kitchen.acceptingOrders
+                          kitchen.accepting_orders
                             ? "bg-emerald-100 text-emerald-700 border-emerald-200"
                             : "bg-red-100 text-red-700 border-red-200"
                         }
                       >
-                        {kitchen.acceptingOrders ? "Open Now" : "Closed"}
+                        {kitchen.accepting_orders ? "Open Now" : "Closed"}
                       </Badge>
                     </div>
                     <p className="text-muted-foreground mt-1">{kitchen.tagline}</p>
@@ -227,7 +227,7 @@ export default function KitchenDetailPage() {
                   </span>
                   <span className="flex items-center gap-1.5 text-muted-foreground">
                     <Clock className="w-4 h-4" />
-                    {kitchen.preparationTime}
+                    {kitchen.preparation_time || kitchen.preparationTime}
                   </span>
                   <span className="flex items-center gap-1.5 text-muted-foreground">
                     <Phone className="w-4 h-4" />
@@ -236,12 +236,12 @@ export default function KitchenDetailPage() {
                 </div>
 
                 <div className="flex gap-2 mt-4 flex-wrap">
-                  {kitchen.cuisineTypes.map((cuisine: string) => (
+                  {kitchen.cuisineTypes?.map((cuisine: string) => (
                     <Badge key={cuisine} variant="secondary" className="text-xs">
                       {cuisine}
                     </Badge>
                   ))}
-                  {kitchen.dietaryOptions.slice(0, 3).map((opt: string) => (
+                  {kitchen.dietaryOptions?.slice(0, 3).map((opt: string) => (
                     <Badge key={opt} variant="outline" className="text-xs">
                       {opt}
                     </Badge>
@@ -250,7 +250,7 @@ export default function KitchenDetailPage() {
 
                 <div className="flex items-center gap-2 mt-4 pt-4 border-t text-sm text-muted-foreground">
                   <Utensils className="w-4 h-4" />
-                  <span>Minimum order: <strong className="text-foreground">${kitchen.minimumOrder}</strong></span>
+                  <span>Minimum order: <strong className="text-foreground">${kitchen.minimum_order || kitchen.minimumOrder || 0}</strong></span>
                 </div>
               </CardContent>
             </Card>
