@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
 import { Star, MessageSquare } from "lucide-react"
-import { PageLoader } from "@/components/shared/table-loader"
+import { SkeletonPageLoader } from "@/components/shared/skeleton-cards"
 import { EmptyReviews } from "@/components/shared/empty-state"
 import { Pagination } from "@/components/shared/pagination"
 import { useAuth } from "@/lib/auth-context"
@@ -129,7 +129,7 @@ export default function BusinessReviewsPage() {
           </div>
 
           {loading ? (
-            <PageLoader />
+            <SkeletonPageLoader />
           ) : reviews.length === 0 ? (
             <Card>
               <CardContent className="p-0">

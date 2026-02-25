@@ -32,7 +32,19 @@ import type { Kitchen } from "@/lib/services/kitchens.service";
 import { useCart } from "@/lib/cart-context";
 
 export function FeaturedKitchens() {
-  const { kitchens, loading } = useFeaturedKitchens(6);
+  const { kitchens, loading, error } = useFeaturedKitchens(6);
+
+  if (error && !loading) {
+    return (
+      <section className="py-16 md:py-24">
+        <div className="container mx-auto px-4 text-center">
+          <Utensils className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+          <p className="text-muted-foreground text-lg font-medium">Unable to load kitchens right now.</p>
+          <p className="text-sm text-muted-foreground mt-1">Please check back soon or <Link href="/kitchens" className="text-primary underline">browse all kitchens</Link>.</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-16 md:py-24">

@@ -18,7 +18,7 @@ import Image from "next/image"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { CardLoader } from "@/components/shared/table-loader"
+import { SkeletonGrid } from "@/components/shared/skeleton-cards"
 import { EmptyProducts } from "@/components/shared/empty-state"
 import { Pagination } from "@/components/shared/pagination"
 import { toast } from "sonner"
@@ -251,10 +251,9 @@ export default function BusinessProductsPage() {
 
     setIsSubmitting(true)
     try {
-      const created = await fetchAPI<any>(`/menu-items`, {
+      const created = await fetchAPI<any>(`/kitchens/${kitchenId}/menu-items`, {
         method: "POST",
         body: JSON.stringify({
-          kitchen_id: kitchenId,
           name: formData.name,
           description: formData.description,
           price: parseFloat(formData.price),
@@ -522,8 +521,8 @@ export default function BusinessProductsPage() {
 
           {/* Products Grid */}
           {loading ? (
-            <CardLoader count={6} />
-          ) : paginatedProducts.length === 0 ? (
+            <SkeletonGrid count={6} />
+          ) : filteredProducts.length === 0 ? (
             <Card>
               <CardContent className="p-0">
                 <EmptyProducts onAction={() => setIsAddDialogOpen(true)} />

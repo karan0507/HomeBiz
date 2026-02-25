@@ -34,20 +34,16 @@ export class APIError extends Error {
 }
 
 export async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  // Filter out Next.js RSC internal calls
-  if (endpoint.includes('_rsc=')) {
-    console.warn('[API Client] Blocked internal RSC call:', endpoint);
-    throw new APIError('Internal call blocked', 0, 'INTERNAL');
+  const method = options?.method || 'GET';
+
+  // Only deduplicate GET requests to avoid side-effect issues with POST/PATCH
+  let cacheKey = '';
+  if (method === 'GET') {
+    cacheKey = `${method}:${endpoint}`;
   }
 
-  // Create cache key from endpoint + method + body (if POST/PATCH)
-  const method = options?.method || 'GET';
-  const bodyKey = options?.body ? `:${(options.body as string).length}` : '';
-  const cacheKey = `${method}:${endpoint}${bodyKey}`;
-
   // Deduplicate: return existing in-flight request
-  // Only deduplicate GET and strictly identical POST/PATCH if body is stable
-  if (inFlightRequests.has(cacheKey)) {
+  if (cacheKey && inFlightRequests.has(cacheKey)) {
     return inFlightRequests.get(cacheKey)!;
   }
 

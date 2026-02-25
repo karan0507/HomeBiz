@@ -1,7 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
-import { fetchAPI } from "./services/api.client";
+import { fetchAPI, APIError } from "./services/api.client";
+import { showError } from "./notifications";
 import { useAuth } from "./auth-context";
 import {
   Dialog,
@@ -88,21 +89,26 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setIsHydrated(true);
   }, []);
 
-  // Fetch wishlist from server on login
+  // Fetch wishlist from server on login — guard against StrictMode double-invoke
+  const wishlistUserId = useRef<string | null>(null);
   useEffect(() => {
-    if (user) {
-      fetchAPI<any[]>('/wishlist')
-        .then(data => {
-          setWishlist(data.map(item => ({ 
-            kitchenId: item.kitchen_id, 
-            entryId: item.id 
-          })));
-        })
-        .catch(err => console.error("[Wishlist] Failed to fetch:", err));
-    } else {
+    const uid = user?.id ?? null;
+    if (uid === wishlistUserId.current) return; // same user, skip
+    wishlistUserId.current = uid;
+    if (!uid) {
       setWishlist([]);
+      return;
     }
-  }, [user]);
+    fetchAPI<any[]>('/wishlist')
+      .then(data => {
+        setWishlist(data.map(item => ({
+          kitchenId: item.kitchen_id,
+          entryId: item.id
+        })));
+      })
+      .catch(err => console.error('[Wishlist] Failed to fetch:', err));
+  }, [user?.id]); // ← ONLY re-run when user ID changes, not the object reference
+
 
   // Save to localStorage on change
   useEffect(() => {
@@ -179,7 +185,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         await fetchAPI(`/wishlist/${existing.entryId}`, { method: "DELETE" });
         setWishlist(prev => prev.filter(w => w.kitchenId !== kitchenId));
       } catch (err) {
-        console.error("[Wishlist] Failed to remove:", err);
+        showError(err);
       }
     } else {
       try {
@@ -189,7 +195,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         });
         setWishlist(prev => [...prev, { kitchenId, entryId: created.id }]);
       } catch (err) {
-        console.error("[Wishlist] Failed to add:", err);
+        showError(err);
       }
     }
   };

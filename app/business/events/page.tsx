@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Plus, Calendar, Clock, MapPin, MoreVertical } from "lucide-react"
 import Image from "next/image"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { CardLoader } from "@/components/shared/table-loader"
+import { SkeletonGrid } from "@/components/shared/skeleton-cards"
 import { EmptyEvents } from "@/components/shared/empty-state"
 import { Pagination } from "@/components/shared/pagination"
 import { toast } from "sonner"
@@ -81,7 +81,7 @@ export default function BusinessEventsPage() {
 
           {/* Events Grid */}
           {loading ? (
-            <CardLoader count={4} />
+            <SkeletonGrid count={3} />
           ) : events.length === 0 ? (
             <Card>
               <CardContent className="p-0">

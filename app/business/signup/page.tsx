@@ -184,29 +184,14 @@ export default function BusinessSignupPage() {
       if (!validateStep1()) return;
       setIsLoading(true);
       try {
-        // Strict check: only call check-exists once if possible,
-        // but backend doc says OR. We call both in parallel.
-        const [emailCheck, phoneCheck] = await Promise.all([
-          fetchAPI<{ exists: boolean }>("/auth/check-exists", {
-            method: "POST",
-            body: JSON.stringify({ email: formData.email }),
-          }),
-          fetchAPI<{ exists: boolean }>("/auth/check-exists", {
-            method: "POST",
-            body: JSON.stringify({ phone: formData.phone }),
-          }),
-        ]);
+        // Check if email already exists
+        const emailCheck = await fetchAPI<{ exists: boolean }>("/auth/check-exists", {
+          method: "POST",
+          body: JSON.stringify({ email: formData.email }),
+        });
 
         if (emailCheck.exists) {
           showError(new APIError("Email already registered", 409, "CONFLICT"));
-          setIsLoading(false);
-          return;
-        }
-
-        if (phoneCheck.exists) {
-          showError(
-            new APIError("Phone number already registered", 409, "CONFLICT"),
-          );
           setIsLoading(false);
           return;
         }
@@ -310,9 +295,13 @@ export default function BusinessSignupPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/20 to-primary/5 p-4">
       <Card className="w-full max-w-lg">
         <CardHeader className="space-y-3 text-center">
-          <div className="mx-auto w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-emerald-600 flex items-center justify-center shadow-lg">
-            <ChefHat className="h-7 w-7 text-white" />
-          </div>
+            <Link href="/" className="inline-block">
+              <img
+                src="/images/logo.png"
+                alt="HomeBiz"
+                className="w-12 h-12 mx-auto object-contain"
+              />
+            </Link>
           <CardTitle className="text-2xl font-bold">
             Become a Home Chef
           </CardTitle>
@@ -414,10 +403,7 @@ export default function BusinessSignupPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">
-                    Phone Number
-                    <Req />
-                  </Label>
+                  <Label htmlFor="phone">Phone Number<Req /></Label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -429,6 +415,7 @@ export default function BusinessSignupPage() {
                         setFormData({ ...formData, phone: e.target.value })
                       }
                       className="pl-9"
+                      required
                     />
                   </div>
                 </div>

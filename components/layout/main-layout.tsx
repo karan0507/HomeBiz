@@ -20,6 +20,7 @@ import {
   Twitter,
   Facebook,
   Utensils,
+  ChevronUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,8 +42,10 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  const [showMobileFooter, setShowMobileFooter] = useState(false);
   const { cartCount, wishlist } = useCart();
   const { user, logout, isAuthenticated } = useAuth();
+  const isHomepage = pathname === "/";
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
@@ -88,14 +91,15 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
         >
           <div className="container mx-auto px-4 h-14 flex items-center justify-between">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2">
-              <div className="flex items-center justify-center w-12 h-12 rounded-lg overflow-hidden bg-white p-1">
-                <img
-                  src="/images/logo.png"
-                  alt="HomeBiz Logo"
-                  className="w-full h-full object-contain"
-                />
-              </div>
+            <Link href="/" className="flex items-center gap-2 group">
+              <img
+                src="/images/logo.png"
+                alt="HomeBiz"
+                className="w-9 h-9 object-contain"
+              />
+              <span className="font-bold text-lg md:text-xl text-foreground group-hover:text-primary transition-colors">
+                HomeBiz
+              </span>
             </Link>
 
             {/* Desktop Nav */}
@@ -338,10 +342,132 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
         <div className={cn("px-2 md:px-4 lg:px-8", fullWidth && "px-0 max-w-none w-full")}>{children}</div>
       </main>
 
+      {/* Mobile Footer (expandable on homepage) */}
+      {!hideNav && isHomepage && (
+        <div
+          className={cn(
+            "fixed left-0 right-0 z-40 md:hidden bg-gradient-to-b from-zinc-900 to-black text-white transition-all duration-300 ease-in-out overflow-hidden",
+            showMobileFooter ? "bottom-14 max-h-[70vh] opacity-100" : "bottom-0 max-h-0 opacity-0"
+          )}
+        >
+          <div className="overflow-y-auto max-h-[70vh] pb-4 scrollbar-thin">
+            <div className="px-4 py-6 space-y-6">
+              {/* Brand */}
+              <div>
+                <Link href="/" className="flex items-center gap-2 mb-4">
+                  <img src="/images/logo.png" alt="HomeBiz" className="w-8 h-8 object-contain" />
+                  <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-emerald-600">
+                    HomeBiz
+                  </span>
+                </Link>
+                <p className="text-zinc-400 text-xs leading-relaxed">
+                  Connecting Toronto with authentic home-cooked meals from talented neighbourhood chefs.
+                </p>
+              </div>
+
+              {/* Quick Links */}
+              <div>
+                <h4 className="font-semibold text-sm mb-3">Explore</h4>
+                <ul className="space-y-2">
+                  {[
+                    { href: "/kitchens", label: "Browse Kitchens" },
+                    { href: "/how-it-works", label: "How It Works" },
+                    { href: "/pricing", label: "Pricing" },
+                  ].map((link) => (
+                    <li key={link.label}>
+                      <Link
+                        href={link.href}
+                        className="text-zinc-400 hover:text-white transition-colors text-xs block py-1"
+                        onClick={() => setShowMobileFooter(false)}
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* For Chefs */}
+              <div>
+                <h4 className="font-semibold text-sm mb-3">For Chefs</h4>
+                <ul className="space-y-2">
+                  {[
+                    { href: "/business/signup", label: "Become a Chef" },
+                    { href: "/resources", label: "Chef Resources" },
+                    { href: "/success-stories", label: "Success Stories" },
+                    { href: "/faq", label: "FAQ" },
+                  ].map((link) => (
+                    <li key={link.label}>
+                      <Link
+                        href={link.href}
+                        className="text-zinc-400 hover:text-white transition-colors text-xs block py-1"
+                        onClick={() => setShowMobileFooter(false)}
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Contact */}
+              <div>
+                <h4 className="font-semibold text-sm mb-3">Contact</h4>
+                <ul className="space-y-3">
+                  <li className="flex items-center gap-2 text-zinc-400 text-xs">
+                    <Mail className="w-3.5 h-3.5" />
+                    <span>hello@homebiz.ca</span>
+                  </li>
+                  <li className="flex items-center gap-2 text-zinc-400 text-xs">
+                    <Phone className="w-3.5 h-3.5" />
+                    <span>416-555-HOME</span>
+                  </li>
+                  <li className="flex items-center gap-2 text-zinc-400 text-xs">
+                    <MapPin className="w-3.5 h-3.5" />
+                    <span>Toronto, Ontario</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Social */}
+              <div className="flex gap-3">
+                <a href="#" className="w-9 h-9 rounded-xl bg-white/5 hover:bg-primary/20 flex items-center justify-center transition-colors">
+                  <Instagram className="w-4 h-4" />
+                </a>
+                <a href="#" className="w-9 h-9 rounded-xl bg-white/5 hover:bg-primary/20 flex items-center justify-center transition-colors">
+                  <Twitter className="w-4 h-4" />
+                </a>
+                <a href="#" className="w-9 h-9 rounded-xl bg-white/5 hover:bg-primary/20 flex items-center justify-center transition-colors">
+                  <Facebook className="w-4 h-4" />
+                </a>
+              </div>
+
+              {/* Legal */}
+              <div className="border-t border-white/10 pt-4">
+                <div className="flex items-center gap-4 text-[10px] text-zinc-500">
+                  <Link href="/privacy" className="hover:text-white transition-colors" onClick={() => setShowMobileFooter(false)}>
+                    Privacy
+                  </Link>
+                  <Link href="/terms" className="hover:text-white transition-colors" onClick={() => setShowMobileFooter(false)}>
+                    Terms
+                  </Link>
+                  <Link href="/contact" className="hover:text-white transition-colors" onClick={() => setShowMobileFooter(false)}>
+                    Contact
+                  </Link>
+                </div>
+                <p className="text-zinc-500 text-[10px] mt-2">
+                  © {new Date().getFullYear()} HomeBiz Toronto
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mobile Bottom Navigation */}
       {!hideNav && (
         <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background/95 backdrop-blur-md border-t safe-area-pb">
-          <div className="grid grid-cols-4 h-14">
+          <div className={cn("grid h-14", isHomepage ? "grid-cols-5" : "grid-cols-4")}>
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -369,6 +495,28 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
                 )}
               </Link>
             ))}
+
+            {/* "More" button - only on homepage */}
+            {isHomepage && (
+              <button
+                onClick={() => setShowMobileFooter(!showMobileFooter)}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-0.5 transition-colors",
+                  showMobileFooter ? "text-primary" : "text-muted-foreground"
+                )}
+              >
+                <div className="flex items-center justify-center w-6 h-6">
+                  {showMobileFooter ? (
+                    <ChevronUp className="w-5 h-5" />
+                  ) : (
+                    <Menu className="w-5 h-5" />
+                  )}
+                </div>
+                <span className="text-[10px] font-medium">
+                  {showMobileFooter ? "Less" : "More"}
+                </span>
+              </button>
+            )}
           </div>
         </nav>
       )}
@@ -387,10 +535,12 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
               {/* Brand Column */}
               <div className="lg:col-span-1">
-                <Link href="/" className="flex items-center gap-3 mb-6">
-                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary via-primary to-emerald-600 flex items-center justify-center shadow-lg shadow-primary/25">
-                    <ChefHat className="w-6 h-6 text-white" />
-                  </div>
+                <Link href="/" className="flex items-center gap-3 mb-6 group">
+                  <img
+                    src="/images/logo.png"
+                    alt="HomeBiz"
+                    className="w-6 h-6 object-contain"
+                  />
                   <span className="font-bold text-2xl">HomeBiz</span>
                 </Link>
                 <p className="text-zinc-400 text-sm leading-relaxed mb-6">
@@ -425,11 +575,11 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
                 <ul className="space-y-3">
                   {[
                     { href: "/kitchens", label: "Browse Kitchens" },
-                    { href: "/kitchens", label: "All Cuisines" },
+                    { href: "/kitchens?view=cuisines", label: "All Cuisines" },
                     { href: "/how-it-works", label: "How It Works" },
                     { href: "/pricing", label: "Pricing" },
                   ].map((link) => (
-                    <li key={link.href}>
+                    <li key={link.label}>
                       <Link
                         href={link.href}
                         className="text-zinc-400 hover:text-white transition-colors text-sm"
@@ -451,7 +601,7 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
                     { href: "/success-stories", label: "Success Stories" },
                     { href: "/faq", label: "FAQ" },
                   ].map((link) => (
-                    <li key={link.href}>
+                    <li key={link.label}>
                       <Link
                         href={link.href}
                         className="text-zinc-400 hover:text-white transition-colors text-sm"

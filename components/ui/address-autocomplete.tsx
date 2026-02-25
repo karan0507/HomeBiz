@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MapPin } from "lucide-react";
-import { getProvinces } from "@/lib/services/provinces.service";
+import { getCachedProvinces } from "@/lib/services/data.service";
 import type { Province } from "@/types/database";
 
 export interface Address {
@@ -39,7 +39,7 @@ export default function AddressAutocomplete({
     if (hasFetched.current) return;
     hasFetched.current = true;
 
-    getProvinces()
+    getCachedProvinces()
       .then(setProvinces)
       .catch(() => setProvinces([]))
       .finally(() => setLoadingProvinces(false));
@@ -106,11 +106,15 @@ export default function AddressAutocomplete({
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <option value="">Select Province</option>
-            {provinces.map((p) => (
-              <option key={p.code} value={p.code}>
-                {p.name}
-              </option>
-            ))}
+            {provinces.map((p, idx) => {
+              const code = String(p.code || "");
+              const name = String(p.name || code || "Unknown");
+              return (
+                <option key={`${code}-${idx}`} value={code}>
+                  {name}
+                </option>
+              );
+            })}
           </select>
         </div>
       </div>

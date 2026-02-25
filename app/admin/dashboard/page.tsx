@@ -6,6 +6,7 @@ import { AdminLayout } from "@/components/admin/admin-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { fetchAPI } from "@/lib/services/api.client"
 import { Users, Building, FolderTree, Star, TrendingUp, Activity } from "lucide-react"
+import { SkeletonStatCard, SkeletonCardContent } from "@/components/shared/skeleton-cards"
 
 interface AdminStats {
   total_users?: number
@@ -78,20 +79,24 @@ export default function AdminDashboardPage() {
 
           {/* Stats Grid */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {statCards.map((stat) => {
-              const Icon = stat.icon
-              return (
-                <Card key={stat.title}>
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
-                    <Icon className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{loading ? "..." : stat.value}</div>
-                  </CardContent>
-                </Card>
-              )
-            })}
+            {loading ? (
+              Array.from({ length: 4 }).map((_, i) => <SkeletonStatCard key={i} />)
+            ) : (
+              statCards.map((stat) => {
+                const Icon = stat.icon
+                return (
+                  <Card key={stat.title}>
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
+                      <Icon className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{stat.value}</div>
+                    </CardContent>
+                  </Card>
+                )
+              })
+            )}
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
@@ -105,7 +110,7 @@ export default function AdminDashboardPage() {
               </CardHeader>
               <CardContent>
                 {loading ? (
-                  <p className="text-sm text-muted-foreground">Loading...</p>
+                  <SkeletonCardContent rows={4} />
                 ) : recentKitchens.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No businesses yet.</p>
                 ) : (
@@ -146,7 +151,7 @@ export default function AdminDashboardPage() {
               </CardHeader>
               <CardContent>
                 {loading ? (
-                  <p className="text-sm text-muted-foreground">Loading...</p>
+                  <SkeletonCardContent rows={4} />
                 ) : recentReviews.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No reviews yet.</p>
                 ) : (

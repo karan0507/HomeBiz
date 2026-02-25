@@ -715,6 +715,20 @@ export interface Address {
   updated_at: string
 }
 
+/** Write-side payload for POST /profile/addresses and PATCH /profile/addresses/[id] */
+export interface AddressInput {
+  label: string
+  address_line1: string
+  address_line2?: string
+  city: string
+  province_code: string
+  postal_code?: string
+  country_code?: string     // default "CA"
+  latitude?: number
+  longitude?: number
+  is_default?: boolean
+}
+
 // ============================================================================
 // PUSH TOKEN
 // ============================================================================

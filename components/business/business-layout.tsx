@@ -2,14 +2,12 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { cn } from "@/lib/utils"
 import {
-  Building,
   LayoutDashboard,
   ShoppingCart,
   Package,
-  Wrench,
   DollarSign,
   ImageIcon,
   Calendar,
@@ -17,11 +15,20 @@ import {
   LogOut,
   Menu,
   X,
-  ChefHat,
   MoreHorizontal,
+  Bell,
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Breadcrumbs } from "@/components/shared/breadcrumbs"
 
 interface BusinessLayoutProps {
   children: React.ReactNode
@@ -31,7 +38,7 @@ const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/business/dashboard" },
   { icon: ShoppingCart, label: "Orders", href: "/business/orders" },
   { icon: Package, label: "Products", href: "/business/products" },
-  { icon: Wrench, label: "Services", href: "/business/services" },
+  // { icon: Wrench, label: "Services", href: "/business/services" }, // DISABLED — not production ready
   { icon: DollarSign, label: "Pricing", href: "/business/pricing" },
   { icon: ImageIcon, label: "Gallery", href: "/business/gallery" },
   { icon: Calendar, label: "Events", href: "/business/events" },
@@ -52,6 +59,7 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
 
   useEffect(() => {
     let ticking = false;
@@ -79,9 +87,19 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
   }
 
   // Check if current page is in the "More" menu
-  const isMoreActive = ["/business/services", "/business/pricing", "/business/gallery", "/business/events", "/business/reviews"].some(
+  const isMoreActive = ["/business/pricing", "/business/gallery", "/business/events", "/business/reviews"].some(
     (href) => pathname.startsWith(href)
   )
+
+  const handleLogoutClick = useCallback(() => {
+    setConfirmOpen(true)
+    setMobileMenuOpen(false)
+  }, [])
+
+  const handleLogoutConfirm = useCallback(() => {
+    setConfirmOpen(false)
+    logout()
+  }, [logout])
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-background">
@@ -89,8 +107,16 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
       <aside className="hidden md:flex w-64 bg-gradient-to-b from-card to-card/95 border-r flex-col h-screen sticky top-0">
         <div className="p-6 border-b border-border/50">
           <Link href="/business/dashboard" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary via-primary to-emerald-600 flex items-center justify-center shadow-lg shadow-primary/25">
-              <ChefHat className="h-5 w-5 text-white" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary via-primary to-emerald-600 flex items-center justify-center shadow-lg shadow-primary/25 p-1.5 overflow-hidden">
+              <img
+                src="/images/logo.png"
+                alt="HomeBiz"
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  // Fallback: hide broken image, parent div retains gradient
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
             </div>
             <div>
               <span className="text-lg font-bold">HomeBiz</span>
@@ -131,7 +157,11 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
             <p className="text-sm font-semibold truncate">{user?.name}</p>
             <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
           </div>
-          <Button variant="ghost" className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl" onClick={logout}>
+          <Button
+            variant="ghost"
+            className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl"
+            onClick={handleLogoutClick}
+          >
             <LogOut className="h-4 w-4 mr-3" />
             Logout
           </Button>
@@ -146,14 +176,21 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
         )}
       >
         <div className="px-4 h-14 flex items-center justify-between">
-          <Link href="/business/dashboard" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-emerald-600 flex items-center justify-center shadow-lg shadow-primary/25">
-              <ChefHat className="h-5 w-5 text-white" />
-            </div>
-            <span className="font-bold text-lg bg-gradient-to-r from-primary to-emerald-600 bg-clip-text text-transparent">HomeBiz</span>
-          </Link>
+            <Link href="/business/dashboard" className="flex items-center gap-3 px-2">
+              <img
+                src="/images/logo.png"
+                alt="HomeBiz"
+                className="w-8 h-8 object-contain"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+              />
+              <span className="font-bold text-xl tracking-tight text-slate-800">HomeBiz</span>
+            </Link>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            {/* Notification Bell */}
+            <Button variant="ghost" size="icon" className="h-9 w-9 relative">
+              <Bell className="w-4 h-4" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -196,7 +233,7 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
                 <Button
                   variant="ghost"
                   className="w-full justify-start gap-2 text-destructive hover:text-destructive"
-                  onClick={logout}
+                  onClick={handleLogoutClick}
                 >
                   <LogOut className="w-4 h-4" />
                   Logout
@@ -211,6 +248,7 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
       <main className="flex-1 pt-14 pb-20 md:pt-0 md:pb-0">
         <div className="p-4 md:p-8">
           <div className="max-w-7xl mx-auto">
+            <Breadcrumbs />
             {children}
           </div>
         </div>
@@ -261,7 +299,6 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
           <div className="absolute bottom-full left-0 right-0 bg-background border-t shadow-lg">
             <div className="grid grid-cols-4 gap-2 p-4">
               {[
-                { icon: Wrench, label: "Services", href: "/business/services" },
                 { icon: DollarSign, label: "Pricing", href: "/business/pricing" },
                 { icon: ImageIcon, label: "Gallery", href: "/business/gallery" },
                 { icon: Calendar, label: "Events", href: "/business/events" },
@@ -287,6 +324,35 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
           </div>
         )}
       </nav>
+
+      {/* Logout Confirmation Dialog */}
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent className="max-w-[340px] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Sign out?</DialogTitle>
+            <DialogDescription>
+              You'll be returned to the login screen.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-row gap-3 sm:justify-start pt-2">
+            <Button
+              variant="outline"
+              className="flex-1 rounded-xl"
+              onClick={() => setConfirmOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1 rounded-xl"
+              onClick={handleLogoutConfirm}
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign Out
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

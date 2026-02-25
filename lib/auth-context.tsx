@@ -34,43 +34,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const initialized = useRef(false)
 
   useEffect(() => {
-    if (initialized.current) return
-    initialized.current = true
+    const validate = async () => {
+      const raw = localStorage.getItem("user");
+      if (!raw) {
+        setIsLoading(false);
+        return;
+      }
 
-    const raw = localStorage.getItem("user")
-    if (!raw) {
-      setIsLoading(false)
-      return
-    }
+      let parsed: SessionUser;
+      try {
+        parsed = JSON.parse(raw);
+        setUser(parsed); // Fast UI restore
+      } catch {
+        localStorage.removeItem("user");
+        setIsLoading(false);
+        return;
+      }
 
-    let parsed: SessionUser
-    try {
-      parsed = JSON.parse(raw)
-    } catch {
-      localStorage.removeItem("user")
-      setIsLoading(false)
-      return
-    }
-
-    // Restore immediately for fast UX
-    setUser(parsed)
-
-    // Validate session in background against real backend
-    // GET /api/auth/me returns { user: Profile }
-    const controller = new AbortController();
-    
-    fetchAPI<{ user: any }>('/auth/me', { signal: controller.signal })
-      .then(res => {
-        if (!initialized.current) return;
-        
-        // Handle Orphaned Profile: Authenticated in Supabase but no DB record
+      try {
+        const res = await fetchAPI<{ user: any }>('/auth/me');
         if (!res || !res.user) {
-          console.error("[Auth] Orphaned profile detected - user exists in Auth but not in DB.");
-          logout();
+          console.error("[Auth] Orphaned profile detected.");
+          await logout();
           return;
         }
 
-        const fresh = res.user
+        const fresh = res.user;
         const updated: SessionUser = {
           id: fresh.id,
           email: fresh.email,
@@ -78,36 +67,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           first_name: fresh.first_name,
           last_name: fresh.last_name,
           role: fresh.role as SessionUser["role"],
-        }
+        };
         
-        // Only update state if data actually changed to prevent re-renders
         if (JSON.stringify(updated) !== JSON.stringify(parsed)) {
-            setUser(updated)
-            localStorage.setItem("user", JSON.stringify(updated))
+          setUser(updated);
+          localStorage.setItem("user", JSON.stringify(updated));
         }
-      })
-      .catch(err => {
-        if (!initialized.current) return;
-        if (err.name === 'AbortError') return;
-
+      } catch (err: any) {
         console.warn("[Auth] Session validation failed:", err);
-        // Force logout on 401 (Unauth) or 404 (Deleted Profile)
         if (err instanceof APIError && (err.status === 401 || err.status === 404 || err.code === 'UNAUTHORIZED')) {
-          setUser(null)
-          localStorage.removeItem("user")
-          router.push('/login')
+          setUser(null);
+          localStorage.removeItem("user");
+          router.push('/login');
         }
-        // Network error → keep cached session, don't force logout
-      })
-      .finally(() => {
-        if (initialized.current) setIsLoading(false);
-      });
-
-    return () => {
-      initialized.current = false;
-      controller.abort();
+      } finally {
+        setIsLoading(false);
+      }
     };
-  }, [])
+
+    if (!initialized.current) {
+      initialized.current = true;
+      validate();
+    }
+
+    // Re-validate when tab becomes visible
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        validate();
+      }
+    };
+
+    window.addEventListener("focus", validate);
+    window.addEventListener("visibilitychange", handleVisibility);
+    
+    return () => {
+      window.removeEventListener("focus", validate);
+      window.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, []);
 
   const loginWithSession = (
     userData: { id: string; email: string; name: string; first_name?: string; last_name?: string; role: string }
@@ -124,13 +121,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("user", JSON.stringify(sessionUser))
   }
 
-  const logout = () => {
-    setUser(null)
-    localStorage.removeItem("user")
-    // Fire-and-forget — clear server cookie session
-    fetchAPI('/auth/logout', { method: 'POST' }).catch(() => {})
-    router.push("/")
-  }
+  const logout = async () => {
+    // Clear local state immediately for UX
+    setUser(null);
+    localStorage.removeItem("user");
+    
+    try {
+      // Wait for server-side cookie cleanup
+      await fetchAPI('/auth/logout', { method: 'POST' });
+    } catch {
+      // Ignore cleanup errors
+    }
+    
+    router.push("/");
+  };
 
   const value: AuthContextType = {
     user,

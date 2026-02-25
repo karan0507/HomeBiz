@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth-context"
 import { ProtectedRoute } from "@/components/protected-route"
 import { fetchAPI } from "@/lib/services/api.client"
 import { showError } from "@/lib/notifications"
+import { SkeletonStatCard, SkeletonCardContent } from "@/components/shared/skeleton-cards"
 
 export default function BusinessDashboardPage() {
   const { user } = useAuth();
@@ -18,7 +19,7 @@ export default function BusinessDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState([
     { title: "Total Orders", value: 0, icon: ShoppingCart, trend: "+0%", trendUp: true },
-    { title: "Products & Services", value: 0, icon: Package, trend: "+0", trendUp: true },
+    { title: "Menu Items", value: 0, icon: Package, trend: "+0", trendUp: true },
     { title: "Revenue", value: "$0", icon: DollarSign, trend: "+0%", trendUp: true },
     { title: "Avg Rating", value: "0.0", icon: Star, trend: "+0.0", trendUp: true },
   ]);
@@ -120,36 +121,40 @@ export default function BusinessDashboardPage() {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-4">
-              {stats.map((stat, index) => {
-                const Icon = stat.icon
-                const gradients = [
-                  "from-primary/10 to-emerald-500/10",
-                  "from-accent/10 to-blue-500/10",
-                  "from-yellow-500/10 to-orange-500/10",
-                  "from-pink-500/10 to-purple-500/10"
-                ]
-                return (
-                  <Card key={stat.title} className="relative overflow-hidden transition-all md:hover:shadow-lg md:hover:-translate-y-1 min-w-0">
-                    <div className={`absolute inset-0 bg-gradient-to-br ${gradients[index]} opacity-50`} />
-                    <CardHeader className="flex flex-row items-center justify-between pb-2 relative">
-                      <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-emerald-500/20 flex items-center justify-center">
-                        <Icon className="h-5 w-5 text-primary" />
-                      </div>
-                    </CardHeader>
-                    <CardContent className="relative">
-                      <div className="text-2xl md:text-3xl font-bold">{loading ? "..." : stat.value}</div>
-                      <div className="flex items-center gap-1 mt-2">
-                        <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${stat.trendUp ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-                          {stat.trendUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                          <span className="text-xs font-medium">{stat.trend}</span>
+              {loading ? (
+                Array.from({ length: 4 }).map((_, i) => <SkeletonStatCard key={i} />)
+              ) : (
+                stats.map((stat, index) => {
+                  const Icon = stat.icon
+                  const gradients = [
+                    "from-primary/10 to-emerald-500/10",
+                    "from-accent/10 to-blue-500/10",
+                    "from-yellow-500/10 to-orange-500/10",
+                    "from-pink-500/10 to-purple-500/10"
+                  ]
+                  return (
+                    <Card key={stat.title} className="relative overflow-hidden transition-all md:hover:shadow-lg md:hover:-translate-y-1 min-w-0">
+                      <div className={`absolute inset-0 bg-gradient-to-br ${gradients[index]} opacity-50`} />
+                      <CardHeader className="flex flex-row items-center justify-between pb-2 relative">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-emerald-500/20 flex items-center justify-center">
+                          <Icon className="h-5 w-5 text-primary" />
                         </div>
-                        <span className="text-xs text-muted-foreground">from last month</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
+                      </CardHeader>
+                      <CardContent className="relative">
+                        <div className="text-2xl md:text-3xl font-bold">{stat.value}</div>
+                        <div className="flex items-center gap-1 mt-2">
+                          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${stat.trendUp ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                            {stat.trendUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                            <span className="text-xs font-medium">{stat.trend}</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">from last month</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })
+              )}
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-2">
@@ -164,7 +169,7 @@ export default function BusinessDashboardPage() {
                 </CardHeader>
                 <CardContent className="pt-4">
                   {loading ? (
-                    <div className="text-center py-4">Loading orders...</div>
+                    <SkeletonCardContent rows={4} />
                   ) : recentOrders.length > 0 ? (
                     <div className="space-y-3">
                       {recentOrders.map((order: any) => (

@@ -18,7 +18,10 @@
       "Bash(netstat:*)",
       "Bash(ss:*)",
       "Bash(pkill:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(chmod:*)",
+      "Bash(identify:*)",
+      "Bash(git reset:*)"
     ]
   }
 }

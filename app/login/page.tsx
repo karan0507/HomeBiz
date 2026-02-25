@@ -63,9 +63,13 @@ function LoginForm() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <div className="mx-auto w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-            <ChefHat className="h-6 w-6 text-white" />
-          </div>
+          <Link href="/" className="inline-block">
+            <img
+              src="/images/logo.png"
+              alt="HomeBiz"
+              className="w-16 h-16 mx-auto object-contain"
+            />
+          </Link>
           <CardTitle className="text-xl">Welcome back</CardTitle>
           <CardDescription className="text-sm">Sign in to your account</CardDescription>
         </CardHeader>

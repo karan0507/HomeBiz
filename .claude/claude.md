@@ -174,6 +174,22 @@ When I say **"EXECUTION MODE (Sonnet 4.5)"**:
 - [x] Customer signup: firstName/lastName split, check-exists on email/phone blur, phone required, address `line1` mapping, toast errors, no double-signup
 - [x] All required field labels use red `*` (`<span className="text-destructive">`)
 
+### Production Audit Completed (2026-02-24)
+- [x] **Security:** Next.js 16.0.10 → 16.1.5 (fixed HIGH/MODERATE CVEs, 0 vulnerabilities)
+- [x] **Security:** Production headers added (`next.config.mjs`): X-Frame-Options, XSS-Protection, HSTS, etc.
+- [x] **Security:** Duplicate `.claude/supabase.ts` removed
+- [x] **Branding:** Theme colors updated to emerald green (#10B981) in `manifest.json` + `layout.tsx`
+- [x] **Branding:** Logo enhanced with "HomeBiz" brand name, increased size, emerald gradient
+- [x] **Mobile UX:** Mobile footer with "More" button (homepage only), slides up from bottom nav
+- [x] **Performance:** Stale-while-revalidate cache (`lib/cache-utils.ts`): 75s kitchens, 60s menu, 120s profile
+- [x] **Performance:** Cached functions in `kitchens.service.ts`: `getCachedKitchens()`, `getCachedKitchenBySlug()`, etc.
+- [x] **Animations:** Shimmer effect on skeleton loaders (`globals.css` + `skeleton.tsx`)
+- [x] **PWA:** Icons configured in `manifest.json` (using existing `launchericon-*.png`)
+- [x] **PWA:** Icons copied to `/public/icon-192.png` and `/public/icon-512.png`
+- [x] **Realtime:** Supabase client created (`lib/supabase-client.ts`) with reconnection logic
+- [x] **Environment:** Supabase credentials added to `.env.local` (realtime-ready)
+- [x] **Environment:** Google Maps API key marked optional (address input works without it)
+
 ### In Progress
 - [ ] Stage + commit untracked files (`address-autocomplete`, `geolocation`, `loading-state`, `route-guards`)
 

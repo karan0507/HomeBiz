@@ -75,9 +75,16 @@ function KitchensContent() {
         (position) => {
           setUserLocation({ lat: position.coords.latitude, lon: position.coords.longitude });
         },
-        (err) => { console.warn("Geolocation error:", err.message); },
+        (err) => {
+          console.warn("Geolocation error:", err.message);
+          // Fallback: Continue without location (filters already handle null userLocation)
+          setUserLocation(null);
+        },
         { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
       );
+    } else {
+      // No geolocation support: Continue without location
+      setUserLocation(null);
     }
   }, []);
 
@@ -96,14 +103,16 @@ function KitchensContent() {
   }, []);
 
   // Build current filter object (stable for the current render)
+  // Only send radius + lat/lon when geolocation succeeded — sending radius without
+  // coordinates causes the backend search_kitchens RPC to throw a 500 error.
   const currentFilters = useMemo<KitchenFilters>(() => ({
     query: searchQuery || undefined,
     cuisines: selectedCuisine ? [selectedCuisine] : undefined,
     dietary: selectedDietary.length > 0 ? selectedDietary : undefined,
     min_rating: minRating > 0 ? minRating : undefined,
-    lat: userLocation?.lat,
-    lon: userLocation?.lon,
-    radius: maxDistance,
+    ...(userLocation
+      ? { lat: userLocation.lat, lon: userLocation.lon, radius: maxDistance }
+      : {}),
     sort: sortBy === "rating" ? "rating" : sortBy === "orders" ? "orders" : undefined,
     per_page: PER_PAGE,
   }), [searchQuery, selectedCuisine, selectedDietary, minRating, userLocation, maxDistance, sortBy]);

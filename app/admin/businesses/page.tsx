@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { fetchAPI, APIError } from "@/lib/services/api.client"
 import { Search, Building2, MoreVertical, Star, CheckCircle, Building, Clock, XCircle } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { TableLoader } from "@/components/shared/table-loader"
+import { SkeletonTable } from "@/components/shared/skeleton-cards"
 import { EmptyBusinesses } from "@/components/shared/empty-state"
 import { Pagination } from "@/components/shared/pagination"
 import { VerificationBadge } from "@/components/shared/status-badge"
@@ -148,7 +148,7 @@ export default function AdminBusinessesPage() {
             </CardHeader>
             <CardContent>
               {loading ? (
-                <TableLoader rows={5} columns={5} />
+                <SkeletonTable rows={10} columns={5} />
               ) : filtered.length === 0 ? (
                 <EmptyBusinesses />
               ) : (

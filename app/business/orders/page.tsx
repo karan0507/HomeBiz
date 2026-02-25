@@ -9,7 +9,7 @@ import { ProtectedRoute } from "@/components/protected-route"
 import { BusinessLayout } from "@/components/business/business-layout"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { EmptyOrders } from "@/components/shared/empty-state"
-import { PageLoader } from "@/components/shared/table-loader"
+import { SkeletonPageLoader } from "@/components/shared/skeleton-cards"
 import { Pagination } from "@/components/shared/pagination"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/lib/auth-context"
@@ -360,7 +360,7 @@ export default function BusinessOrdersPage() {
           </div>
 
           {loading ? (
-            <PageLoader />
+            <SkeletonPageLoader />
           ) : filteredOrders.length === 0 ? (
             <Card>
               <CardContent className="p-0">

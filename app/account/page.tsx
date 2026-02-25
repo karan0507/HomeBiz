@@ -9,9 +9,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useAuth } from "@/lib/auth-context";
 import { fetchAPI, APIError } from "@/lib/services/api.client";
-import { toast } from "sonner";
+import { showError, showSuccess } from "@/lib/notifications";
 import {
   User,
   Settings,
@@ -39,6 +47,7 @@ function AccountContent() {
   const [reviewingOrder, setReviewingOrder] = useState<string | null>(null);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewText, setReviewText] = useState("");
+  const [confirmLogout, setConfirmLogout] = useState(false);
 
   // Real data state
   const [orders, setOrders] = useState<any[]>([]);
@@ -48,6 +57,7 @@ function AccountContent() {
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isAdmin) router.push("/admin/dashboard");
@@ -58,6 +68,7 @@ function AccountContent() {
     if (!isAuthenticated) return;
     // Fetch profile
     setProfileLoading(true);
+    setProfileError(null);
     fetchAPI<any>("/profile")
       .then(data => {
         const p = data?.profile ?? data;
@@ -73,7 +84,10 @@ function AccountContent() {
           postal_code: p?.postal_code || "",
         });
       })
-      .catch(() => {})
+      .catch(err => {
+        console.error("[Profile] Fetch error:", err);
+        setProfileError("Could not load profile details. Using basic session info.");
+      })
       .finally(() => setProfileLoading(false));
   }, [isAuthenticated, user?.email]);
 
@@ -96,12 +110,16 @@ function AccountContent() {
   }, [isAuthenticated, activeTab]);
 
   const handleProfileSave = async () => {
+    if (!profileForm.phone?.trim()) {
+      showError(new APIError("Phone number is required", 400, "VALIDATION_ERROR"));
+      return;
+    }
     try {
       await fetchAPI("/profile", { method: "PUT", body: JSON.stringify(profileForm) });
-      toast.success("Profile updated");
+      showSuccess("Profile updated", "Your changes were saved.");
       setEditingProfile(false);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to update profile");
+    } catch (err) {
+      showError(err);
     }
   };
 
@@ -111,10 +129,10 @@ function AccountContent() {
         method: "POST",
         body: JSON.stringify({ order_id: orderId, kitchen_id: kitchenId, rating: reviewRating, comment: reviewText }),
       });
-      toast.success("Review submitted");
+      showSuccess("Review submitted", "Thank you for your feedback!");
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, has_review: true } : o));
-    } catch (err: any) {
-      toast.error(err.message || "Failed to submit review");
+    } catch (err) {
+      showError(err);
     } finally {
       setReviewingOrder(null);
       setReviewText("");
@@ -126,8 +144,8 @@ function AccountContent() {
     try {
       await fetchAPI(`/wishlist/${kitchenId}`, { method: "DELETE" });
       setWishlist(prev => prev.filter(k => k.id !== kitchenId));
-    } catch (err: any) {
-      toast.error(err.message || "Failed to remove");
+    } catch (err) {
+      showError(err);
     }
   };
 
@@ -137,8 +155,8 @@ function AccountContent() {
         <div className="flex-1 flex items-center justify-center py-12">
           <Card className="w-full max-w-sm mx-4">
             <CardHeader className="text-center pb-4">
-              <div className="w-14 h-14 mx-auto rounded-full bg-gradient-to-br from-primary to-emerald-600 flex items-center justify-center mb-3">
-                <User className="w-7 h-7 text-white" />
+              <div className="mx-auto flex items-center justify-center mb-4">
+                <User className="w-12 h-12 text-primary" />
               </div>
               <CardTitle className="text-lg">Sign In Required</CardTitle>
             </CardHeader>
@@ -183,8 +201,8 @@ function AccountContent() {
         <Card className="mb-6">
           <CardContent className="p-6">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-emerald-600 flex items-center justify-center shadow-lg shrink-0">
-                <User className="w-10 h-10 text-white" />
+              <div className="w-16 h-16 flex items-center justify-center shrink-0">
+                <User className="w-12 h-12 text-primary" />
               </div>
               <div className="flex-1 text-center sm:text-left">
                 <h1 className="text-2xl font-bold">{displayName}</h1>
@@ -200,7 +218,7 @@ function AccountContent() {
                   </Badge>
                 </div>
               </div>
-              <Button variant="outline" size="sm" className="gap-2 shrink-0" onClick={logout}>
+              <Button variant="outline" size="sm" className="gap-2 shrink-0" onClick={() => setConfirmLogout(true)}>
                 <LogOut className="w-4 h-4" />
                 Sign Out
               </Button>
@@ -251,6 +269,12 @@ function AccountContent() {
                   </Button>
                 </div>
               </CardHeader>
+                {profileError && (
+                  <div className="bg-destructive/10 text-destructive text-xs p-3 rounded-lg mb-4 flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse" />
+                    {profileError}
+                  </div>
+                )}
               <CardContent className="space-y-4">
                 {profileLoading ? (
                   <p className="text-sm text-muted-foreground">Loading...</p>
@@ -528,6 +552,33 @@ function AccountContent() {
           </div>
         )}
       </div>
+      <Dialog open={confirmLogout} onOpenChange={setConfirmLogout}>
+        <DialogContent className="max-w-[340px] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Sign out?</DialogTitle>
+            <DialogDescription>
+              You'll need to sign back in to access your account.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-row gap-3 sm:justify-start pt-2">
+            <Button
+              variant="outline"
+              className="flex-1 rounded-xl"
+              onClick={() => setConfirmLogout(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1 rounded-xl"
+              onClick={() => { setConfirmLogout(false); logout(); }}
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign Out
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 }

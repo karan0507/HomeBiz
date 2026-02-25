@@ -5,9 +5,7 @@
 
 import { fetchAPI } from './api.client';
 import { transformOrder } from './orders.service';
-
-import { Order, OrderItem } from './orders.service';
-export type { Order, OrderItem };
+import type { Order, OrderItem } from '@/types/database';
 
 // Business-specific order filters
 export interface BusinessOrderFilters {

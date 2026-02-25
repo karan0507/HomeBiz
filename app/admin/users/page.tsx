@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { fetchAPI, APIError } from "@/lib/services/api.client"
 import { Search, UserPlus, MoreVertical, Users, Building, Shield } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { TableLoader } from "@/components/shared/table-loader"
+import { SkeletonTable } from "@/components/shared/skeleton-cards"
 import { EmptyUsers } from "@/components/shared/empty-state"
 import { Pagination } from "@/components/shared/pagination"
 import { UserStatusBadge } from "@/components/shared/status-badge"
@@ -199,7 +199,7 @@ export default function AdminUsersPage() {
             </CardHeader>
             <CardContent>
               {loading ? (
-                <TableLoader rows={5} columns={6} />
+                <SkeletonTable rows={10} columns={5} />
               ) : users.length === 0 ? (
                 <EmptyUsers />
               ) : (

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { ProtectedRoute } from "@/components/protected-route";
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TableLoader } from "@/components/shared/table-loader";
+import { SkeletonTable } from "@/components/shared/skeleton-cards";
 import { fetchAPI, APIError } from "@/lib/services/api.client";
 import { showError } from "@/lib/notifications";
 import { Badge } from "@/components/ui/badge";
@@ -31,7 +31,7 @@ export default function AdminPaymentsPage() {
             </CardHeader>
             <CardContent>
               {loading ? (
-                <TableLoader />
+                <SkeletonTable rows={10} columns={5} />
               ) : transactions.length === 0 ? (
                 <div className="text-center py-10 text-muted-foreground">
                   <p className="font-medium">No transactions yet</p>

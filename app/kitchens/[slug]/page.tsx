@@ -24,7 +24,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MainLayout } from "@/components/layout/main-layout";
 import { useCart } from "@/lib/cart-context";
 import { useKitchen } from "@/hooks/useKitchens";
-import { fetchAPI } from "@/lib/services/api.client";
+import { fetchAPI, APIError } from "@/lib/services/api.client";
+import { showError } from "@/lib/notifications";
 
 export default function KitchenDetailPage() {
   const params = useParams();
@@ -44,7 +45,10 @@ export default function KitchenDetailPage() {
           dietaryInfo: i.dietary_info ?? [],
         })))
       )
-      .catch(() => setMenuItems([]));
+      .catch(err => {
+        showError(err);
+        setMenuItems([]);
+      });
     fetchAPI<any[]>(`/kitchens/${kitchen.id}/reviews`)
       .then(data =>
         setReviews((Array.isArray(data) ? data : []).map(r => {
@@ -57,7 +61,10 @@ export default function KitchenDetailPage() {
           };
         }))
       )
-      .catch(() => setReviews([]));
+      .catch(err => {
+        showError(err);
+        setReviews([]);
+      });
   }, [kitchen?.id]);
 
   const [visibleReviews, setVisibleReviews] = useState(2);

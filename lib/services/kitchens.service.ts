@@ -4,6 +4,7 @@
  */
 
 import { fetchAPI } from './api.client';
+import { cache, CACHE_TTL } from '@/lib/cache-utils';
 import type { Kitchen, KitchenWithOwner, KitchenFilters, KitchenInput } from '@/types/database';
 
 export type { Kitchen, KitchenWithOwner, KitchenFilters, KitchenInput };
@@ -157,7 +158,7 @@ export async function getKitchenById(id: string, signal?: AbortSignal): Promise<
  * Get featured kitchens
  */
 export async function getFeaturedKitchens(limit: number = 6, signal?: AbortSignal): Promise<Kitchen[]> {
-  const kitchens = await fetchAPI<ApiKitchen[]>(`/kitchens/featured?limit=${limit}`, { signal });
+  const kitchens = await fetchAPI<ApiKitchen[]>(`/kitchens?featured=true&per_page=${limit}`, { signal });
   return kitchens.map(mapKitchen);
 }
 
@@ -227,4 +228,47 @@ export async function getKitchenHours(kitchenId: string) {
  */
 export async function searchKitchens(searchQuery: string, filters: KitchenFilters = {}, signal?: AbortSignal): Promise<Kitchen[]> {
   return getKitchens({ ...filters, query: searchQuery }, signal);
+}
+
+/**
+ * =========================================
+ * CACHED VERSIONS (Stale-While-Revalidate)
+ * =========================================
+ * Use these for better performance with automatic background refresh
+ */
+
+/**
+ * Get kitchens with 75s stale-while-revalidate cache
+ * Returns cached data immediately, refreshes in background
+ */
+export async function getCachedKitchens(filters: KitchenFilters = {}): Promise<Kitchen[]> {
+  const cacheKey = `kitchens:${JSON.stringify(filters)}`;
+  return cache.get(cacheKey, () => getKitchens(filters), CACHE_TTL.KITCHENS);
+}
+
+/**
+ * Get kitchen by slug with caching
+ */
+export async function getCachedKitchenBySlug(slug: string): Promise<Kitchen | null> {
+  const cacheKey = `kitchen:slug:${slug}`;
+  return cache.get(cacheKey, () => getKitchenBySlug(slug), CACHE_TTL.KITCHENS);
+}
+
+/**
+ * Get kitchen by ID with caching
+ */
+export async function getCachedKitchenById(id: string): Promise<Kitchen | null> {
+  const cacheKey = `kitchen:id:${id}`;
+  return cache.get(cacheKey, () => getKitchenById(id), CACHE_TTL.KITCHENS);
+}
+
+/**
+ * Invalidate kitchen cache (call after kitchen updates)
+ */
+export function invalidateKitchenCache(kitchenId?: string) {
+  if (kitchenId) {
+    cache.invalidate(`kitchen:id:${kitchenId}`);
+    cache.invalidatePattern(`kitchen:slug:`); // Slug might have changed
+  }
+  cache.invalidatePattern('kitchens:'); // Clear all kitchen lists
 }

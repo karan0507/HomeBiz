@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChefHat, Lock, Mail } from "lucide-react";
+import { Lock, Mail } from "lucide-react";
 
 export default function BusinessLoginPage() {
   const [email, setEmail] = useState("");
@@ -58,9 +58,13 @@ export default function BusinessLoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/5 p-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="space-y-2 text-center pb-4">
-          <div className="mx-auto w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-            <ChefHat className="h-6 w-6 text-primary" />
-          </div>
+            <Link href="/" className="inline-block">
+              <img
+                src="/images/logo.png"
+                alt="HomeBiz"
+                className="w-16 h-16 mx-auto object-contain"
+              />
+            </Link>
           <CardTitle className="text-xl">Chef Portal</CardTitle>
           <CardDescription className="text-sm">Sign in to manage your kitchen</CardDescription>
         </CardHeader>

@@ -17,14 +17,13 @@ function resolveAPIError(error: APIError): ToastEntry {
       return { title: 'Already Registered', description: error.message || 'This resource already exists.' };
     case 'NOT_FOUND':
       return { title: 'Not Found', description: error.message || 'The requested resource was not found.' };
-    case 'SERVER_ERROR':
-      return { title: 'Server Error', description: 'Something went wrong. Please try again later.' };
     case 'RATE_LIMITED':
       return { title: 'Too Many Requests', description: 'Please wait a moment before trying again.' };
-    case 'SERVICE_UNAVAILABLE':
-      return { title: 'Service Unavailable', description: 'The service is temporarily down. Please try again shortly.' };
-    case 'MOCK_MODE':
-      return { title: 'Dev Mode', description: 'Backend is disabled — using mock data.' };
+    case 'TIMEOUT':
+      return { title: 'Request Timed Out', description: 'The server took too long to respond. Please try again.' };
+    case 'SERVER_ERROR':
+    case 'INTERNAL_ERROR':
+      return { title: 'Server Error', description: 'Something went wrong. Please try again later.' };
     default:
       return { title: 'Error', description: error.message || 'An unexpected error occurred.' };
   }

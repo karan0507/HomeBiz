@@ -50,7 +50,6 @@ export default function SignupPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const checkedEmail = useRef("");
-  const checkedPhone = useRef("");
   const { loginWithSession } = useAuth();
   const router = useRouter();
 
@@ -86,29 +85,6 @@ export default function SignupPage() {
       }
     } catch {
       /* silent — backend may not be reachable */
-    }
-  };
-
-  const handlePhoneBlur = async () => {
-    const val = phone.trim();
-    if (!val || val === checkedPhone.current) return;
-    checkedPhone.current = val;
-    try {
-      const result = await fetchAPI<{ exists: boolean }>("/auth/check-exists", {
-        method: "POST",
-        body: JSON.stringify({ phone: val }),
-      });
-      if (result.exists) {
-        showError(
-          new APIError(
-            "Phone already registered. Please sign in.",
-            409,
-            "CONFLICT",
-          ),
-        );
-      }
-    } catch {
-      /* silent */
     }
   };
 
@@ -214,9 +190,14 @@ export default function SignupPage() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <div className="mx-auto w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-            <ChefHat className="h-6 w-6 text-white" />
-          </div>
+          <Link href="/" className="inline-block mx-auto">
+            <img
+              src="/images/logo.png"
+              alt="HomeBiz"
+              className="w-12 h-12 object-contain"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            />
+          </Link>
           <CardTitle className="text-xl">Create Account</CardTitle>
           <CardDescription className="text-sm">
             Join HomeBiz to order home-cooked meals
@@ -283,7 +264,7 @@ export default function SignupPage() {
 
             <div className="space-y-1.5">
               <Label htmlFor="phone" className="text-sm">
-                Phone
+                Phone Number
                 <Req />
               </Label>
               <div className="relative">
@@ -291,10 +272,9 @@ export default function SignupPage() {
                 <Input
                   id="phone"
                   type="tel"
-                  placeholder="(416) 555-1234"
+                  placeholder="(416) 555-0123"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  onBlur={handlePhoneBlur}
                   className="pl-9 h-9"
                   required
                 />

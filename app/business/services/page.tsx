@@ -31,7 +31,7 @@ const demoServices: Service[] = [
 
 import { Plus, MoreVertical, Clock, Search, Wrench, CheckCircle, XCircle } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { CardLoader } from "@/components/shared/table-loader"
+import { SkeletonGrid } from "@/components/shared/skeleton-cards"
 import { EmptyState } from "@/components/shared/empty-state"
 import { Pagination } from "@/components/shared/pagination"
 import { toast } from "sonner"
@@ -185,7 +185,7 @@ export default function BusinessServicesPage() {
 
           {/* Services Grid */}
           {loading ? (
-            <CardLoader count={6} />
+            <SkeletonGrid count={3} />
           ) : paginatedServices.length === 0 ? (
             <Card>
               <CardContent className="p-0">

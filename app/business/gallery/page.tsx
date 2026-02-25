@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Plus, Trash2, Image as ImageIcon } from "lucide-react"
 import Image from "next/image"
-import { CardLoader } from "@/components/shared/table-loader"
+import { SkeletonGrid } from "@/components/shared/skeleton-cards"
 import { EmptyGallery } from "@/components/shared/empty-state"
 import { Pagination } from "@/components/shared/pagination"
 import { toast } from "sonner"
@@ -78,7 +78,7 @@ export default function BusinessGalleryPage() {
 
           {/* Gallery Grid */}
           {loading ? (
-            <CardLoader count={8} />
+            <SkeletonGrid count={4} />
           ) : images.length === 0 ? (
             <Card>
               <CardContent className="p-0">
