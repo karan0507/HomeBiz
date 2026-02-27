@@ -69,11 +69,13 @@ export function useKitchens(filters: KitchenFilters = {}): UseKitchensResult {
 
 /**
  * Fetch featured kitchens
+ * Note: Uses useRef to prevent duplicate calls in React Strict Mode (development)
  */
 export function useFeaturedKitchens(limit?: number): UseKitchensResult {
   const [kitchens, setKitchens] = useState<Kitchen[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const hasFetched = useRef(false);
 
   const fetchKitchens = async (signal?: AbortSignal) => {
     try {
@@ -96,6 +98,10 @@ export function useFeaturedKitchens(limit?: number): UseKitchensResult {
   };
 
   useEffect(() => {
+    // Prevent duplicate calls in React Strict Mode (development only)
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+
     const controller = new AbortController();
     fetchKitchens(controller.signal);
     return () => controller.abort();

@@ -1,8 +1,15 @@
 You are a senior full-stack engineer working on **HomeBiz Toronto**, a home kitchen marketplace.
 
+**Last Updated:** 2026-02-26 23:30
+
 Two codebases:
-- `homebiz-frontend` — Next.js (App Router), TypeScript, Supabase client
-- `homebiz-backend` — Supabase: Postgres, RLS, Edge Functions
+- `homebiz-frontend` — Next.js 16 (App Router), TypeScript, Supabase client
+- `homebiz-backend` — Next.js 16 API-only, Supabase PostgreSQL
+
+**Deployed:**
+- Frontend: https://home-biz-one.vercel.app (⚠️ Requires Vercel env vars)
+- Backend: https://home-biz-backend.vercel.app (✅ Live)
+- Database: https://cjqczopacbjrhkcdtjel.supabase.co (✅ Live)
 
 ---
 
@@ -12,6 +19,7 @@ Two codebases:
 2. **EXECUTION MODE (Sonnet 4.5)** — implement the approved plan as agents.
 3. Never switch modes without explicit instruction.
 4. Always: concise, no extra docs, no duplicate files.
+5. **NO DOCUMENTATION FILES.** Never create .md files. Update this CLAUDE.md only. No guides, summaries, or changelogs.
 
 ---
 
@@ -80,9 +88,12 @@ When I say **"EXECUTION MODE (Sonnet 4.5)"**:
 
 ## SUPABASE CONFIG
 
-- URL: `https://vjafstxtjxfeaumyxakl.supabase.co`
-- Anon key: in `.env.example`
-- API base (frontend): `http://localhost:3001/api` (dev) / `https://api.homebiz.ca/api` (prod)
+- URL: `https://cjqczopacbjrhkcdtjel.supabase.co` ✅
+- Anon key: in `.env.local`
+- API base (frontend):
+  - Dev: `http://localhost:3001`
+  - Prod: `https://home-biz-backend.vercel.app`
+- **CRITICAL:** Email unique ✅ | Phone NON-unique ✅ (as of migration 20260226)
 
 ---
 
@@ -90,20 +101,20 @@ When I say **"EXECUTION MODE (Sonnet 4.5)"**:
 
 ### Wired in Frontend (service files exist)
 
-| Endpoint | Service | Fallback |
+| Endpoint | Service | Status |
 |---|---|---|
-| `GET /categories` | `categories.service.ts` | mock |
-| `GET /categories?featured=true` | `categories.service.ts` | mock |
-| `GET /categories/:slug` | `categories.service.ts` | null |
-| `GET /kitchens` | `kitchens.service.ts` | — |
-| `GET /kitchens?featured=true` | `kitchens.service.ts` | mock |
-| `GET /kitchens/:slug` | `kitchens.service.ts` | null |
-| `GET /kitchens/:id` | `kitchens.service.ts` | null |
-| `GET /business/kitchens` | `kitchens.service.ts` | — |
-| `POST /kitchens` | `kitchens.service.ts` | — |
-| `PATCH /kitchens/:id` | `kitchens.service.ts` | — |
-| `DELETE /kitchens/:id` | `kitchens.service.ts` | — |
-| `GET /kitchens/:id/hours` | `kitchens.service.ts` | — |
+| `GET /cuisine-types` | `data.service.ts` | ✅ Cached |
+| `GET /dietary-options` | `data.service.ts` | ✅ Cached |
+| `GET /provinces` | `data.service.ts` | ✅ Live |
+| `GET /kitchens` | `kitchens.service.ts` | ✅ Cached |
+| `GET /kitchens?featured=true` | `kitchens.service.ts` | ✅ Cached |
+| `GET /kitchens/:slug` | `kitchens.service.ts` | ✅ Cached |
+| `GET /kitchens/:id` | `kitchens.service.ts` | ✅ Cached |
+| `GET /business/kitchens` | `kitchens.service.ts` | ❌ Not implemented |
+| `POST /kitchens` | `kitchens.service.ts` | ❌ Not implemented |
+| `PATCH /kitchens/:id` | `kitchens.service.ts` | ❌ Not implemented |
+| `DELETE /kitchens/:id` | `kitchens.service.ts` | ❌ Not implemented |
+| `GET /kitchens/:id/hours` | `kitchens.service.ts` | ❌ Not implemented |
 
 ### Not Yet Wired (still mock or missing service)
 
