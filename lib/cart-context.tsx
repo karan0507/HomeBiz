@@ -89,13 +89,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setIsHydrated(true);
   }, []);
 
-  // Fetch wishlist from server on login — guard against StrictMode double-invoke
+  // Fetch wishlist from server on login — CUSTOMER ONLY (not business/admin)
   const wishlistUserId = useRef<string | null>(null);
   useEffect(() => {
     const uid = user?.id ?? null;
     if (uid === wishlistUserId.current) return; // same user, skip
     wishlistUserId.current = uid;
-    if (!uid) {
+    if (!uid || user?.role !== 'customer') {
       setWishlist([]);
       return;
     }
@@ -107,7 +107,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         })));
       })
       .catch(err => console.error('[Wishlist] Failed to fetch:', err));
-  }, [user?.id]); // ← ONLY re-run when user ID changes, not the object reference
+  }, [user?.id, user?.role]); // ← Re-run when user ID or role changes
 
 
   // Save to localStorage on change
