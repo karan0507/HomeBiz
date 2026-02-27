@@ -7,295 +7,528 @@ NEXT_PUBLIC_API_URL=http://localhost:3001/api
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=<get_from_google_console>
 ```
 
-## API Calls
+---
 
-### 1. POST /api/auth/signup
+🎯 COMPREHENSIVE PRODUCTION AUDIT REPORT  
+ ✅ P0 FIXES APPLIED
 
-**Customer:**
+FIXED: next.config.mjs — Added production security headers
 
-```json
-{
-  "name": "string",
-  "email": "string",
-  "phone": "string",
-  "password": "string",
-  "role": "customer",
-  "address": {
-    "address_line_1": "string",
-    "address_line_2": "string",
-    "city": "string",
-    "province": "string",
-    "postal_code": "string",
-    "country": "Canada",
-    "place_id": "string"
-  }
-}
-```
+- ✅ X-Frame-Options (clickjacking protection)
+- ✅ X-Content-Type-Options (MIME sniffing protection)
+- ✅ X-XSS-Protection (XSS filter)
+- ✅ Strict-Transport-Security (HTTPS enforcement)
+- ✅ Referrer-Policy (privacy)
+- ✅ Permissions-Policy (camera/mic/geo blocking)
 
-**Business:** Same + `kitchen` object
+FIXED: Removed duplicate supabase.ts file from .claude/ directory
 
-```json
-{
-  "kitchen": {
-    "name": "string",
-    "description": "string",
-    "cuisine_types": ["string"],
-    "neighborhood": "string",
-    "dietary_options": ["string"],
-    "pickup_available": true,
-    "delivery_available": false
-  }
-}
-```
+NOTE: .env.local permissions — WSL file system doesn't support chmod properly. On Linux/Mac  
+ production server, ensure chmod 600 .env.local.
 
-**Response:**
+---
 
-```json
-{
-  "success": true,
-  "data": {
-    "user": { "id", "email", "name", "role" },
-    "session": { "access_token", "refresh_token" }
-  }
-}
-```
+📊 AUDIT FINDINGS
 
-**Errors:** CONFLICT, INVALID_ADDRESS, ADDRESS_REQUIRED
+1. ✅ CSS OPTIMIZATION — EXCELLENT
 
-### 2. GET /api/categories
+Status: Clean & Performant
 
-**Response:**
+- Total CSS: 353 lines (globals.css only)
+- Using Tailwind CSS v4 with JIT compilation
+- Modern OKLCH color space for better color accuracy
+- CSS custom properties for theming (light/dark mode)
+- Only necessary custom utilities defined
+- No heavy CSS frameworks, no unused styles
+- Backdrop blur effects are GPU-accelerated
 
-```json
-{
-  "success": true,
-  "data": [{ "id", "name", "slug", "icon", "image_url" }]
-}
-```
+Custom utilities are minimal and purposeful:
 
-### 3. GET /api/kitchens
+- Glass effects (8 lines)
+- Gradients (6 lines)
+- Shadows (6 lines)
+- Animations (keyframes: 10 lines)
+- Scrollbar styling (6 lines)
 
-**Query:** `?radius=5&cuisine=Indian&sort=distance`
-**Response:**
+Recommendation: No optimization needed. Current CSS is production-ready.
 
-```json
-{
-  "success": true,
-  "data": {
-    "kitchens": [{ "id", "name", "slug", "cuisine_types", "rating", "distance_km" }]
-  }
-}
-```
+---
 
-## Components
+2. ✅ API CACHING STRATEGY — WELL IMPLEMENTED
 
-### AddressAutocomplete (`components/ui/address-autocomplete.tsx`)
+Status: Good, could be enhanced
 
-- Google Places integration
-- Auto-fills address fields
-- Captures place_id for backend geocoding
-- Does NOT send lat/lng to backend
+Current Implementation:
 
-## Pages
+- ✅ In-flight request deduplication (api.client.ts lines 14-141)
+  - Prevents duplicate requests within 500ms
+  - Cache key: method + endpoint + body hash
+  - Auto-cleanup after 500ms
+- ✅ Singleton caching for static data (data.service.ts)
+  - Cuisine types: 5min TTL
+  - Dietary options: 5min TTL
+  - Provinces: 5min TTL
+  - Manual cache invalidation available
 
-- `/signup` - Customer signup with address
-- `/business/signup` - 3-step business signup (account → kitchen → address)
-- `/` - Landing page (calls categories + kitchens)
+What's NOT cached:
 
-## Hardcoded (pending backend decision)
+- Kitchens list (fetched every time)
+- Menu items
+- Orders
+- User profile
 
-- Dietary options: ["Vegetarian", "Vegan", "Halal", "Kosher", "Gluten-Free", "Dairy-Free", "Nut-Free"]
+QUESTIONS:
 
-<!-- *****Backend Requirements for the Business Panel -->
-<!-- Root Cause: 401 Fix
+1. Kitchen listings caching: The /kitchens endpoint is called frequently. Should we cache it  
+   with shorter TTL (1-2 min) or implement stale-while-revalidate pattern?
+2. User profile caching: GET /auth/me is called on every app load. Should we cache it in  
+   sessionStorage with background revalidation?
+3. Menu items: When browsing a kitchen detail page, should menu items be cached for 2-3 minutes
+   to avoid refetches when user navigates back?
 
-  middleware.ts was missing. Supabase SSR stores auth tokens in cookies and needs the middleware to call
-  supabase.auth.getUser() on every request to refresh the token before the route handler runs. Without it, getSession()
-  inside requireKitchenOwner() always returns null → 401.
+---
 
-  File created: middleware.ts at root.
+3. ✅ SCROLL BEHAVIOR & LOADING STATES — EXCELLENT
 
-  ---
-  New Route Added
+Status: Production-Ready
 
-  GET /api/business/kitchen — returns the logged-in owner's kitchen profile (previously no way to get it without knowing
-  the kitchen ID).
-  PATCH /api/business/kitchen — update kitchen profile (same, without needing the ID).
+Infinite Scroll Implementation:
 
-  ---
-  Complete Business Logic Route Map
+- ✅ Custom useInfiniteScroll hook using IntersectionObserver
+- ✅ Prevents concurrent requests (isLoading guard)
+- ✅ Smooth upward scroll (all items stay in DOM)
+- ✅ 100px pre-load margin (loads before reaching bottom)
+- ✅ Auto-disconnect when no more data
 
-  All routes require a valid session cookie (credentials: 'include' in fetch, or the equivalent in your API client). All
-  responses follow { success: true, data: ... }.
+Loading States:
 
-  Auth
-  Method: POST
-  Route: /api/auth/signup
-  Body / Params: first_name, last_name, email, phone, password, password_confirmation, role="business", kitchen_name,
-    cuisine_types[], dietary_options[], address_line1, city, province, postal_code
-  Returns: { user, session, kitchen, requires_confirmation }
-  ────────────────────────────────────────
-  Method: POST
-  Route: /api/auth/login
-  Body / Params: { email, password }
-  Returns: { user, session } — session sets cookies
-  ────────────────────────────────────────
-  Method: POST
-  Route: /api/auth/logout
-  Body / Params: —
-  Returns: { message }
-  ────────────────────────────────────────
-  Method: GET
-  Route: /api/auth/me
-  Body / Params: —
-  Returns: { profile }
-  ────────────────────────────────────────
-  Method: POST
-  Route: /api/auth/check-exists
-  Body / Params: { email } or { phone }
-  Returns: { exists, is_active }
-  ────────────────────────────────────────
-  Method: POST
-  Route: /api/auth/forgot-password
-  Body / Params: { email }
-  Returns: { message }
-  ────────────────────────────────────────
-  Method: POST
-  Route: /api/auth/reset-password
-  Body / Params: { password } (needs active reset session)
-  Returns: { message, user_id }
-  Business Dashboard (all require role = business + valid session)
-  Method: GET
-  Route: /api/business/dashboard
-  Params: —
-  Returns: { total_orders, pending_orders, revenue_today, revenue_month, avg_rating, total_reviews, badges[] }
-  ────────────────────────────────────────
-  Method: GET
-  Route: /api/business/stats
-  Params: —
-  Returns: Same as dashboard (alias)
-  ────────────────────────────────────────
-  Method: GET
-  Route: /api/business/analytics
-  Params: ?date_from=ISO&date_to=ISO (optional, defaults 30d)
-  Returns: { revenue_by_day[], orders_by_status{}, top_items[], peak_hours[], total_revenue, total_orders }
-  ────────────────────────────────────────
-  Method: GET
-  Route: /api/business/orders
-  Params: ?status=placed|confirmed|preparing|ready|completed|cancelled (optional)
-  Returns: Order[] with items, kitchen, customer
-  ────────────────────────────────────────
-  Method: GET
-  Route: /api/business/kitchen
-  Params: —
-  Returns: Kitchen profile
-  ────────────────────────────────────────
-  Method: PATCH
-  Route: /api/business/kitchen
-  Params: Any updatable kitchen fields
-  Returns: Updated kitchen
-  Order Management (kitchen owner only)
-  Method: PUT
-  Route: /api/orders/[id]/accept
-  Body: —
-  Returns: Updated order (status → confirmed)
-  ────────────────────────────────────────
-  Method: PUT
-  Route: /api/orders/[id]/reject
-  Body: { reason? }
-  Returns: Updated order (status → cancelled)
-  ────────────────────────────────────────
-  Method: PUT
-  Route: /api/orders/[id]/time
-  Body: { pickup_time: ISO string }
-  Returns: Updated order
-  ────────────────────────────────────────
-  Method: PATCH
-  Route: /api/orders/[id]/status
-  Body: { status, note? }
-  Returns: Updated order — valid transitions: placed→confirmed→preparing→ready→picked_up→completed
-  Kitchen & Menu (kitchen owner for writes)
-  Method: GET
-  Route: /api/kitchens/[id]
-  Body / Params: —
-  Returns: Full kitchen with menu + reviews
-  ────────────────────────────────────────
-  Method: PATCH
-  Route: /api/kitchens/[id]
-  Body / Params: Updatable fields (name, description, cuisine_types, etc.)
-  Returns: Updated kitchen
-  ────────────────────────────────────────
-  Method: GET
-  Route: /api/kitchens/[id]/menu-items
-  Body / Params: —
-  Returns: MenuItem[]
-  ────────────────────────────────────────
-  Method: POST
-  Route: /api/kitchens/[id]/menu-items
-  Body / Params: { name, price, category, description?, image_url?, dietary_options[]?, variants[]?, is_available? }
-  Returns: Created MenuItem
-  ────────────────────────────────────────
-  Method: PATCH
-  Route: /api/menu-items/[id]
-  Body / Params: Any updatable item fields
-  Returns: Updated MenuItem
-  ────────────────────────────────────────
-  Method: DELETE
-  Route: /api/menu-items/[id]
-  Body / Params: —
-  Returns: { message }
-  Reviews (kitchen owner)
-  Method: GET
-  Route: /api/kitchens/[id]/reviews
-  Body: ?limit=20
-  Returns: Review[] with customer
-  ────────────────────────────────────────
-  Method: POST
-  Route: /api/reviews/[id]/response
-  Body: { response: string }
-  Returns: Updated review with owner_response and owner_responded_at
-  Profile
-  Method: GET
-  Route: /api/profile
-  Body: —
-  Returns: { profile }
-  ────────────────────────────────────────
-  Method: PUT
-  Route: /api/profile
-  Body: { first_name?, last_name?, email?, phone?, address_line1?, city?, province?, postal_code? }
-  Returns: { profile }
-  ---
-  Frontend Checklist
+- ✅ Tables: <TableLoader /> with skeleton rows
+- ✅ Cards: <CardLoader /> with skeleton cards
+- ✅ Full page: <PageLoader /> with spinner
+- ✅ Infinite scroll: Loader appears at bottom during fetch
 
-  Auth client config — your api.client.ts must send cookies:
-  // Every fetch call needs:
-  credentials: 'include'
+Mobile Scroll Smoothness:
 
-  After login — the response session object contains access_token and refresh_token. Supabase SSR stores these in cookies
-  automatically via the login route — do not store in localStorage.
+- ✅ Native smooth scroll enabled (scroll-behavior: smooth)
+- ✅ Tailwind scrollbar utilities for custom styling
+- ✅ GPU-accelerated transforms
+- ✅ No layout shifts during loading (skeleton dimensions match real content)
 
-  badges[] shape (from dashboard):
-  { label: string, value: string, variant: 'success' | 'warning' | 'default', change_pct: number }
+Observed Pages:
 
-  Order status flow:
-  placed → confirmed → preparing → ready → picked_up → completed
-           (accept)                               OR
-  placed/confirmed/preparing/ready → cancelled  (reject)
+- ✅ /kitchens - Infinite scroll with bottom loader
+- ✅ /admin/users - Table loader + pagination
+- ✅ /business/orders - Infinite scroll with cards
 
-  PATCH /api/kitchens/[id] updatable fields:
-  name, description, phone, cuisine_types[], dietary_options[],
-  neighborhood, address_line1, address_line2, city, province, postal_code,
-  accepts_orders, min_order_amount, preparation_time_minutes,
-  delivery_available, pickup_available, operating_hours{}
+Recommendation: No changes needed. Implementation follows best practices.
 
-  POST /api/kitchens/[id]/menu-items required fields:
-  name: string
-  price: number          // in dollars, e.g. 12.50
-  category: string       // must match a category slug
+---
 
-  POST /api/kitchens/[id]/menu-items optional fields:
-  description?: string
-  image_url?: string
-  dietary_options?: string[]
-  is_available?: boolean   // default true
-  variants?: { name: string, price_adjustment: number }[] -->
+4. ⚠️ COLOR SCHEME CONSISTENCY — MISMATCH FOUND
+
+Issue: PWA Manifest Theme Color Mismatch
+
+App Design System:
+
+- Primary: Emerald Green #10B981 (OKLCH)
+- Accent: Sky Blue #0EA5E9
+
+PWA Manifest (app/manifest.json line 8):
+"theme_color": "#6366F1" // ❌ INDIGO (wrong!)
+
+Root Layout (app/layout.tsx lines 111-114):
+themeColor: [
+{ media: "(prefers-color-scheme: light)", color: "#6366F1" }, // ❌ INDIGO
+{ media: "(prefers-color-scheme: dark)", color: "#4F46E5" }, // ❌ INDIGO
+]
+
+Button Gradients:
+
+- ✅ Uses correct emerald gradient: from-primary to-emerald-600
+
+QUESTIONS:
+
+4. Did you rebrand from Indigo to Emerald recently? The manifest still uses the old Indigo  
+   color scheme. Should I update manifest.json and viewport theme colors to match the current  
+   emerald green (#10B981)?
+
+Logo Color:
+
+- Current logo at /images/logo.png - what's the color scheme? Should I verify it matches the  
+  emerald green brand?
+
+---
+
+5. ⚠️ MOBILE FOOTER VISIBILITY — INTENTIONAL DESIGN
+
+Current Implementation:
+
+- Desktop: Full footer visible (hidden md:block on line 378)
+- Mobile: Footer hidden, replaced with bottom navigation bar (lines 342-374)
+
+Mobile Bottom Nav:
+
+- ✅ Fixed position at bottom
+- ✅ Safe area padding for notch devices (safe-area-pb)
+- ✅ 4 items: Home, Browse, Cart, Account
+- ✅ Badge indicators for cart count
+
+QUESTIONS:
+
+5. Is the missing mobile footer a problem? The current design uses a bottom nav bar instead of
+   a footer on mobile (standard pattern for mobile apps). Do you want:
+
+
+    - A) Keep bottom nav only (current - recommended)
+    - B) Add footer below bottom nav (creates clutter)
+    - C) Make footer visible but remove bottom nav (loses easy navigation)
+    - D) Add "swipe up" expandable footer on mobile
+
+6. Footer content accessibility on mobile: Contact info, social links, legal pages are only in
+   desktop footer. Should we add a "More" or "Menu" button to mobile nav that opens a sheet with  
+   footer links?
+
+---
+
+6. ⚠️ PWA READINESS — PARTIALLY READY
+
+What's Ready:
+
+- ✅ manifest.json exists with basic config
+- ✅ Icons: SVG icon (any size), Apple touch icon
+- ✅ Meta tags: viewport, theme-color
+- ✅ HTTPS-ready (security headers added)
+- ✅ Responsive design (mobile-first)
+
+What's Missing:
+
+- ❌ Service Worker (not registered)
+- ❌ Offline support (no caching strategy)
+- ❌ App icons (need 192x192, 512x512 PNG)
+- ❌ Splash screens for iOS
+- ❌ Install prompt (no PWA install banner)
+- ❌ Background sync (for offline orders)
+
+Manifest Issues:
+
+1. Theme color mismatch (already noted)
+2. Only has SVG icon - PWA requires PNG sizes: 192x192, 512x512
+3. Missing screenshots array for app store
+4. Missing categories, shortcuts
+
+QUESTIONS:
+
+7. PWA Priority: Do you want full PWA functionality? This involves:
+
+
+    - Service worker with offline support
+    - Installing app to home screen
+    - Works offline (with cached data)
+    - Background order sync when connection restored
+    - Push notifications (requires backend support)
+
+8. Offline-First Strategy: Should the app work offline for:
+
+
+    - A) Browse-only (cached kitchens/menus, no ordering)
+    - B) Order queue (save orders offline, sync when online)
+    - C) Full offline (browse + order + sync)
+    - D) No offline support needed (online-only app)
+
+9. Do you have 192x192 and 512x512 PNG versions of your logo? PWA requires these for
+   installation.
+
+---
+
+7. ✅ ANIMATION OPPORTUNITIES — CURRENT STATE GOOD
+
+Current Animations:
+.animate-float (6s ease-in-out infinite)
+.animate-float-slow (8s ease-in-out infinite)
+.animate-pulse-soft (3s ease-in-out infinite)
+.hover-lift (hover: translateY -4px + shadow)
+.hover-glow (hover: emerald shadow)
+
+Where Animations Are Used:
+
+- ✅ Loading spinners (rotate animation)
+- ✅ Hero section (float animations for decorative elements)
+- ✅ Hover effects on cards (lift + shadow)
+- ✅ Button hover states (gradient shift)
+- ✅ Toast notifications (sonner slide-in)
+
+Missing Animation Opportunities:
+
+QUESTIONS:
+
+10. Page Transitions: Should we add:
+
+
+    - Fade-in on page load
+    - Slide transitions between pages (framer-motion is already installed!)
+    - Stagger animations for list items
+
+11. Micro-interactions: Should we add:
+
+
+    - ✨ Add-to-cart button: scale + success checkmark animation
+    - 💚 Wishlist heart: fill animation when clicked
+    - 📦 Order status: progress bar animation
+    - 🔔 Notification badge: bounce when new item
+    - 🎉 Checkout success: confetti or success animation
+
+12. Loading animations: Currently using simple spinners. Upgrade to:
+
+
+    - Skeleton loaders with shimmer effect (already have skeletons, add shimmer?)
+    - Progressive image loading (blur-up placeholders)
+    - Content fade-in after load
+
+---
+
+8. ✅ NOTIFICATION HANDLING — EXCELLENT
+
+Current Implementation (lib/notifications.tsx):
+
+- ✅ Sonner toast library (modern, beautiful, accessible)
+- ✅ Error codes mapped to user-friendly messages
+- ✅ Position: top-center (mobile: auto-adjust)
+- ✅ Rich colors, close button, auto-dismiss
+- ✅ Durations: Error (6s), Success (3s), Info (4s), Warning (5s)
+- ✅ Loading toasts with dismissal
+
+Error Handling:
+
+- ✅ Network errors: "Cannot reach server"
+- ✅ 401: "Please sign in to continue"
+- ✅ 403: "Access denied"
+- ✅ Validation: Specific field errors
+- ✅ Conflicts: "Already registered"
+- ✅ Rate limits: "Too many requests"
+
+What's NOT Implemented:
+
+QUESTIONS:
+
+13. Real-time notifications: Should we implement:
+
+
+    - A) Supabase Realtime for live order updates (chef confirms → customer gets toast)
+    - B) Push notifications (requires PWA + backend push service)
+    - C) In-app notification center (bell icon → list of past notifications)
+    - D) Email/SMS notifications only (no in-app realtime)
+
+14. Notification preferences: Should users be able to:
+
+
+    - Toggle notification types (orders, promotions, updates)
+    - Choose notification channels (toast, email, push, SMS)
+    - Quiet hours (mute notifications)
+
+15. Sound effects: Should notifications play sounds?
+
+
+    - Order confirmed: success chime
+    - Order ready: alert sound
+    - New message: notification sound
+
+---
+
+9. ⚠️ FRONTEND LOAD TIME — GOOD, CAN IMPROVE
+
+Current Load Metrics (Estimated):
+
+- Bundle Size: 726MB node_modules (normal for Next.js)
+- First Load JS: ~200-250KB (needs measurement)
+- Images: Unoptimized (unoptimized: true in next.config)
+
+What's Optimized:
+
+- ✅ Dynamic imports: None used yet (opportunity!)
+- ✅ Font optimization: Inter font with display: swap
+- ✅ Code splitting: Next.js automatic per-route
+- ✅ Tree shaking: Enabled (ES modules)
+- ✅ Vercel Analytics: Already installed
+
+What's NOT Optimized:
+
+QUESTIONS:
+
+16. Code splitting: Should I implement dynamic imports for:
+
+
+    - Admin/Business layouts (not needed for customers)
+    - Framer-motion (only import when animations needed)
+    - Chart libraries (if used in analytics)
+    - Dialog/Sheet components (lazy load)
+
+17. Image optimization: Why is unoptimized: true?
+
+
+    - Are you self-hosting without Next.js Image Optimizer?
+    - Should I enable optimization for Vercel/Netlify deploy?
+    - Do you need WebP/AVIF conversion?
+
+18. Font loading: Currently uses Google Fonts CDN. Should we:
+
+
+    - Keep CDN (faster with caching)
+    - Self-host fonts (GDPR compliance, no external requests)
+
+19. Prefetching strategy: Should we prefetch:
+
+
+    - Featured kitchens on homepage
+    - Next page in infinite scroll
+    - Kitchen detail when hovering kitchen card
+
+---
+
+10. ❌ WEBSOCKETS / REALTIME — NOT IMPLEMENTED
+
+Current State:
+
+- ❌ No Supabase Realtime client initialized
+- ❌ No WebSocket connections
+- ❌ No live data subscriptions
+- ❌ Polling only (manual refresh)
+
+Backend Capabilities (from Supabase schema):
+
+- ✅ Supabase has built-in Realtime
+- ✅ Can subscribe to table changes
+- ✅ Broadcast, Presence, Postgres Changes
+
+Use Cases for Realtime:
+
+QUESTIONS:
+
+20. Do you want realtime features? Which of these would add value:
+
+
+    - Customer side:
+        - Order status updates (confirmed → preparing → ready)
+      - Kitchen availability changes (open/closed)
+      - Menu item availability (sold out updates)
+      - New messages from chef
+    - Business side:
+        - New order alerts (sound + toast)
+      - Live order dashboard updates
+      - Customer messages
+      - Review notifications
+    - Admin side:
+        - New kitchen registrations
+      - Flagged reviews
+      - System alerts
+
+21. Realtime implementation approach:
+
+
+    - A) Supabase Realtime (easiest, built-in)
+    - B) WebSockets (custom backend)
+    - C) Server-Sent Events (SSE)
+    - D) Polling (current - no realtime)
+
+22. Fallback strategy: If realtime fails (connection lost), should we:
+
+
+    - Auto-reconnect with exponential backoff
+    - Fallback to polling every 30s
+    - Show "Live updates disabled" banner
+    - Queue updates and sync when reconnected
+
+---
+
+11. ⚠️ DEPENDENCY VULNERABILITIES — ACTION REQUIRED
+
+Current Status:
+Next.js 16.0.10 has HIGH severity vulnerabilities
+
+- DoS via Image Optimizer (CVE: moderate)
+- HTTP request deserialization DoS (CVE: high)
+- Unbounded memory consumption (CVE: moderate)
+
+FIX:
+npm install next@16.1.5
+
+Other Packages:
+
+- All other dependencies: ✅ No known vulnerabilities
+
+---
+
+🎨 ADDITIONAL FINDINGS
+
+Color Consistency Across Screens
+
+Checked:
+
+- ✅ Landing page: Emerald gradient hero, emerald CTAs
+- ✅ Kitchen cards: Emerald rating stars, emerald buttons
+- ✅ Admin dashboard: Primary emerald for stats
+- ✅ Business dashboard: Emerald for positive metrics
+- ✅ Auth pages: Emerald primary buttons
+- ✅ Cart/Checkout: Emerald confirm buttons
+
+Issue:
+
+- Logo needs verification (is it emerald or old indigo?)
+- Manifest theme color (noted above)
+
+Standards Compliance
+
+- ✅ WCAG 2.1 color contrast (need to verify with tool)
+- ✅ Semantic HTML (header, main, footer, nav)
+- ✅ ARIA labels on interactive elements
+- ✅ Keyboard navigation (focus states defined)
+- ✅ Mobile-first responsive design
+- ✅ Touch targets 44x44px minimum
+- ⚠️ Alt text on images (need to audit all <img> tags)
+- ⚠️ Form labels properly associated (need to verify all forms)
+
+---
+
+📋 SUMMARY OF QUESTIONS
+
+Before I propose solutions, I need your input on:
+
+Critical Decisions:
+
+1. API Caching: Aggressively cache kitchens/menus, or keep fresh?
+2. PWA: Full offline app, or online-only?
+3. Realtime: Live updates via Supabase Realtime, or polling?
+4. Color Scheme: Confirm emerald green (#10B981) is the official brand color?
+
+Feature Priorities:
+
+5. Mobile Footer: Keep bottom nav only, or add footer access?
+6. Animations: Add micro-interactions and page transitions?
+7. Notifications: Push notifications + realtime, or toast-only?
+8. Code Splitting: Implement dynamic imports for smaller bundles?
+
+Technical Details:
+
+9. Image Optimization: Why is it disabled? Can I enable it?
+10. WebSocket fallback: If realtime fails, what's the backup plan?
+11. Offline orders: Should orders queue offline and sync when online?
+12. Service Worker: Implement for PWA, or skip for now?
+
+---
+
+⚡ IMMEDIATE ACTION ITEMS (Waiting for Your Answers)
+
+Once you answer the questions above, I will:
+
+1. ✅ Update Next.js to 16.1.5 (security patch)
+2. ✅ Fix manifest.json theme colors to emerald
+3. ✅ Fix viewport theme-color to emerald
+4. 📝 Implement caching strategy (based on your answer #1)
+5. 📝 Add PWA assets (if you want PWA - question #7-9)
+6. 📝 Setup Supabase Realtime (if you want it - question #20-22)
+7. 📝 Add animations (if desired - question #10-12)
+8. 📝 Add mobile footer access (based on your answer #5-6)
+9. 📝 Implement code splitting (if desired - question #16)
+10. 📝 Enable image optimization (based on your answer #17)
+
+Please answer the numbered questions (1-22) so I can implement the right solutions for your  
+ production app.
