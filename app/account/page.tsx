@@ -389,7 +389,7 @@ function AccountContent() {
                       <div className="space-y-2 mb-4 pb-4 border-b">
                         {(order.order_items || order.items || []).map((item: any, idx: number) => (
                           <div key={idx} className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">{item.quantity}x {item.menu_item?.name || item.name}</span>
+                            <span className="text-muted-foreground">{item.quantity}x {item.item_name || item.menu_item?.name || item.name}</span>
                             <span className="font-medium">${(Number(item.unit_price ?? item.price ?? 0) * item.quantity).toFixed(2)}</span>
                           </div>
                         ))}

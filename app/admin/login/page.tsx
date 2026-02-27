@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
@@ -17,10 +17,17 @@ export default function AdminLoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const { loginWithSession } = useAuth()
+  const { loginWithSession, user, isAdmin } = useAuth()
   const router = useRouter()
 
   const canSubmit = email.trim().length > 0 && password.length > 0
+
+  // Redirect after successful login when user state is updated
+  useEffect(() => {
+    if (user && isAdmin) {
+      router.push("/admin/dashboard")
+    }
+  }, [user, isAdmin, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,7 +49,6 @@ export default function AdminLoginPage() {
 
       loginWithSession(result.user, result.session?.access_token)
       showSuccess("Welcome, Admin", "Redirecting to dashboard...")
-      router.push("/admin/dashboard")
     } catch (err) {
       showError(err)
     } finally {

@@ -35,6 +35,9 @@ export const metadata: Metadata = {
     "Discover talented home chefs in Toronto making real family recipes.",
   keywords: ["home cooking Toronto", "home chefs", "authentic food"],
   manifest: "/manifest.json",
+  icons: {
+    icon: "/icon-192.png",
+  },
 };
 
 // Viewport configuration

@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
@@ -17,10 +17,17 @@ export default function BusinessLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { loginWithSession } = useAuth();
+  const { loginWithSession, user, isBusiness } = useAuth();
   const router = useRouter();
 
   const canSubmit = email.trim().length > 0 && password.length > 0;
+
+  // Redirect after successful login when user state is updated
+  useEffect(() => {
+    if (user && isBusiness) {
+      router.push("/business/dashboard");
+    }
+  }, [user, isBusiness, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +53,6 @@ export default function BusinessLoginPage() {
 
       loginWithSession(result.user, result.session?.access_token);
       showSuccess("Welcome back!", "Redirecting to your dashboard...");
-      router.push("/business/dashboard");
     } catch (err) {
       showError(err);
     } finally {

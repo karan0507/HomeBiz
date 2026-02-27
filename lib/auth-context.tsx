@@ -130,14 +130,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     localStorage.removeItem("user");
     localStorage.removeItem("access_token");
-    
+    localStorage.removeItem("cart");
+    localStorage.removeItem("wishlist");
+
     try {
       // Wait for server-side cookie cleanup
       await fetchAPI('/auth/logout', { method: 'POST' });
     } catch {
       // Ignore cleanup errors
     }
-    
+
     router.push("/");
   };
 
