@@ -65,7 +65,7 @@ function transformOrder(o: any): Order {
     customerName: fullName,
     customerPhone: customer.phone || "",
     items: (o.order_items || o.items || []).map((item: any) => ({
-      name: item.menu_item?.name || item.name || "",
+      name: item.menu_item?.name || item.item_name || item.name || "",
       quantity: item.quantity,
       price: Number(item.unit_price ?? item.price ?? 0),
       specialInstructions: item.notes || item.special_instructions,
