@@ -7,6 +7,8 @@ import { NextRequest, NextResponse } from 'next/server';
  * Auth cookie: Supabase sets `sb-<project>-auth-token` as an httpOnly cookie.
  * We check for its presence as a gate — actual role validation still happens
  * in the page-level route guards (which call GET /api/auth/me).
+ *
+ * NOTE: Next.js 16 renamed middleware.ts → proxy.ts
  */
 
 // Routes that require authentication (any role)
@@ -26,7 +28,7 @@ function hasAuthCookie(request: NextRequest): boolean {
     );
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // Skip static files, API routes, and Next.js internals
