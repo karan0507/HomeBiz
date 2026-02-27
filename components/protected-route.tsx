@@ -13,49 +13,40 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, requireAdmin, requireBusiness }: ProtectedRouteProps) {
-  const { isAuthenticated, isAdmin, isBusiness, user } = useAuth()
+  const { isAuthenticated, isAdmin, isBusiness, isLoading } = useAuth()
   const router = useRouter()
-  const [isChecking, setIsChecking] = useState(true)
+  const [allowed, setAllowed] = useState(false)
 
   useEffect(() => {
-    const checkAuth = () => {
-      if (!isAuthenticated) {
-        if (requireAdmin) {
-          router.push("/admin/login")
-        } else if (requireBusiness) {
-          router.push("/business/login")
-        } else {
-          router.push("/login")
-        }
-        return
-      }
+    // Wait until AuthProvider has finished reading localStorage + /auth/me
+    if (isLoading) return
 
-      if (requireAdmin && !isAdmin) {
-        router.push("/admin/login")
-        return
-      }
-
-      if (requireBusiness && !isBusiness) {
-        router.push("/business/login")
-        return
-      }
-
-      setIsChecking(false)
+    if (!isAuthenticated) {
+      if (requireAdmin) router.replace("/admin/login")
+      else if (requireBusiness) router.replace("/business/login")
+      else router.replace("/login")
+      return
     }
 
-    checkAuth()
-  }, [isAuthenticated, isAdmin, isBusiness, requireAdmin, requireBusiness, router])
+    if (requireAdmin && !isAdmin) {
+      router.replace("/admin/login")
+      return
+    }
 
-  if (isChecking || !isAuthenticated) {
-    return null
-  }
+    if (requireBusiness && !isBusiness) {
+      router.replace("/business/login")
+      return
+    }
 
-  if (requireAdmin && !isAdmin) {
-    return null
-  }
+    setAllowed(true)
+  }, [isLoading, isAuthenticated, isAdmin, isBusiness, requireAdmin, requireBusiness, router])
 
-  if (requireBusiness && !isBusiness) {
-    return null
+  if (isLoading || !allowed) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    )
   }
 
   return <>{children}</>

@@ -280,7 +280,7 @@ export default function BusinessSignupPage() {
         );
         setTimeout(() => router.push("/business/login"), 1500);
       } else {
-        loginWithSession(result.user);
+        loginWithSession(result.user, result.session?.access_token);
         showSuccess("Account created!", "Redirecting to your dashboard...");
         setTimeout(() => router.push("/business/dashboard"), 1200);
       }

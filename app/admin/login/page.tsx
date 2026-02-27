@@ -40,7 +40,7 @@ export default function AdminLoginPage() {
         return
       }
 
-      loginWithSession(result.user)
+      loginWithSession(result.user, result.session?.access_token)
       showSuccess("Welcome, Admin", "Redirecting to dashboard...")
       router.push("/admin/dashboard")
     } catch (err) {

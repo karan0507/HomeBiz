@@ -17,12 +17,13 @@ export interface SessionUser {
 
 interface AuthContextType {
   user: SessionUser | null
-  loginWithSession: (userData: { id: string; email: string; name: string; first_name?: string; last_name?: string; role: string }) => void
+  loginWithSession: (userData: { id: string; email: string; name: string; first_name?: string; last_name?: string; role: string }, accessToken?: string) => void
   logout: () => void
   isAuthenticated: boolean
   isAdmin: boolean
   isBusiness: boolean
   isCustomer: boolean
+  isLoading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -47,6 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(parsed); // Fast UI restore
       } catch {
         localStorage.removeItem("user");
+        localStorage.removeItem("access_token");
         setIsLoading(false);
         return;
       }
@@ -78,6 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (err instanceof APIError && (err.status === 401 || err.status === 404 || err.code === 'UNAUTHORIZED')) {
           setUser(null);
           localStorage.removeItem("user");
+          localStorage.removeItem("access_token");
           router.push('/login');
         }
       } finally {
@@ -85,10 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    if (!initialized.current) {
-      initialized.current = true;
-      validate();
-    }
+    validate();
 
     // Re-validate when tab becomes visible
     const handleVisibility = () => {
@@ -107,7 +107,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const loginWithSession = (
-    userData: { id: string; email: string; name: string; first_name?: string; last_name?: string; role: string }
+    userData: { id: string; email: string; name: string; first_name?: string; last_name?: string; role: string },
+    accessToken?: string
   ) => {
     const sessionUser: SessionUser = {
       id: userData.id,
@@ -119,12 +120,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     setUser(sessionUser)
     localStorage.setItem("user", JSON.stringify(sessionUser))
+    if (accessToken) {
+      localStorage.setItem("access_token", accessToken)
+    }
   }
 
   const logout = async () => {
     // Clear local state immediately for UX
     setUser(null);
     localStorage.removeItem("user");
+    localStorage.removeItem("access_token");
     
     try {
       // Wait for server-side cookie cleanup
@@ -144,14 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAdmin: user?.role === "admin",
     isBusiness: user?.role === "business",
     isCustomer: user?.role === "customer",
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    )
+    isLoading,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -44,7 +44,7 @@ export default function BusinessLoginPage() {
         return;
       }
 
-      loginWithSession(result.user);
+      loginWithSession(result.user, result.session?.access_token);
       showSuccess("Welcome back!", "Redirecting to your dashboard...");
       router.push("/business/dashboard");
     } catch (err) {

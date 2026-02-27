@@ -53,6 +53,8 @@ export async function fetchAPI<T>(endpoint: string, options?: RequestInit): Prom
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
+      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+
       const response = await fetch(`${API_URL}${endpoint}`, {
         ...options,
         credentials: 'include',
@@ -60,6 +62,7 @@ export async function fetchAPI<T>(endpoint: string, options?: RequestInit): Prom
         headers: {
           'Content-Type': 'application/json',
           'X-Requested-With': 'XMLHttpRequest', // Standard CSRF mitigation helper
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
           ...options?.headers,
         },
       });

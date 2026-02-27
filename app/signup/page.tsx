@@ -171,7 +171,7 @@ export default function SignupPage() {
         router.push("/login");
         return;
       }
-      loginWithSession(result.user);
+      loginWithSession(result.user, result.session?.access_token);
       showSuccess("Account created!", "Welcome to HomeBiz.");
       router.push("/account");
     } catch (err) {

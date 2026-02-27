@@ -44,7 +44,7 @@ function LoginForm() {
         showError(new APIError("Use the admin portal to sign in.", 403, "FORBIDDEN"));
         return;
       }
-      loginWithSession(result.user);
+      loginWithSession(result.user, result.session?.access_token);
       showSuccess("Welcome back!", "You're now signed in.");
       router.push(result.user.role === 'business' ? '/business/dashboard' : redirect);
     } catch (err) {
