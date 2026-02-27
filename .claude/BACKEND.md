@@ -16,7 +16,7 @@ HomeBiz is a Next.js 15 API-only backend serving a home kitchen marketplace for 
 - **Realtime:** Supabase Realtime (orders, notifications, order_status_timeline)
 - **Geocoding:** OpenStreetMap Nominatim (free, no API key)
 - **Runtime:** Node.js via Next.js
-- **Port:** 3001 (dev), Netlify deployment for prod
+- **Port:** 3001 (dev), ✅ Deployed: https://home-biz-backend.vercel.app
 
 ---
 
@@ -1234,7 +1234,7 @@ It provides everything you need:
 **CORS (lib/utils/cors.ts):**
 
 - ✅ OPTIONS handler on all routes
-- ✅ Whitelisted origins (localhost:3000, localhost:3001, homebiz.netlify.app)
+- ✅ Whitelisted origins (localhost:3000, localhost:3001, home-biz-one.vercel.app)
 - ✅ credentials: true for cookie-based auth
 - ✅ Dev mode allows any origin
 
