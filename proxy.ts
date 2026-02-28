@@ -40,31 +40,16 @@ export function proxy(request: NextRequest) {
         return NextResponse.next();
     }
 
-    const isProtected = AUTH_REQUIRED.some(route => pathname.startsWith(route));
-
-    // Allow signup/login pages through without auth check
-    const isAuthPage =
-        pathname === '/business/login' ||
-        pathname === '/business/signup' ||
-        pathname === '/admin/login';
-
-    if (isProtected && !isAuthPage && !hasAuthCookie(request)) {
-        const loginPath = pathname.startsWith('/admin')
-            ? '/admin/login'
-            : '/business/login';
-
-        const url = request.nextUrl.clone();
-        url.pathname = loginPath;
-        url.searchParams.set('redirect', pathname);
-        return NextResponse.redirect(url);
-    }
-
     // Block /business/services — route exists on disk but is not ready for production
     if (pathname === '/business/services') {
         const url = request.nextUrl.clone();
         url.pathname = '/business/dashboard';
         return NextResponse.redirect(url);
     }
+
+    // REMOVED: Server-side auth check - cross-domain cookies don't work between
+    // home-biz-backend.vercel.app and home-biz-one.vercel.app
+    // Auth is handled client-side by ProtectedRoute component which calls /api/auth/me
 
     return NextResponse.next();
 }

@@ -23,7 +23,6 @@ export default function BusinessLoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
-    console.log('[Business Login] API URL:', process.env.NEXT_PUBLIC_API_URL);
     setIsLoading(true);
     try {
       const result = await fetchAPI<{
@@ -43,13 +42,9 @@ export default function BusinessLoginPage() {
         return;
       }
 
-      console.log('[Business Login] Login successful, redirecting...', result.user);
       loginWithSession(result.user, result.session?.access_token);
       showSuccess("Welcome back!", "Redirecting to your dashboard...");
-      // Use full page reload to ensure cookie is committed before middleware check
-      console.log('[Business Login] Executing window.location.href');
       window.location.href = "/business/dashboard";
-      console.log('[Business Login] window.location.href executed');
     } catch (err) {
       showError(err);
     } finally {
