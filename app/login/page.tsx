@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
@@ -16,21 +16,12 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { loginWithSession, user, isBusiness, isCustomer } = useAuth();
+  const { loginWithSession } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/account";
 
   const canSubmit = email.trim().length > 0 && password.length > 0;
-
-  // Redirect after successful login when user state is updated
-  useEffect(() => {
-    if (user && isBusiness) {
-      router.push("/business/dashboard");
-    } else if (user && isCustomer) {
-      router.push(redirect);
-    }
-  }, [user, isBusiness, isCustomer, redirect, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,6 +46,12 @@ function LoginForm() {
       }
       loginWithSession(result.user, result.session?.access_token);
       showSuccess("Welcome back!", "You're now signed in.");
+      // Use full page reload for business users to ensure cookie is committed
+      if (result.user.role === 'business') {
+        window.location.href = '/business/dashboard';
+      } else {
+        router.push(redirect);
+      }
     } catch (err) {
       showError(err);
     } finally {

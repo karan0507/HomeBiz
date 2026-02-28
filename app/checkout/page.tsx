@@ -11,7 +11,7 @@ import { MainLayout } from "@/components/layout/main-layout";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth-context";
 import { fetchAPI } from "@/lib/services/api.client";
-import { showError } from "@/lib/notifications";
+import { showError, showSuccess } from "@/lib/notifications";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -55,7 +55,7 @@ export default function CheckoutPage() {
         pickupTime === "1hr" ? new Date(Date.now() + 3600000).toISOString()
         : pickupTime === "2hr" ? new Date(Date.now() + 7200000).toISOString()
         : undefined;
-      const result = await fetchAPI<{ id: string }>("/orders", {
+      const result = await fetchAPI<{ id: string; order_number: string }>("/orders", {
         method: "POST",
         body: JSON.stringify({
           kitchen_id: items[0].kitchenId,
@@ -66,6 +66,7 @@ export default function CheckoutPage() {
         }),
       });
       clearCart();
+      showSuccess("Order placed!", `Your order ${result.order_number} has been confirmed. The kitchen will prepare your meal.`);
       router.push(`/order-confirmation?id=${result.id}`);
     } catch (err) {
       showError(err);

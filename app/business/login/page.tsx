@@ -1,8 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { fetchAPI, APIError } from "@/lib/services/api.client";
@@ -17,17 +16,9 @@ export default function BusinessLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { loginWithSession, user, isBusiness } = useAuth();
-  const router = useRouter();
+  const { loginWithSession } = useAuth();
 
   const canSubmit = email.trim().length > 0 && password.length > 0;
-
-  // Redirect after successful login when user state is updated
-  useEffect(() => {
-    if (user && isBusiness) {
-      router.push("/business/dashboard");
-    }
-  }, [user, isBusiness, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +44,8 @@ export default function BusinessLoginPage() {
 
       loginWithSession(result.user, result.session?.access_token);
       showSuccess("Welcome back!", "Redirecting to your dashboard...");
+      // Use full page reload to ensure cookie is committed before middleware check
+      window.location.href = "/business/dashboard";
     } catch (err) {
       showError(err);
     } finally {
