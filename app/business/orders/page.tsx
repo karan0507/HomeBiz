@@ -249,10 +249,21 @@ export default function BusinessOrdersPage() {
   }
 
   const handleReject = async (orderId: string) => {
+    // Confirmation dialog
+    if (!confirm("Are you sure you want to reject this order? This action cannot be undone.")) {
+      return
+    }
+
+    const reason = prompt("Please provide a reason for rejecting this order (optional):")
+
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: "cancelled" } : o))
     try {
-      await fetchAPI(`/orders/${orderId}/reject`, { method: "PUT" })
-      toast.error("Order rejected")
+      await fetchAPI(`/orders/${orderId}/reject`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: reason || "Order rejected by kitchen" })
+      })
+      toast.success("Order rejected")
     } catch (err) {
       showError(err)
       fetchAPI<any[]>("/business/orders")

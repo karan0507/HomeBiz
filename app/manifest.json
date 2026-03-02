@@ -4,8 +4,8 @@
   "description": "Authentic home cooking from your Toronto neighbours",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#10B981",
+  "background_color": "#FFF9F5",
+  "theme_color": "#E8480A",
   "icons": [
     {
       "src": "/icon.svg",

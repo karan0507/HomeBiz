@@ -171,110 +171,113 @@ export default function KitchenDetailPage() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/10 to-emerald-500/10" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/10 to-orange-500/10" />
                 )}
                 <div className="absolute inset-0 bg-[url('/pattern.svg')] opacity-5" />
               </div>
-              <CardContent className="p-5 -mt-10 relative">
-                <div className="flex gap-4">
-                  <div className="w-20 h-20 rounded-2xl overflow-hidden bg-white flex items-center justify-center shrink-0 shadow-lg shadow-primary/25 border-4 border-background relative">
+              <CardContent className="p-3 -mt-10 relative">
+                <div className="flex gap-3">
+                  <div className="w-16 h-16 rounded-xl overflow-hidden bg-white flex items-center justify-center shrink-0 shadow-md shadow-primary/20 border-2 border-background relative">
                     {kitchen.logo_url ? (
-                      <img 
-                        src={kitchen.logo_url} 
-                        alt={kitchen.name} 
+                      <img
+                        src={kitchen.logo_url}
+                        alt={kitchen.name}
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-primary via-primary to-emerald-600 flex items-center justify-center">
-                        <ChefHat className="w-10 h-10 text-white" />
+                      <div className="w-full h-full bg-gradient-to-br from-primary via-primary to-orange-600 flex items-center justify-center">
+                        <ChefHat className="w-8 h-8 text-white" />
                       </div>
                     )}
                   </div>
-                  <div className="flex-1 min-w-0 pt-2">
+                  <div className="flex-1 min-w-0 pt-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h1 className="font-bold text-xl">{kitchen.name}</h1>
-                      {kitchen.isVerified && (
-                        <BadgeCheck className="w-5 h-5 text-primary shrink-0" />
+                      <h1 className="font-bold text-lg">{kitchen.name}</h1>
+                      {kitchen.verification_status === 'approved' && (
+                        <BadgeCheck className="w-4 h-4 text-blue-500 shrink-0" />
                       )}
                       <Badge
                         className={
-                          kitchen.accepting_orders
-                            ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-                            : "bg-red-100 text-red-700 border-red-200"
+                          kitchen.is_active
+                            ? "bg-emerald-500 text-white border-0"
+                            : "bg-red-500 text-white border-0"
                         }
                       >
-                        {kitchen.accepting_orders ? "Open Now" : "Closed"}
+                        {kitchen.is_active ? "Open" : "Closed"}
                       </Badge>
                     </div>
-                    <p className="text-muted-foreground mt-1">{kitchen.tagline}</p>
+                    <p className="text-sm text-muted-foreground mt-0.5">{kitchen.description || kitchen.short_description}</p>
                   </div>
                   <Button
                     variant="outline"
                     size="icon"
-                    className="shrink-0 h-10 w-10"
+                    className="shrink-0 h-8 w-8"
                     onClick={() => toggleWishlist(kitchen.id)}
                   >
                     <Heart
-                      className={`w-5 h-5 ${
+                      className={`w-4 h-4 ${
                         isInWishlist(kitchen.id) ? "fill-red-500 text-red-500" : ""
                       }`}
                     />
                   </Button>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-4 mt-4 text-sm">
-                  <span className="flex items-center gap-1.5 bg-yellow-50 text-yellow-700 px-2.5 py-1 rounded-full">
-                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                <div className="flex flex-wrap items-center gap-3 mt-3 text-xs">
+                  <span className="flex items-center gap-1 bg-yellow-50 text-yellow-700 px-2 py-0.5 rounded-full">
+                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                     <span className="font-semibold">{kitchen.rating}</span>
-                    <span className="text-yellow-600">({kitchen.reviewCount})</span>
+                    <span className="text-yellow-600">({kitchen.review_count || kitchen.reviewCount || 0})</span>
                   </span>
-                  <span className="flex items-center gap-1.5 text-muted-foreground">
-                    <MapPin className="w-4 h-4" />
+                  <span className="flex items-center gap-1 text-muted-foreground">
+                    <MapPin className="w-3 h-3" />
                     {kitchen.neighborhood}
                   </span>
-                  <span className="flex items-center gap-1.5 text-muted-foreground">
-                    <Clock className="w-4 h-4" />
-                    {kitchen.preparation_time || kitchen.preparationTime}
+                  <span className="flex items-center gap-1 text-muted-foreground">
+                    <Clock className="w-3 h-3" />
+                    {kitchen.prep_time_min && kitchen.prep_time_max
+                      ? `${kitchen.prep_time_min}-${kitchen.prep_time_max} min`
+                      : kitchen.preparation_time || '30-45 min'
+                    }
                   </span>
-                  <span className="flex items-center gap-1.5 text-muted-foreground">
-                    <Phone className="w-4 h-4" />
+                  <span className="flex items-center gap-1 text-muted-foreground">
+                    <Phone className="w-3 h-3" />
                     {kitchen.phone}
                   </span>
                 </div>
 
-                <div className="flex gap-2 mt-4 flex-wrap">
+                <div className="flex gap-1.5 mt-3 flex-wrap">
                   {kitchen.cuisineTypes?.map((cuisine: string) => (
-                    <Badge key={cuisine} variant="secondary" className="text-xs">
+                    <Badge key={cuisine} variant="secondary" className="text-[10px] px-1.5 py-0">
                       {cuisine}
                     </Badge>
                   ))}
                   {kitchen.dietaryOptions?.slice(0, 3).map((opt: string) => (
-                    <Badge key={opt} variant="outline" className="text-xs">
+                    <Badge key={opt} variant="outline" className="text-[10px] px-1.5 py-0">
                       {opt}
                     </Badge>
                   ))}
                 </div>
 
-                <div className="flex items-center gap-2 mt-4 pt-4 border-t text-sm text-muted-foreground">
-                  <Utensils className="w-4 h-4" />
-                  <span>Minimum order: <strong className="text-foreground">${kitchen.minimum_order || kitchen.minimumOrder || 0}</strong></span>
+                <div className="flex items-center gap-1.5 mt-3 pt-3 border-t text-xs text-muted-foreground">
+                  <Utensils className="w-3 h-3" />
+                  <span>Minimum order: <strong className="text-foreground">${kitchen.minimum_order || 0}</strong></span>
                 </div>
               </CardContent>
             </Card>
 
             {/* Menu Section */}
             <div>
-              <h2 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                <Utensils className="w-5 h-5 text-primary" />
+              <h2 className="font-semibold text-base mb-3 flex items-center gap-2">
+                <Utensils className="w-4 h-4 text-primary" />
                 Menu ({menuItems.length} items)
               </h2>
-              <div className="grid sm:grid-cols-2 gap-3">
+              <div className="grid sm:grid-cols-2 gap-2">
                 {menuItems.map((item) => {
                   const quantity = getItemQuantity(item.id);
                   const isVeg = item.dietaryInfo?.includes("Vegetarian");
                   return (
                     <Card key={item.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                      <CardContent className="p-4">
+                      <CardContent className="p-3">
                         <div className="flex gap-3">
                           <div className="w-20 h-20 rounded-xl overflow-hidden bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center text-3xl shrink-0 relative">
                             {item.image_url ? (
@@ -325,7 +328,7 @@ export default function KitchenDetailPage() {
                               ) : (
                                 <Button
                                   size="sm"
-                                  className="h-7 text-xs px-3 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90"
+                                  className="h-7 text-xs px-3 "
                                   onClick={() => addToCart(item, kitchen.id, kitchen.name)}
                                   disabled={!item.available}
                                 >
@@ -350,36 +353,36 @@ export default function KitchenDetailPage() {
             {cartCount > 0 && (
               <div className="hidden lg:block sticky top-20 self-start">
                 <Card className="bg-background border shadow-md">
-                  <CardContent className="p-5">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <ShoppingCart className="w-5 h-5 text-primary" />
+                  <CardContent className="p-3">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <ShoppingCart className="w-4 h-4 text-primary" />
                     </div>
                     <div>
-                      <p className="font-semibold text-foreground">Your Order</p>
-                      <p className="text-sm text-muted-foreground">{cartCount} items</p>
+                      <p className="font-semibold text-sm text-foreground">Your Order</p>
+                      <p className="text-xs text-muted-foreground">{cartCount} items</p>
                     </div>
                   </div>
-                  <div className="space-y-2 mb-4">
+                  <div className="space-y-1.5 mb-3">
                     {items.slice(0, 3).map((cartItem) => (
-                      <div key={cartItem.item.id} className="flex justify-between text-sm">
+                      <div key={cartItem.item.id} className="flex justify-between text-xs">
                         <span className="text-muted-foreground">{cartItem.quantity}x {cartItem.item.name}</span>
                         <span className="font-medium">${(cartItem.item.price * cartItem.quantity).toFixed(2)}</span>
                       </div>
                     ))}
                     {items.length > 3 && (
-                      <p className="text-xs text-muted-foreground">+{items.length - 3} more items</p>
+                      <p className="text-[10px] text-muted-foreground">+{items.length - 3} more items</p>
                     )}
                   </div>
-                  <div className="border-t pt-3 mb-4">
-                    <div className="flex justify-between font-semibold">
+                  <div className="border-t pt-2 mb-3">
+                    <div className="flex justify-between font-semibold text-sm">
                       <span>Subtotal</span>
                       <span className="text-primary">${cartTotal.toFixed(2)}</span>
                     </div>
                   </div>
                   <Link href="/cart">
-                    <Button size="sm" className="w-full gap-2 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90">
-                      <ShoppingCart className="w-4 h-4" />
+                    <Button size="sm" className="w-full gap-2 h-8 text-xs">
+                      <ShoppingCart className="w-3 h-3" />
                       View Cart
                     </Button>
                   </Link>
@@ -391,29 +394,29 @@ export default function KitchenDetailPage() {
             {/* Reviews */}
             {reviews.length > 0 && (
               <div>
-                <h2 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                  <Star className="w-5 h-5 text-yellow-500" />
+                <h2 className="font-semibold text-base mb-3 flex items-center gap-2">
+                  <Star className="w-4 h-4 text-yellow-500" />
                   Reviews ({reviews.length})
                 </h2>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {reviews.slice(0, visibleReviews).map((review) => (
                     <Card key={review.id}>
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-emerald-500/20 flex items-center justify-center shrink-0">
-                            <span className="text-sm font-semibold text-primary">
+                      <CardContent className="p-3">
+                        <div className="flex items-start gap-2">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-emerald-500/20 flex items-center justify-center shrink-0">
+                            <span className="text-xs font-semibold text-primary">
                               {review.userName.charAt(0)}
                             </span>
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between">
-                              <span className="font-medium text-sm">{review.userName}</span>
-                              <span className="flex items-center gap-1 text-xs bg-yellow-50 text-yellow-700 px-2 py-0.5 rounded-full">
-                                <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                              <span className="font-medium text-xs">{review.userName}</span>
+                              <span className="flex items-center gap-0.5 text-[10px] bg-yellow-50 text-yellow-700 px-1.5 py-0.5 rounded-full">
+                                <Star className="w-2.5 h-2.5 fill-yellow-400 text-yellow-400" />
                                 {review.rating}
                               </span>
                             </div>
-                            <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                               {review.comment}
                             </p>
                           </div>
@@ -422,8 +425,8 @@ export default function KitchenDetailPage() {
                     </Card>
                   ))}
                   {visibleReviews < reviews.length && (
-                    <div ref={observerTarget} className="flex justify-center py-4">
-                      {isLoadingMore && <Loader2 className="w-5 h-5 animate-spin text-primary" />}
+                    <div ref={observerTarget} className="flex justify-center py-3">
+                      {isLoadingMore && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
                     </div>
                   )}
                 </div>
@@ -437,7 +440,7 @@ export default function KitchenDetailPage() {
       {cartCount > 0 && (
         <div className="fixed bottom-16 left-0 right-0 z-40 lg:hidden px-3 py-2 bg-background/95 backdrop-blur-sm border-t shadow-lg">
           <Link href="/cart">
-            <Button size="sm" className="w-full gap-2 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90">
+            <Button size="sm" className="w-full gap-2 ">
               <ShoppingCart className="w-4 h-4" />
               <span>View Cart ({cartCount})</span>
               <span className="ml-auto font-semibold">${cartTotal.toFixed(2)}</span>

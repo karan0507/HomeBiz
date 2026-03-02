@@ -22,7 +22,7 @@ export function ContactSection() {
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Contact <span className="bg-gradient-to-r from-primary to-emerald-600 bg-clip-text text-transparent">Us</span>
+            Contact <span className=" bg-clip-text text-transparent">Us</span>
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
             Have questions? We're here to help. Reach out and we'll get back to you as soon as possible.
@@ -39,7 +39,7 @@ export function ContactSection() {
             </CardHeader>
             <CardContent>
               {submitted ? (
-                <Alert className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                <Alert className="bg-orange-50 text-orange-700 border-orange-200">
                   <AlertDescription>
                     Thank you! We'll get back to you within 24-48 hours.
                   </AlertDescription>
@@ -63,7 +63,7 @@ export function ContactSection() {
                       className="w-full mt-1.5 px-3 py-2 text-sm border rounded-md resize-none"
                     />
                   </div>
-                  <Button type="submit" size="sm" className="w-full gap-2 bg-gradient-to-r from-primary to-emerald-600">
+                  <Button type="submit" size="sm" className="w-full gap-2 ">
                     <Send className="w-4 h-4" />
                     Send Message
                   </Button>
@@ -91,8 +91,8 @@ export function ContactSection() {
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
-                    <Phone className="w-6 h-6 text-emerald-600" />
+                  <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center shrink-0">
+                    <Phone className="w-6 h-6 text-orange-600" />
                   </div>
                   <div>
                     <h3 className="font-semibold mb-1">Phone</h3>

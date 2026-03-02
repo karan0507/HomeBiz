@@ -13,8 +13,6 @@ import {
   Heart,
   X,
   BadgeCheck,
-  Grid3X3,
-  List,
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -37,17 +35,46 @@ import type { CuisineType, Kitchen, KitchenFilters } from "@/types/database";
 
 const PER_PAGE = 12;
 
+// Cuisine emoji mapping
+const cuisineEmojiMap: Record<string, string> = {
+  "South Indian": "🇮🇳",
+  "Tamil": "🇮🇳",
+  "Italian": "🇮🇹",
+  "Neapolitan": "🇮🇹",
+  "Jamaican": "🇯🇲",
+  "Caribbean": "🇯🇲",
+  "Chinese": "🇨🇳",
+  "Cantonese": "🇨🇳",
+  "Halal": "☪️",
+  "Middle Eastern": "🥙",
+  "Lebanese": "🇱🇧",
+  "Ethiopian": "🇪🇹",
+  "African": "🌍",
+  "Mexican": "🇲🇽",
+  "Greek": "🇬🇷",
+  "Thai": "🇹🇭",
+  "Japanese": "🇯🇵",
+  "Korean": "🇰🇷",
+  "Vietnamese": "🇻🇳",
+  "Filipino": "🇵🇭",
+  "Indian": "🇮🇳",
+};
+
+function getCuisineEmoji(cuisine: string): string {
+  return cuisineEmojiMap[cuisine] || "🍽️";
+}
+
 function KitchensContent() {
   const searchParams = useSearchParams();
   const initialCuisine = searchParams.get("cuisine") || "";
   const initialQuery = searchParams.get("q") || "";
 
   const [searchQuery, setSearchQuery] = useState(initialQuery);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(initialQuery);
   const [selectedCuisine, setSelectedCuisine] = useState(initialCuisine);
   const [selectedDietary, setSelectedDietary] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState("rating");
   const [filterOpen, setFilterOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [minRating, setMinRating] = useState(0);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 50]);
   const [maxDistance, setMaxDistance] = useState(10);
@@ -59,6 +86,14 @@ function KitchensContent() {
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Search debouncer (500ms delay)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Stable filter snapshot — changes reset to page 1
   const filtersRef = useRef<KitchenFilters>({});
@@ -103,19 +138,27 @@ function KitchensContent() {
   }, []);
 
   // Build current filter object (stable for the current render)
+  // Map cuisine slug to ID, dietary names to IDs
   // Only send radius + lat/lon when geolocation succeeded — sending radius without
   // coordinates causes the backend search_kitchens RPC to throw a 500 error.
-  const currentFilters = useMemo<KitchenFilters>(() => ({
-    query: searchQuery || undefined,
-    cuisines: selectedCuisine ? [selectedCuisine] : undefined,
-    dietary: selectedDietary.length > 0 ? selectedDietary : undefined,
-    min_rating: minRating > 0 ? minRating : undefined,
-    ...(userLocation
-      ? { lat: userLocation.lat, lon: userLocation.lon, radius: maxDistance }
-      : {}),
-    sort: sortBy === "rating" ? "rating" : sortBy === "orders" ? "orders" : undefined,
-    per_page: PER_PAGE,
-  }), [searchQuery, selectedCuisine, selectedDietary, minRating, userLocation, maxDistance, sortBy]);
+  const currentFilters = useMemo<KitchenFilters>(() => {
+    // Find cuisine ID from slug
+    const cuisineId = selectedCuisine
+      ? cuisineTypes.find(c => c.slug === selectedCuisine)?.id
+      : undefined;
+
+    return {
+      query: debouncedSearchQuery || undefined,
+      cuisines: cuisineId ? [cuisineId] : undefined,
+      dietary: selectedDietary.length > 0 ? selectedDietary : undefined,
+      min_rating: minRating > 0 ? minRating : undefined,
+      ...(userLocation
+        ? { lat: userLocation.lat, lon: userLocation.lon, radius: maxDistance }
+        : {}),
+      sort: sortBy === "rating" ? "rating" : sortBy === "orders" ? "orders" : undefined,
+      per_page: PER_PAGE,
+    };
+  }, [debouncedSearchQuery, selectedCuisine, selectedDietary, minRating, userLocation, maxDistance, sortBy, cuisineTypes]);
 
   // When filters change → reset to page 1 and clear accumulated list
   const prevFiltersKey = useRef("");
@@ -203,7 +246,8 @@ function KitchensContent() {
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-6 max-w-7xl">
-        {/* Header */}
+        {/* Header - Commented out */}
+        {/*
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold">Find Home Kitchens</h1>
           <p className="text-muted-foreground mt-1">
@@ -211,14 +255,16 @@ function KitchensContent() {
               ? "Loading..."
               : `${allKitchens.length} home chefs ready to cook for you in Toronto`}
           </p>
-          {error && (
-            <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
-              {error}
-            </div>
-          )}
         </div>
+        */}
+        {error && (
+          <div className="mt-2 mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
+            {error}
+          </div>
+        )}
 
-        {/* Search & Filter Bar */}
+        {/* Search - Commented out, using nav search instead */}
+        {/*
         <div className="flex gap-2 mb-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -237,30 +283,42 @@ function KitchensContent() {
               </button>
             )}
           </div>
+        </div>
+        */}
 
-          {/* View Toggle (Desktop only) */}
-          <div className="hidden md:flex border rounded-md overflow-hidden">
-            <button
-              onClick={() => setViewMode("grid")}
-              className={`px-2.5 py-1.5 ${viewMode === "grid" ? "bg-primary text-white" : "bg-background hover:bg-muted"}`}
-            >
-              <Grid3X3 className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode("list")}
-              className={`px-2.5 py-1.5 ${viewMode === "list" ? "bg-primary text-white" : "bg-background hover:bg-muted"}`}
-            >
-              <List className="w-4 h-4" />
-            </button>
-          </div>
-
-          <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1.5 shrink-0">
-                <SlidersHorizontal className="w-4 h-4" />
-                <span className="hidden sm:inline">Filters</span>
-              </Button>
-            </SheetTrigger>
+        {/* Quick Filters + Filter Button */}
+        {!cuisinesLoading && cuisineTypes.length > 0 && (
+          <div className="relative mb-4">
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+              {cuisineTypes.slice(0, 8).map((cat) => (
+                <Button
+                  key={cat.id}
+                  variant={selectedCuisine === cat.slug ? "default" : "secondary"}
+                  size="sm"
+                  className={`shrink-0 h-8 gap-1 transition-all text-xs ${selectedCuisine === cat.slug ? "bg-gradient-to-r from-primary to-emerald-600 shadow-sm" : "hover:bg-muted"}`}
+                  onClick={() => setSelectedCuisine(selectedCuisine === cat.slug ? "" : cat.slug)}
+                >
+                  <span className="text-sm">{cat.icon}</span>
+                  {cat.name}
+                </Button>
+              ))}
+              <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5 shrink-0 h-8">
+                    <SlidersHorizontal className="w-4 h-4" />
+                    <span className="hidden sm:inline">More Filters</span>
+                    {hasFilters && (
+                      <X
+                        className="w-3.5 h-3.5 ml-1 hover:text-destructive transition-colors"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          clearFilters();
+                        }}
+                      />
+                    )}
+                  </Button>
+                </SheetTrigger>
             <SheetContent side="right" className="w-full sm:max-w-md">
               <SheetHeader>
                 <SheetTitle>Filter Kitchens</SheetTitle>
@@ -411,70 +469,26 @@ function KitchensContent() {
               </div>
             </SheetContent>
           </Sheet>
-        </div>
-
-        {/* Quick Filters */}
-        {!cuisinesLoading && cuisineTypes.length > 0 && (
-          <div className="relative mb-4">
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
-              {cuisineTypes.slice(0, 8).map((cat) => (
-                <Button
-                  key={cat.id}
-                  variant={selectedCuisine === cat.slug ? "default" : "secondary"}
-                  size="sm"
-                  className={`shrink-0 h-8 gap-1 transition-all text-xs ${selectedCuisine === cat.slug ? "bg-gradient-to-r from-primary to-emerald-600 shadow-sm" : "hover:bg-muted"}`}
-                  onClick={() => setSelectedCuisine(selectedCuisine === cat.slug ? "" : cat.slug)}
-                >
-                  <span className="text-sm">{cat.icon}</span>
-                  {cat.name}
-                </Button>
-              ))}
             </div>
             <div className="absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none md:hidden" />
           </div>
         )}
 
-        {/* Active Filters */}
-        {hasFilters && (
-          <div className="flex items-center gap-2 mb-6 flex-wrap bg-muted/30 p-3 rounded-lg">
-            <span className="text-sm text-muted-foreground font-medium">Filters:</span>
-            {selectedCuisine && (
-              <Badge variant="secondary" className="gap-1.5 h-7 pl-3 pr-2 bg-primary/10 text-primary border-primary/20">
-                {selectedCuisine}
-                <X className="w-3.5 h-3.5 cursor-pointer hover:text-destructive transition-colors" onClick={() => setSelectedCuisine("")} />
-              </Badge>
-            )}
-            {selectedDietary.map((d) => (
-              <Badge key={d} variant="secondary" className="gap-1.5 h-7 pl-3 pr-2 bg-accent/10 text-accent border-accent/20">
-                {d}
-                <X
-                  className="w-3.5 h-3.5 cursor-pointer hover:text-destructive transition-colors"
-                  onClick={() => setSelectedDietary((prev) => prev.filter((x) => x !== d))}
-                />
-              </Badge>
-            ))}
-            <button onClick={clearFilters} className="text-sm text-destructive hover:underline font-medium ml-auto">
-              Clear all
-            </button>
-          </div>
-        )}
+        {/* Active Filters - Removed as per requirements */}
 
-        {/* Kitchen Grid/List */}
+        {/* Kitchen Grid - Grid View Only */}
         {loading && page === 1 ? (
           // Initial skeleton
-          <div className={viewMode === "grid"
-            ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-            : "space-y-3"
-          }>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
             {Array.from({ length: 8 }).map((_, i) => (
-              <Card key={i} className="overflow-hidden">
-                <div className="h-32 bg-muted animate-pulse" />
-                <CardContent className="p-4 space-y-3">
-                  <div className="h-4 bg-muted rounded animate-pulse" />
-                  <div className="h-3 bg-muted rounded w-2/3 animate-pulse" />
-                  <div className="h-3 bg-muted rounded w-1/2 animate-pulse" />
-                </CardContent>
-              </Card>
+              <div key={i} className="rounded-2xl glass overflow-hidden animate-pulse">
+                <div className="h-48 bg-muted" />
+                <div className="p-6 space-y-3">
+                  <div className="h-6 bg-muted rounded w-3/4" />
+                  <div className="h-4 bg-muted rounded w-1/2" />
+                  <div className="h-4 bg-muted rounded w-2/3" />
+                </div>
+              </div>
             ))}
           </div>
         ) : allKitchens.length === 0 && !loading ? (
@@ -483,186 +497,147 @@ function KitchensContent() {
               <ChefHat className="w-10 h-10 text-muted-foreground" />
             </div>
             <h3 className="text-lg font-semibold mb-2">No kitchens found</h3>
-            <p className="text-muted-foreground mb-4">Try adjusting your filters or search terms</p>
-            <Button variant="outline" onClick={clearFilters}>Clear all filters</Button>
+            <p className="text-muted-foreground mb-4">Try adjusting your filters</p>
+            <Button variant="outline" onClick={clearFilters}>Clear filters</Button>
           </div>
         ) : (
-          <div className={viewMode === "grid"
-            ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-            : "space-y-3"
-          }>
-            {allKitchens.map((kitchen) =>
-              viewMode === "grid" ? (
-                // Grid View Card
-                <Card key={kitchen.id} className="overflow-hidden group hover:shadow-lg transition-all hover:border-primary/50">
-                  <Link href={`/kitchens/${kitchen.id}`}>
-                    <div className="h-32 relative overflow-hidden">
-                      {kitchen.cover_image_url ? (
-                        <img
-                          src={kitchen.cover_image_url}
-                          alt={kitchen.name}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/10 to-emerald-500/10" />
-                      )}
-
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-16 h-16 rounded-2xl overflow-hidden bg-white flex items-center justify-center shadow-lg relative border-2 border-background">
-                          {kitchen.logo_url ? (
-                            <img src={kitchen.logo_url} alt={kitchen.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-primary via-primary to-emerald-600 flex items-center justify-center">
-                              <ChefHat className="w-8 h-8 text-white" />
-                            </div>
-                          )}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
+            {allKitchens.map((kitchen) => (
+                // Grid View Card (matching landing page design)
+                <Link key={kitchen.id} href={`/kitchens/${kitchen.id}`}>
+                  <div className="group relative bg-card rounded-2xl overflow-hidden border border-border hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                    {/* Image Container */}
+                    <div className="relative aspect-[16/10] bg-muted overflow-hidden">
+                      {/* Placeholder with cuisine emoji */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
+                        <div className="text-center">
+                          <div className="w-24 h-24 rounded-full bg-white dark:bg-slate-700 shadow-lg mx-auto flex items-center justify-center mb-3">
+                            <span className="text-5xl">{getCuisineEmoji(kitchen.cuisineTypes?.[0] || "")}</span>
+                          </div>
+                          <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                            {kitchen.cuisineTypes?.[0] || "Home Kitchen"}
+                          </span>
                         </div>
                       </div>
-                      {kitchen.isVerified && (
-                        <Badge className="absolute top-3 left-3 bg-primary/90 text-white border-0 gap-1">
-                          <BadgeCheck className="w-3 h-3" />
-                          Verified
-                        </Badge>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-2 right-2 h-8 w-8 bg-white/80 hover:bg-white"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          toggleWishlist(kitchen.id);
-                        }}
-                      >
-                        <Heart
-                          className={`w-4 h-4 ${
-                            isHydrated && isInWishlist(kitchen.id) ? "fill-red-500 text-red-500" : ""
-                          }`}
-                        />
-                      </Button>
-                    </div>
-                    <CardContent className="p-4">
-                      <h3 className="font-semibold truncate group-hover:text-primary transition-colors">
-                        {kitchen.name}
-                      </h3>
-                      <p className="text-sm text-muted-foreground truncate mt-0.5">
-                        {kitchen.cuisineTypes?.slice(0, 2).join(" • ") || ""}
-                      </p>
 
-                      <div className="flex items-center gap-3 mt-3 text-sm">
-                        <span className="flex items-center gap-1 bg-yellow-50 text-yellow-700 px-2 py-0.5 rounded-full">
-                          <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                          <span className="font-medium">{kitchen.rating}</span>
-                        </span>
-                        <span className="flex items-center gap-1 text-muted-foreground text-xs">
-                          <MapPin className="w-3 h-3" />
-                          {kitchen.neighborhood}
-                        </span>
+                      {/* Badges */}
+                      <div className="absolute top-3 left-3 flex flex-col gap-2">
+                        {kitchen.is_verified && (
+                          <Badge className="bg-blue-600 text-white border-0 text-xs gap-1 shadow-sm">
+                            <BadgeCheck className="w-3 h-3" />
+                            Verified
+                          </Badge>
+                        )}
+                        {kitchen.is_featured && (
+                          <Badge className="bg-amber-600 text-white border-0 text-xs shadow-sm">
+                            Featured
+                          </Badge>
+                        )}
+                        {kitchen.rating >= 4.8 && (
+                          <Badge className="bg-amber-50 text-amber-700 border border-amber-200 text-xs shadow-sm">
+                            ⭐ Top Rated
+                          </Badge>
+                        )}
                       </div>
 
-                      <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                        <div className="flex gap-1">
-                          {kitchen.dietaryOptions?.slice(0, 2).map((opt: string) => (
-                            <Badge key={opt} variant="outline" className="text-[10px] h-5 px-1.5">
+                      {/* Open/Closed Badge */}
+                      <div className="absolute top-3 right-3">
+                        <Badge className={kitchen.is_active ? "bg-green-600 text-white shadow-sm" : "bg-slate-500 text-white shadow-sm"}>
+                          {kitchen.is_active ? "Open" : "Closed"}
+                        </Badge>
+                      </div>
+
+                      {/* Wishlist Button */}
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toggleWishlist(kitchen.id);
+                        }}
+                        className="absolute top-14 right-3 w-9 h-9 rounded-full bg-white/90 dark:bg-zinc-800/90 shadow-md flex items-center justify-center hover:scale-110 transition-transform"
+                        aria-label={isHydrated && isInWishlist(kitchen.id) ? "Remove from favorites" : "Add to favorites"}
+                      >
+                        <Heart
+                          className={`w-4 h-4 transition-colors ${
+                            isHydrated && isInWishlist(kitchen.id) ? "fill-red-500 text-red-500" : "text-muted-foreground"
+                          }`}
+                        />
+                      </button>
+
+                      {/* Pickup Only Badge */}
+                      <div className="absolute bottom-4 left-4">
+                        <Badge variant="secondary" className="bg-white/90 text-foreground gap-1 text-xs">
+                          <MapPin className="w-3 h-3" />
+                          Pickup Only
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-4">
+                      {/* Kitchen Name & Rating */}
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="font-semibold text-lg md:text-xl line-clamp-1 group-hover:text-primary transition-colors">
+                          {kitchen.name}
+                        </h3>
+                        <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 px-2.5 py-1 rounded-full shrink-0">
+                          <Star className="w-4 h-4 fill-current" />
+                          <span className="text-sm font-semibold">{kitchen.rating}</span>
+                        </div>
+                      </div>
+
+                      {/* Cuisine & Location */}
+                      <div className="flex items-center gap-1.5 mt-2 text-sm md:text-base text-muted-foreground">
+                        <span>{kitchen.cuisineTypes?.slice(0, 2).join(" • ") || ""}</span>
+                        {kitchen.cuisineTypes && kitchen.cuisineTypes.length > 2 && (
+                          <span className="text-xs text-muted-foreground">+{kitchen.cuisineTypes.length - 2}</span>
+                        )}
+                        <span>•</span>
+                        <MapPin className="w-4 h-4 text-red-500" />
+                        <span>{kitchen.neighborhood}</span>
+                      </div>
+
+                      {/* Address */}
+                      {kitchen.address && (
+                        <div className="mt-1.5 text-sm text-muted-foreground line-clamp-1">
+                          <span className="font-medium">📍</span> {kitchen.address}
+                        </div>
+                      )}
+
+                      {/* Dietary Options */}
+                      {kitchen.dietaryOptions && kitchen.dietaryOptions.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                          <span className="text-xs font-medium text-muted-foreground">Dietary:</span>
+                          {kitchen.dietaryOptions.slice(0, 2).map((opt: string) => (
+                            <Badge key={opt} variant="outline" className="text-xs h-6 px-2">
                               {opt}
                             </Badge>
                           ))}
-                        </div>
-                        <Badge
-                          className={
-                            kitchen.accepting_orders
-                              ? "bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px]"
-                              : "bg-red-100 text-red-700 border-red-200 text-[10px]"
-                          }
-                        >
-                          {kitchen.accepting_orders ? "Open" : "Closed"}
-                        </Badge>
-                      </div>
-                    </CardContent>
-                  </Link>
-                </Card>
-              ) : (
-                // List View Card
-                <Card key={kitchen.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                  <Link href={`/kitchens/${kitchen.id}`}>
-                    <CardContent className="p-4">
-                      <div className="flex gap-4">
-                        <div className="w-20 h-20 rounded-xl overflow-hidden bg-gradient-to-br from-primary/20 to-emerald-500/10 flex items-center justify-center shrink-0 relative">
-                          {kitchen.logo_url ? (
-                            <img src={kitchen.logo_url} alt={kitchen.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <ChefHat className="w-10 h-10 text-primary" />
+                          {kitchen.dietaryOptions.length > 2 && (
+                            <span className="text-xs text-muted-foreground">+{kitchen.dietaryOptions.length - 2}</span>
                           )}
                         </div>
+                      )}
 
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-semibold truncate">{kitchen.name}</h3>
-                                {kitchen.is_verified && (
-                                  <BadgeCheck className="w-4 h-4 text-primary shrink-0" />
-                                )}
-                              </div>
-                              <p className="text-sm text-muted-foreground truncate">
-                                {kitchen.cuisineTypes?.slice(0, 3).join(" • ") || ""}
-                              </p>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 shrink-0"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                toggleWishlist(kitchen.id);
-                              }}
-                            >
-                              <Heart
-                                className={`w-4 h-4 ${
-                                  isHydrated && isInWishlist(kitchen.id) ? "fill-red-500 text-red-500" : ""
-                                }`}
-                              />
-                            </Button>
-                          </div>
-
-                          <div className="flex items-center gap-4 mt-2 text-sm">
-                            <span className="flex items-center gap-1">
-                              <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                              <span className="font-medium">{kitchen.rating}</span>
-                              <span className="text-muted-foreground">({kitchen.reviewCount})</span>
-                            </span>
-                            <span className="flex items-center gap-1 text-muted-foreground">
-                              <MapPin className="w-3.5 h-3.5" />
-                              {kitchen.neighborhood}
-                            </span>
-                            <span className="flex items-center gap-1 text-muted-foreground">
-                              <Clock className="w-3.5 h-3.5" />
-                              {kitchen.preparation_time || kitchen.preparationTime}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-2 mt-2">
-                            {kitchen.dietaryOptions?.slice(0, 3).map((opt: string) => (
-                              <Badge key={opt} variant="outline" className="text-xs h-6">
-                                {opt}
-                              </Badge>
-                            ))}
-                            <Badge
-                              className={`ml-auto ${
-                                kitchen.accepting_orders
-                                  ? "bg-emerald-100 text-emerald-700"
-                                  : "bg-red-100 text-red-700"
-                              }`}
-                            >
-                              {kitchen.accepting_orders ? "Open Now" : "Closed"}
-                            </Badge>
-                          </div>
+                      {/* Footer */}
+                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-medium text-muted-foreground">Min:</span>
+                          <span className="text-sm font-semibold text-foreground">
+                            ${kitchen.minimum_order || kitchen.minimumOrder || 0}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">
+                            {kitchen.prep_time_min}-{kitchen.prep_time_max} min
+                          </span>
                         </div>
                       </div>
-                    </CardContent>
-                  </Link>
-                </Card>
-              )
-            )}
+                    </div>
+                  </div>
+                </Link>
+            ))}
           </div>
         )}
 

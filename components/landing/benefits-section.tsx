@@ -57,7 +57,7 @@ export function BenefitsSection() {
           transition={{ duration: 0.5 }}
           className="text-center mb-10"
         >
-          <span className="inline-block px-4 py-1.5 rounded-full glass-emerald text-primary text-sm font-medium mb-4">
+          <span className="inline-block px-4 py-1.5 rounded-full glass-orange text-primary text-sm font-medium mb-4">
             Why HomeBiz?
           </span>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
@@ -87,7 +87,7 @@ export function BenefitsSection() {
                   <motion.div
                     whileHover={{ scale: 1.1, rotate: 5 }}
                     transition={{ type: "spring", stiffness: 400 }}
-                    className="w-16 h-16 rounded-2xl gradient-emerald-lime flex items-center justify-center mb-6 shadow-emerald"
+                    className="w-16 h-16 rounded-2xl gradient-warm flex items-center justify-center mb-6 shadow-warm"
                   >
                     <Icon className="w-8 h-8 text-white" />
                   </motion.div>
@@ -108,7 +108,7 @@ export function BenefitsSection() {
                     whileInView={{ width: "3rem" }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.5, delay: 0.3 + index * 0.1 }}
-                    className="h-1 mt-6 rounded-full gradient-emerald-lime"
+                    className="h-1 mt-6 rounded-full gradient-warm"
                   />
                 </div>
               </motion.div>

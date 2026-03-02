@@ -98,7 +98,7 @@ function OrderConfirmationContent() {
             className="space-y-2"
           >
             <Link href="/account?tab=orders">
-              <Button className="w-full bg-gradient-to-r from-primary to-accent text-white gap-2">
+              <Button className="w-full  gap-2">
                 <ShoppingBag className="w-4 h-4" />
                 View My Orders
               </Button>

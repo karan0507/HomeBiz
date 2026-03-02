@@ -90,8 +90,8 @@ export default function ContactPage() {
                 <Card>
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
-                        <Mail className="w-6 h-6 text-emerald-600" />
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                        <Mail className="w-6 h-6 text-primary" />
                       </div>
                       <div>
                         <h3 className="font-semibold">Email Us</h3>
@@ -109,8 +109,8 @@ export default function ContactPage() {
                 <Card>
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
-                        <Phone className="w-6 h-6 text-emerald-600" />
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                        <Phone className="w-6 h-6 text-primary" />
                       </div>
                       <div>
                         <h3 className="font-semibold">Call Us</h3>
@@ -126,8 +126,8 @@ export default function ContactPage() {
                 <Card>
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
-                        <MapPin className="w-6 h-6 text-emerald-600" />
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                        <MapPin className="w-6 h-6 text-primary" />
                       </div>
                       <div>
                         <h3 className="font-semibold">Location</h3>

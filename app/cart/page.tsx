@@ -124,7 +124,7 @@ export default function CartPage() {
                                 </div>
                                 <Button
                                   size="sm"
-                                  className="h-8 text-xs gap-1 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90"
+                                  className="h-8 text-xs gap-1"
                                   onClick={() => addToCart(item, kitchenId, kitchenName)}
                                   disabled={!item.available}
                                 >

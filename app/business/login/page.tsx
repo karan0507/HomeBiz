@@ -1,7 +1,8 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { fetchAPI, APIError } from "@/lib/services/api.client";
@@ -16,7 +17,21 @@ export default function BusinessLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { loginWithSession } = useAuth();
+  const { loginWithSession, user } = useAuth();
+  const router = useRouter();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'business') {
+        router.replace('/business/dashboard');
+      } else if (user.role === 'admin') {
+        router.replace('/admin/dashboard');
+      } else {
+        router.replace('/account');
+      }
+    }
+  }, [user, router]);
 
   const canSubmit = email.trim().length > 0 && password.length > 0;
 

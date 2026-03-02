@@ -75,37 +75,35 @@ export function useFeaturedKitchens(limit?: number): UseKitchensResult {
   const [kitchens, setKitchens] = useState<Kitchen[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const hasFetched = useRef(false);
 
   const fetchKitchens = async (signal?: AbortSignal) => {
     try {
       setLoading(true);
       setError(null);
       const data = await getFeaturedKitchens(limit, signal);
-      setKitchens(data);
+      if (!signal?.aborted) {
+        setKitchens(data);
+      }
     } catch (err: any) {
       if (err.name === 'AbortError') return;
       const error = err as Error;
-      setError(error);
+      if (!signal?.aborted) {
+        setError(error);
+      }
       if (error instanceof APIError && error.code !== 'NETWORK_ERROR' && error.code !== 'NOT_FOUND') {
         showError(error);
       }
     } finally {
-      if (!signal || !signal.aborted) {
+      if (!signal?.aborted) {
         setLoading(false);
       }
     }
   };
 
   useEffect(() => {
-    // Prevent duplicate calls in React Strict Mode (development only)
-    if (hasFetched.current) return;
-    hasFetched.current = true;
-
     const controller = new AbortController();
     fetchKitchens(controller.signal);
     return () => controller.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [limit]);
 
   return { kitchens, loading, error, refetch: () => fetchKitchens() };

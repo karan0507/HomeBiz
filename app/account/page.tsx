@@ -165,7 +165,7 @@ function AccountContent() {
                 Sign in to view your orders and wishlist
               </p>
               <Link href="/login" className="block">
-                <Button size="sm" className="w-full gap-2 bg-gradient-to-r from-primary to-emerald-600">
+                <Button size="sm" className="w-full gap-2 ">
                   <User className="w-4 h-4" />
                   Customer Login
                 </Button>
@@ -237,7 +237,7 @@ function AccountContent() {
               key={tab.id}
               variant={activeTab === tab.id ? "default" : "outline"}
               size="sm"
-              className={`gap-2 flex-shrink-0 ${activeTab === tab.id ? "bg-gradient-to-r from-primary to-emerald-600" : ""}`}
+              className={`gap-2 flex-shrink-0 ${activeTab === tab.id ? "" : ""}`}
               onClick={() => setActiveTab(tab.id)}
             >
               <tab.icon className="w-4 h-4" />
@@ -302,7 +302,7 @@ function AccountContent() {
                       <Label className="text-sm">Address</Label>
                       <Input className="mt-1.5 h-9 text-sm" value={profileForm.address_line1 || ""} onChange={e => setProfileForm((p: any) => ({ ...p, address_line1: e.target.value }))} />
                     </div>
-                    <Button size="sm" className="w-full gap-2 bg-gradient-to-r from-primary to-emerald-600" onClick={handleProfileSave}>
+                    <Button size="sm" className="w-full gap-2 " onClick={handleProfileSave}>
                       <Check className="w-4 h-4" />
                       Save Changes
                     </Button>
@@ -419,7 +419,7 @@ function AccountContent() {
                                 <Input placeholder="Share your experience..." value={reviewText} onChange={(e) => setReviewText(e.target.value)} className="mt-1.5 h-9 text-sm" />
                               </div>
                               <div className="flex gap-2">
-                                <Button size="sm" className="flex-1 gap-2 bg-gradient-to-r from-primary to-emerald-600" onClick={() => handleReviewSubmit(order.id, kitchenId)}>
+                                <Button size="sm" className="flex-1 gap-2 " onClick={() => handleReviewSubmit(order.id, kitchenId)}>
                                   <Check className="w-4 h-4" />
                                   Submit Review
                                 </Button>
@@ -539,7 +539,7 @@ function AccountContent() {
                           )}
                         </div>
                         <Link href={`/kitchens/${kitchen.id}`}>
-                          <Button size="sm" className="w-full gap-2 bg-gradient-to-r from-primary to-emerald-600">
+                          <Button size="sm" className="w-full gap-2 ">
                             View Menu
                           </Button>
                         </Link>

@@ -193,32 +193,44 @@ function KitchenCard({ kitchen, index }: { kitchen: Kitchen; index: number }) {
       <Link href={`/kitchens/${kitchen.id}`}>
         <div className="group relative bg-card rounded-2xl overflow-hidden border border-border hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
           {/* Image Container */}
-          <div className="relative aspect-[16/10] bg-secondary/50 overflow-hidden">
-            {/* Placeholder with gradient and icon */}
-            <div className="absolute inset-0 gradient-emerald-lime-subtle flex items-center justify-center">
+          <div className="relative aspect-[16/10] bg-muted overflow-hidden">
+            {/* Placeholder with cuisine emoji */}
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
               <div className="text-center">
-                <div className="w-20 h-20 rounded-full bg-white/80 mx-auto flex items-center justify-center mb-2">
-                  <span className="text-4xl">{cuisineEmoji}</span>
+                <div className="w-24 h-24 rounded-full bg-white dark:bg-slate-700 shadow-lg mx-auto flex items-center justify-center mb-3">
+                  <span className="text-5xl">{cuisineEmoji}</span>
                 </div>
-                <span className="text-sm font-medium text-emerald-700/70">
+                <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
                   {kitchen.cuisineTypes?.[0] || "Home Kitchen"}
                 </span>
               </div>
             </div>
 
             {/* Badges */}
-            <div className="absolute top-4 left-4 flex flex-col gap-2">
-              {kitchen.isVerified && (
-                <Badge className="gradient-emerald-lime text-white border-0 gap-1">
+            <div className="absolute top-3 left-3 flex flex-col gap-2">
+              {kitchen.is_verified && (
+                <Badge className="bg-blue-600 text-white border-0 text-xs gap-1 shadow-sm">
                   <BadgeIcon className="w-3 h-3" />
                   Verified
                 </Badge>
               )}
-              {kitchen.rating >= 4.8 && (
-                <Badge variant="secondary" className="bg-amber-100 text-amber-700 border-0">
-                  Top Rated
+              {kitchen.is_featured && (
+                <Badge className="bg-amber-600 text-white border-0 text-xs shadow-sm">
+                  Featured
                 </Badge>
               )}
+              {kitchen.rating >= 4.8 && (
+                <Badge className="bg-amber-50 text-amber-700 border border-amber-200 text-xs shadow-sm">
+                  ⭐ Top Rated
+                </Badge>
+              )}
+            </div>
+
+            {/* Open/Closed Badge */}
+            <div className="absolute top-3 right-3">
+              <Badge className={kitchen.is_active ? "bg-green-600 text-white shadow-sm" : "bg-slate-500 text-white shadow-sm"}>
+                {kitchen.is_active ? "Open" : "Closed"}
+              </Badge>
             </div>
 
             {/* Wishlist Button */}
@@ -229,7 +241,7 @@ function KitchenCard({ kitchen, index }: { kitchen: Kitchen; index: number }) {
                 e.stopPropagation();
                 toggleWishlist(kitchen.id);
               }}
-              className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 dark:bg-zinc-800/90 shadow-md flex items-center justify-center hover:scale-110 transition-transform"
+              className="absolute top-14 right-3 w-9 h-9 rounded-full bg-white/90 dark:bg-slate-800/90 shadow-md flex items-center justify-center hover:scale-110 transition-transform"
               aria-label={isWishlisted ? "Remove from favorites" : "Add to favorites"}
             >
               <Heart
@@ -252,51 +264,62 @@ function KitchenCard({ kitchen, index }: { kitchen: Kitchen; index: number }) {
           <div className="p-4">
             {/* Kitchen Name & Rating */}
             <div className="flex items-start justify-between gap-2">
-              <h3 className="font-semibold text-base line-clamp-1 group-hover:text-primary transition-colors">
+              <h3 className="font-semibold text-lg md:text-xl line-clamp-1 group-hover:text-primary transition-colors">
                 {kitchen.name}
               </h3>
-              <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 px-2 py-0.5 rounded-full shrink-0">
-                <Star className="w-3 h-3 fill-current" />
-                <span className="text-xs font-semibold">{kitchen.rating}</span>
+              <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 px-2.5 py-1 rounded-full shrink-0">
+                <Star className="w-4 h-4 fill-current" />
+                <span className="text-sm font-semibold">{kitchen.rating}</span>
               </div>
             </div>
 
             {/* Cuisine & Location */}
-            <div className="flex items-center gap-1.5 mt-1.5 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5 mt-2 text-sm md:text-base text-muted-foreground">
               <span>{kitchen.cuisineTypes?.slice(0, 2).join(" • ") || ""}</span>
+              {kitchen.cuisineTypes && kitchen.cuisineTypes.length > 2 && (
+                <span className="text-xs text-muted-foreground">+{kitchen.cuisineTypes.length - 2}</span>
+              )}
               <span>•</span>
-              <MapPin className="w-3 h-3" />
+              <MapPin className="w-4 h-4 text-red-500" />
               <span>{kitchen.neighborhood}</span>
             </div>
 
-            {/* Tags with 40 char limit */}
-            <div className="flex items-center gap-1.5 mt-3">
-              <span className="text-xs text-muted-foreground line-clamp-1">
-                {displayTags}
-              </span>
-              {hasTruncatedTags && (
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    alert(`Specialties: ${allTags}`);
-                  }}
-                  className="shrink-0 w-5 h-5 rounded-full bg-muted flex items-center justify-center hover:bg-primary/10 transition-colors"
-                  title={allTags}
-                >
-                  <Info className="w-3 h-3 text-muted-foreground" />
-                </button>
-              )}
-            </div>
+            {/* Address */}
+            {kitchen.address && (
+              <div className="mt-1.5 text-sm text-muted-foreground line-clamp-1">
+                <span className="font-medium">📍</span> {kitchen.address}
+              </div>
+            )}
+
+            {/* Dietary Options */}
+            {kitchen.dietaryOptions && kitchen.dietaryOptions.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                <span className="text-xs font-medium text-muted-foreground">Dietary:</span>
+                {kitchen.dietaryOptions.slice(0, 2).map((opt: string) => (
+                  <Badge key={opt} variant="outline" className="text-xs h-6 px-2">
+                    {opt}
+                  </Badge>
+                ))}
+                {kitchen.dietaryOptions.length > 2 && (
+                  <span className="text-xs text-muted-foreground">+{kitchen.dietaryOptions.length - 2}</span>
+                )}
+              </div>
+            )}
 
             {/* Footer */}
             <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
-              <span className="text-xs text-muted-foreground">
-                Min ${kitchen.minimum_order || kitchen.minimumOrder || 0}
-              </span>
-              <span className={`text-xs font-medium ${kitchen.accepting_orders ? "text-green-600" : "text-muted-foreground"}`}>
-                {kitchen.accepting_orders ? "Open" : "Closed"}
-              </span>
+              <div className="flex items-center gap-1">
+                <span className="text-xs font-medium text-muted-foreground">Min:</span>
+                <span className="text-sm font-semibold text-foreground">
+                  ${kitchen.minimum_order || kitchen.minimumOrder || 0}
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">
+                  {kitchen.prep_time_min}-{kitchen.prep_time_max} min
+                </span>
+              </div>
             </div>
           </div>
         </div>

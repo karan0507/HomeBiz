@@ -41,11 +41,20 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [showMobileFooter, setShowMobileFooter] = useState(false);
   const { cartCount, wishlist } = useCart();
   const { user, logout, isAuthenticated } = useAuth();
   const isHomepage = pathname === "/";
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
@@ -58,14 +67,22 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
     setShowSearch(false);
   }, [pathname]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/kitchens?q=${encodeURIComponent(searchQuery.trim())}`);
+  const handleSearch = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const query = searchQuery.trim();
+    if (query) {
+      router.push(`/kitchens?q=${encodeURIComponent(query)}`);
       setShowSearch(false);
       setSearchQuery("");
     }
   };
+
+  // Auto-search on debounce
+  useEffect(() => {
+    if (debouncedSearch && showSearch) {
+      handleSearch();
+    }
+  }, [debouncedSearch]);
 
   const navItems = [
     { href: "/", label: "Home", icon: Home },
@@ -109,21 +126,11 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
                   variant="ghost"
                   size="sm"
                   className={cn(
-                      isActive("/kitchens") && "bg-zinc-100 text-zinc-900 font-medium dark:bg-zinc-800 dark:text-zinc-50",
+                    "hover:bg-primary/10 hover:text-primary transition-colors",
+                    isActive("/kitchens") && "bg-primary/10 text-primary font-medium"
                   )}
                 >
                   Browse Kitchens
-                </Button>
-              </Link>
-              <Link href="/kitchens">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    isActive("/kitchens") && "bg-zinc-100 text-zinc-900 font-medium dark:bg-zinc-800 dark:text-zinc-50",
-                  )}
-                >
-                  Cuisines
                 </Button>
               </Link>
               <Link href="/how-it-works">
@@ -131,7 +138,8 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
                   variant="ghost"
                   size="sm"
                   className={cn(
-                    isActive("/how-it-works") && "bg-zinc-100 text-zinc-900 font-medium dark:bg-zinc-800 dark:text-zinc-50",
+                    "hover:bg-primary/10 hover:text-primary transition-colors",
+                    isActive("/how-it-works") && "bg-primary/10 text-primary font-medium"
                   )}
                 >
                   How It Works
@@ -142,7 +150,8 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
                   variant="ghost"
                   size="sm"
                   className={cn(
-                    isActive("/contact") && "bg-zinc-100 text-zinc-900 font-medium dark:bg-zinc-800 dark:text-zinc-50",
+                    "hover:bg-primary/10 hover:text-primary transition-colors",
+                    isActive("/contact") && "bg-primary/10 text-primary font-medium"
                   )}
                 >
                   Contact
@@ -218,7 +227,7 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
                   <Link href="/business/signup">
                     <Button
                       size="sm"
-                      className="gap-1.5 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90"
+                      className="gap-1.5  hover:from-primary/90 hover:to-orange-600/90"
                     >
                       <ChefHat className="w-3 h-3" />
                       Become a Chef
@@ -276,11 +285,6 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
                     Browse Kitchens
                   </Button>
                 </Link>
-                <Link href="/kitchens" className="block">
-                  <Button variant="ghost" className="w-full justify-start h-11">
-                    Cuisines
-                  </Button>
-                </Link>
                 <Link href="/how-it-works" className="block">
                   <Button variant="ghost" className="w-full justify-start h-11">
                     How It Works
@@ -323,7 +327,7 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
                         </Button>
                       </Link>
                       <Link href="/business/signup" className="block">
-                        <Button className="w-full justify-start h-11 gap-2 bg-gradient-to-r from-primary to-emerald-600">
+                        <Button className="w-full justify-start h-11 gap-2 ">
                           <ChefHat className="w-4 h-4" />
                           Become a Chef
                         </Button>
@@ -356,7 +360,7 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
               <div>
                 <Link href="/" className="flex items-center gap-2 mb-4">
                   <img src="/images/logo.png" alt="HomeBiz" className="w-8 h-8 object-contain" />
-                  <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-emerald-600">
+                  <span className="text-xl font-bold bg-clip-text text-transparent ">
                     HomeBiz
                   </span>
                 </Link>
@@ -525,11 +529,11 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
       {!hideFooter && (
         <footer className="hidden md:block bg-gradient-to-b from-zinc-900 to-black text-white relative overflow-hidden">
           {/* Gradient Accent Line */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-emerald-500 to-primary" />
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-orange-500 to-primary" />
 
           {/* Decorative Gradient Orbs */}
           <div className="absolute top-20 left-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-10 right-10 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-10 right-10 w-48 h-48 bg-orange-500/10 rounded-full blur-3xl" />
 
           <div className="container mx-auto px-4 py-16 relative z-10">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">

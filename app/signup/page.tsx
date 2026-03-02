@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
@@ -50,8 +50,21 @@ export default function SignupPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const checkedEmail = useRef("");
-  const { loginWithSession } = useAuth();
+  const { loginWithSession, user } = useAuth();
   const router = useRouter();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'business') {
+        router.replace('/business/dashboard');
+      } else if (user.role === 'admin') {
+        router.replace('/admin/dashboard');
+      } else {
+        router.replace('/account');
+      }
+    }
+  }, [user, router]);
 
   const formValid =
     firstName.trim().length > 0 &&
@@ -330,7 +343,7 @@ export default function SignupPage() {
 
             <Button
               type="submit"
-              className="w-full h-9 bg-gradient-to-r from-primary to-accent text-white mt-4"
+              className="w-full h-9 mt-4"
               disabled={isLoading || !formValid}
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

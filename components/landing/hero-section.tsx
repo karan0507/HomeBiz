@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -16,6 +16,8 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getCachedCuisineTypes } from "@/lib/services/data.service";
+import type { CuisineType } from "@/types/database";
 
 const stats = [
   { value: "50+", label: "Home Chefs" },
@@ -36,6 +38,29 @@ const quickCategories = [
 export function HeroSection() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+  const [cuisineTypes, setCuisineTypes] = useState<CuisineType[]>([]);
+  const hasFetchedCuisines = useRef(false);
+
+  // Fetch cuisine types once for quick category links
+  useEffect(() => {
+    if (hasFetchedCuisines.current) return;
+    hasFetchedCuisines.current = true;
+    getCachedCuisineTypes()
+      .then(setCuisineTypes)
+      .catch(() => setCuisineTypes([]));
+  }, []);
+
+  // Map quick category labels to UUIDs from fetched cuisine types
+  const quickCategoriesWithIds = quickCategories.map(cat => {
+    const match = cuisineTypes.find(ct =>
+      ct.name.toLowerCase() === cat.label.toLowerCase() ||
+      ct.slug?.toLowerCase() === cat.label.toLowerCase()
+    );
+    return {
+      ...cat,
+      id: match?.id || "", // Fallback to empty string if not found
+    };
+  }).filter(cat => cat.id); // Only show categories that have matching IDs
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +79,7 @@ export function HeroSection() {
       {/* Decorative Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 right-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-10 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 left-10 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-radial from-primary/5 to-transparent rounded-full" />
       </div>
 
@@ -81,7 +106,7 @@ export function HeroSection() {
               className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6"
             >
               Home-Cooked Meals from{" "}
-              <span className="bg-gradient-to-r from-primary via-primary to-emerald-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-primary via-primary to-orange-600 bg-clip-text text-transparent">
                 Toronto&apos;s Best
               </span>{" "}
               Home Chefs
@@ -119,7 +144,7 @@ export function HeroSection() {
                 <Button
                   type="submit"
                   size="sm"
-                  className="h-10 px-5 rounded-xl bg-gradient-to-r from-primary to-emerald-600 hover:opacity-90 transition-opacity gap-2 shadow-md"
+                  className="h-10 px-5 rounded-xl  hover:opacity-90 transition-opacity gap-2 shadow-md"
                 >
                   <span className="hidden sm:inline">Find Food</span>
                   <ArrowRight className="w-4 h-4" />
@@ -136,8 +161,8 @@ export function HeroSection() {
             >
               <p className="text-sm text-muted-foreground mb-3 font-bold">Popular cuisines:</p>
               <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
-                {quickCategories.map((cat) => (
-                  <Link key={cat.label} href={`/kitchens?cuisine=${cat.label.toLowerCase()}`}>
+                {quickCategoriesWithIds.map((cat) => (
+                  <Link key={cat.id} href={`/kitchens?cuisine=${cat.id}`}>
                     <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-background border hover:border-primary hover:bg-primary/5 transition-colors text-sm">
                       <span>{cat.emoji}</span>
                       <span>{cat.label}</span>
@@ -156,7 +181,7 @@ export function HeroSection() {
             >
               {stats.map((stat) => (
                 <div key={stat.label} className="text-center lg:text-left">
-                  <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-emerald-600 bg-clip-text text-transparent">
+                  <div className="text-2xl md:text-3xl font-bold  bg-clip-text text-transparent">
                     {stat.value}
                   </div>
                   <div className="text-xs text-muted-foreground">{stat.label}</div>
@@ -199,7 +224,7 @@ export function HeroSection() {
 
               <div className="relative bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border">
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-emerald-600 flex items-center justify-center shadow-lg">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-orange-600 flex items-center justify-center shadow-lg">
                     <ChefHat className="w-8 h-8 text-white" />
                   </div>
                   <div>
@@ -231,7 +256,7 @@ export function HeroSection() {
                     <Clock className="w-4 h-4" />
                     <span>Ready in 30-45 min</span>
                   </div>
-                  <Button size="sm" className="gap-2 bg-gradient-to-r from-primary to-emerald-600">
+                  <Button size="sm" className="gap-2 ">
                     Order Now
                     <ArrowRight className="w-4 h-4" />
                   </Button>
@@ -245,8 +270,8 @@ export function HeroSection() {
                 className="absolute -top-4 -right-4 bg-white dark:bg-zinc-800 rounded-2xl p-4 shadow-xl border"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
-                    <Utensils className="w-5 h-5 text-emerald-600" />
+                  <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                    <Utensils className="w-5 h-5 text-orange-600" />
                   </div>
                   <div>
                     <p className="font-semibold text-sm">25+ Cuisines</p>

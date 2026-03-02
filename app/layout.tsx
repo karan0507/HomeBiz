@@ -3,7 +3,7 @@
  * "Authentic Home Cooking from Your Toronto Neighbours"
  *
  * Features:
- * - Inter font family for modern, clean typography
+ * - DM Sans (body) + Playfair Display (headings) for warm, food-focused typography
  * - SEO-optimized metadata for Toronto home-cooked food market
  * - AuthProvider for user session management
  * - Vercel Analytics for performance tracking
@@ -11,18 +11,26 @@
 
 import React from "react";
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { DM_Sans, Playfair_Display } from "next/font/google";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/lib/auth-context";
 import { CartProvider } from "@/lib/cart-context";
 import { NavigationCacheHandler } from "@/components/providers/navigation-cache-handler";
 import "./globals.css";
 
-// Configure Inter font
-const inter = Inter({
+// Configure fonts
+const dmSans = DM_Sans({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
+  weight: ["400", "500", "600", "700"],
+});
+
+const playfairDisplay = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
+  weight: ["400", "500", "600", "700"],
 });
 
 // SEO Metadata
@@ -42,7 +50,7 @@ export const metadata: Metadata = {
 
 // Viewport configuration
 export const viewport: Viewport = {
-  themeColor: "#10B981",
+  themeColor: "#E8480A",
   width: "device-width",
   initialScale: 1,
 };
@@ -55,7 +63,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.variable} font-sans antialiased min-h-screen bg-background`}
+        suppressHydrationWarning
+        className={`${dmSans.variable} ${playfairDisplay.variable} font-sans antialiased min-h-screen bg-background`}
       >
         <AuthProvider>
           <CartProvider>
@@ -73,7 +82,7 @@ export default function RootLayout({
               classNames: {
                 toast: 'font-sans text-sm border',
                 error: 'border-red-200',
-                success: 'border-emerald-200',
+                success: 'border-orange-200',
                 warning: 'border-yellow-200',
               },
             }}

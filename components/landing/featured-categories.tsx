@@ -41,7 +41,7 @@ export function FeaturedCategories() {
           className="flex flex-col md:flex-row md:items-end md:justify-between mb-12"
         >
           <div>
-            <span className="inline-block px-4 py-1.5 rounded-full glass-emerald text-primary text-sm font-medium mb-4">
+            <span className="inline-block px-4 py-1.5 rounded-full glass-orange text-primary text-sm font-medium mb-4">
               World Flavours
             </span>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold">
@@ -104,7 +104,7 @@ export function FeaturedCategories() {
                         whileInView={{ width: "2rem" }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.5, delay: 0.2 + index * 0.05 }}
-                        className="h-1 mx-auto mt-4 rounded-full gradient-emerald-lime"
+                        className="h-1 mx-auto mt-4 rounded-full gradient-warm"
                       />
                     </div>
                   </Link>

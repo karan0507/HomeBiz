@@ -32,7 +32,7 @@ export default function Error({
         <CardContent className="space-y-3">
           <Button
             onClick={reset}
-            className="w-full bg-gradient-to-r from-primary to-accent"
+            className="w-full"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
             Try Again

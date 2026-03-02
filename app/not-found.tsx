@@ -21,7 +21,7 @@ export default function NotFound() {
         </CardHeader>
         <CardContent className="space-y-3">
           <Link href="/">
-            <Button className="w-full bg-gradient-to-r from-primary to-accent">
+            <Button className="w-full ">
               <Home className="w-4 h-4 mr-2" />
               Go Home
             </Button>

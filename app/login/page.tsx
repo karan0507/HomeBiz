@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
@@ -16,10 +16,23 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { loginWithSession } = useAuth();
+  const { loginWithSession, user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/account";
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'business') {
+        router.replace('/business/dashboard');
+      } else if (user.role === 'admin') {
+        router.replace('/admin/dashboard');
+      } else {
+        router.replace('/account');
+      }
+    }
+  }, [user, router]);
 
   const canSubmit = email.trim().length > 0 && password.length > 0;
 
@@ -119,7 +132,7 @@ function LoginForm() {
 
             <Button
               type="submit"
-              className="w-full h-9 bg-gradient-to-r from-primary to-accent text-white"
+              className="w-full h-9 "
               disabled={isLoading || !canSubmit}
             >
               {isLoading ? "Signing in..." : "Sign In"}

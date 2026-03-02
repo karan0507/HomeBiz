@@ -73,9 +73,22 @@ export default function BusinessSignupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingOptions, setIsLoadingOptions] = useState(false);
   const router = useRouter();
-  const { loginWithSession } = useAuth();
+  const { loginWithSession, user } = useAuth();
   const hasFetchedCuisines = useRef(false);
   const hasFetchedDietary = useRef(false);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'business') {
+        router.replace('/business/dashboard');
+      } else if (user.role === 'admin') {
+        router.replace('/admin/dashboard');
+      } else {
+        router.replace('/account');
+      }
+    }
+  }, [user, router]);
 
   const totalSteps = 3;
 
@@ -704,7 +717,7 @@ export default function BusinessSignupPage() {
                 <Button
                   type="button"
                   onClick={handleNext}
-                  className="flex-1 bg-gradient-to-r from-primary to-emerald-600"
+                  className="flex-1"
                   disabled={
                     isLoading ||
                     (step === 1 && !step1Valid) ||
@@ -717,7 +730,7 @@ export default function BusinessSignupPage() {
               ) : (
                 <Button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-primary to-emerald-600"
+                  className="flex-1"
                   disabled={isLoading}
                 >
                   {isLoading ? "Creating account..." : "Create Account"}

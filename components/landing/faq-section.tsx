@@ -67,7 +67,7 @@ export function FAQSection() {
           transition={{ duration: 0.5 }}
           className="text-center mb-16"
         >
-          <span className="inline-block px-4 py-1.5 rounded-full glass-emerald text-emerald-700 text-sm font-medium mb-4">
+          <span className="inline-block px-4 py-1.5 rounded-full glass-orange text-orange-700 text-sm font-medium mb-4">
             Got Questions?
           </span>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
@@ -96,7 +96,7 @@ export function FAQSection() {
               >
                 {/* Category Header */}
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-xl gradient-emerald-lime flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl gradient-warm flex items-center justify-center">
                     <Icon className="w-5 h-5 text-white" />
                   </div>
                   <h3 className="text-lg font-bold capitalize">{category}</h3>
@@ -127,7 +127,7 @@ export function FAQSection() {
           className="text-center mt-12"
         >
           <div className="inline-flex flex-col sm:flex-row items-center gap-4 p-6 rounded-3xl glass">
-            <div className="w-12 h-12 rounded-full gradient-emerald-lime flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full gradient-warm flex items-center justify-center">
               <HelpCircle className="w-6 h-6 text-white" />
             </div>
             <div className="text-center sm:text-left">
@@ -138,7 +138,7 @@ export function FAQSection() {
             </div>
             <a
               href="mailto:support@homebiz.ca"
-              className="px-6 py-2.5 rounded-full gradient-emerald-lime text-white font-medium hover:opacity-90 transition-opacity"
+              className="px-6 py-2.5 rounded-full gradient-warm text-white font-medium hover:opacity-90 transition-opacity"
             >
               Contact Us
             </a>
@@ -174,7 +174,7 @@ function FAQItem({
           transition={{ duration: 0.2 }}
           className="flex-shrink-0"
         >
-          <ChevronDown className="w-5 h-5 text-emerald-500" />
+          <ChevronDown className="w-5 h-5 text-orange-500" />
         </motion.div>
       </button>
 

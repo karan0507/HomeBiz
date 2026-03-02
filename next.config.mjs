@@ -11,6 +11,8 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // Suppress hydration warnings caused by browser extensions
+  reactStrictMode: true,
 
   async rewrites() {
     return [
