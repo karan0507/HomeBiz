@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { Loader2 } from "lucide-react";
 
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -31,7 +31,6 @@ export default function AuthCallbackPage() {
         });
 
         if (error) {
-          // Error logged for debugging("[Auth Callback] Verification error:", error);
           router.replace("/login?error=verification_failed");
           return;
         }
@@ -39,7 +38,6 @@ export default function AuthCallbackPage() {
         // Success - redirect to home
         router.replace("/?verified=true");
       } catch (err) {
-        // Error logged for debugging("[Auth Callback] Unexpected error:", err);
         router.replace("/login?error=unexpected_error");
       }
     };
@@ -57,5 +55,22 @@ export default function AuthCallbackPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-lg font-medium">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <AuthCallbackContent />
+    </Suspense>
   );
 }
