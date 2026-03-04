@@ -162,8 +162,8 @@ export default function KitchenDetailPage() {
           {/* Left Column - Kitchen Info & Menu */}
           <div className="lg:col-span-2 space-y-6">
             {/* Kitchen Header */}
-            <Card className="overflow-hidden">
-              <div className="h-32 relative overflow-hidden">
+            <div className="bg-card rounded-2xl overflow-hidden border border-border shadow-sm mb-6">
+              <div className="relative aspect-[21/9] sm:aspect-[16/5] bg-muted overflow-hidden">
                 {kitchen.cover_image_url ? (
                   <img 
                     src={kitchen.cover_image_url} 
@@ -171,99 +171,115 @@ export default function KitchenDetailPage() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/10 to-orange-500/10" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
+                     <div className="w-24 h-24 rounded-full bg-white dark:bg-slate-700 shadow-lg mx-auto flex items-center justify-center mb-3">
+                       <span className="text-5xl">
+                         {kitchen.cuisineTypes?.[0] ? '🍽️' : '🧑‍🍳'} 
+                       </span>
+                     </div>
+                  </div>
                 )}
-                <div className="absolute inset-0 bg-[url('/pattern.svg')] opacity-5" />
-              </div>
-              <CardContent className="p-3 -mt-10 relative">
-                <div className="flex gap-3">
-                  <div className="w-16 h-16 rounded-xl overflow-hidden bg-white flex items-center justify-center shrink-0 shadow-md shadow-primary/20 border-2 border-background relative">
-                    {kitchen.logo_url ? (
-                      <img
-                        src={kitchen.logo_url}
-                        alt={kitchen.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-primary via-primary to-orange-600 flex items-center justify-center">
-                        <ChefHat className="w-8 h-8 text-white" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0 pt-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h1 className="font-bold text-lg">{kitchen.name}</h1>
-                      {kitchen.verification_status === 'approved' && (
-                        <BadgeCheck className="w-4 h-4 text-blue-500 shrink-0" />
-                      )}
-                      <Badge
-                        className={
-                          kitchen.is_active
-                            ? "bg-emerald-500 text-white border-0"
-                            : "bg-red-500 text-white border-0"
-                        }
-                      >
-                        {kitchen.is_active ? "Open" : "Closed"}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-0.5">{kitchen.description || kitchen.short_description}</p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="shrink-0 h-8 w-8"
-                    onClick={() => toggleWishlist(kitchen.id)}
-                  >
-                    <Heart
-                      className={`w-4 h-4 ${
-                        isInWishlist(kitchen.id) ? "fill-red-500 text-red-500" : ""
-                      }`}
-                    />
-                  </Button>
+                
+                <div className="absolute top-4 left-4 flex flex-col gap-2">
+                  {kitchen.verification_status === 'approved' && (
+                    <Badge className="bg-blue-600 text-white border-0 text-xs gap-1 shadow-sm">
+                      <BadgeCheck className="w-3 h-3" />
+                      Verified
+                    </Badge>
+                  )}
                 </div>
-
-                <div className="flex flex-wrap items-center gap-3 mt-3 text-xs">
-                  <span className="flex items-center gap-1 bg-yellow-50 text-yellow-700 px-2 py-0.5 rounded-full">
-                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                    <span className="font-semibold">{kitchen.rating}</span>
-                    <span className="text-yellow-600">({kitchen.review_count || kitchen.reviewCount || 0})</span>
-                  </span>
-                  <span className="flex items-center gap-1 text-muted-foreground">
-                    <MapPin className="w-3 h-3" />
-                    {kitchen.neighborhood}
-                  </span>
-                  <span className="flex items-center gap-1 text-muted-foreground">
-                    <Clock className="w-3 h-3" />
-                    {kitchen.prep_time_min && kitchen.prep_time_max
-                      ? `${kitchen.prep_time_min}-${kitchen.prep_time_max} min`
-                      : kitchen.preparation_time || '30-45 min'
+                <div className="absolute top-4 right-4">
+                  <Badge
+                    className={
+                      kitchen.is_active
+                        ? "bg-green-600 text-white shadow-sm hover:bg-green-700"
+                        : "bg-slate-500 text-white shadow-sm hover:bg-slate-600"
                     }
-                  </span>
-                  <span className="flex items-center gap-1 text-muted-foreground">
-                    <Phone className="w-3 h-3" />
-                    {kitchen.phone}
-                  </span>
+                  >
+                    {kitchen.is_active ? "Open" : "Closed"}
+                  </Badge>
+                </div>
+              </div>
+              
+              <div className="p-5 sm:p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <h1 className="font-bold text-2xl md:text-3xl tracking-tight">{kitchen.name}</h1>
+                    <p className="text-muted-foreground mt-2 max-w-2xl leading-relaxed">{kitchen.description || kitchen.short_description}</p>
+                  </div>
+                  <div className="flex flex-col items-end gap-2 shrink-0">
+                    <div className="flex items-center gap-1.5 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 px-3 py-1.5 rounded-full shadow-sm">
+                      <Star className="w-4 h-4 fill-current" />
+                      <span className="font-semibold">{kitchen.rating || 'New'}</span>
+                      <span className="text-muted-foreground text-xs ml-0.5 font-normal">({kitchen.review_count || kitchen.reviewCount || 0})</span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-9 w-9 rounded-full relative overflow-hidden"
+                      onClick={() => toggleWishlist(kitchen.id)}
+                    >
+                      <Heart
+                        className={`w-4 h-4 ${
+                          isInWishlist(kitchen.id) ? "fill-red-500 text-red-500" : "text-muted-foreground"
+                        }`}
+                      />
+                    </Button>
+                  </div>
                 </div>
 
-                <div className="flex gap-1.5 mt-3 flex-wrap">
-                  {kitchen.cuisineTypes?.map((cuisine: string) => (
-                    <Badge key={cuisine} variant="secondary" className="text-[10px] px-1.5 py-0">
-                      {cuisine}
-                    </Badge>
-                  ))}
-                  {kitchen.dietaryOptions?.slice(0, 3).map((opt: string) => (
-                    <Badge key={opt} variant="outline" className="text-[10px] px-1.5 py-0">
-                      {opt}
-                    </Badge>
-                  ))}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t">
+                  <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <MapPin className="w-4 h-4 text-primary" />
+                    </div>
+                    <span className="font-medium">{kitchen.neighborhood || "Delivery / Pickup"}</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <Clock className="w-4 h-4 text-primary" />
+                    </div>
+                    <span className="font-medium">
+                      {kitchen.prep_time_min && kitchen.prep_time_max
+                        ? `${kitchen.prep_time_min}-${kitchen.prep_time_max} min`
+                        : kitchen.preparation_time || '30-45 m'
+                      }
+                    </span>
+                  </div>
+                  {kitchen.phone && (
+                    <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <Phone className="w-4 h-4 text-primary" />
+                      </div>
+                      <span className="font-medium">{kitchen.phone}</span>
+                    </div>
+                  )}
+                  {(kitchen.minimum_order > 0 || (kitchen.minimumOrder && kitchen.minimumOrder > 0)) && (
+                    <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <Utensils className="w-4 h-4 text-primary" />
+                      </div>
+                      <span className="font-medium">Min Order: ${kitchen.minimum_order || kitchen.minimumOrder}</span>
+                    </div>
+                  )}
                 </div>
 
-                <div className="flex items-center gap-1.5 mt-3 pt-3 border-t text-xs text-muted-foreground">
-                  <Utensils className="w-3 h-3" />
-                  <span>Minimum order: <strong className="text-foreground">${kitchen.minimum_order || 0}</strong></span>
-                </div>
-              </CardContent>
-            </Card>
+                {((kitchen.cuisineTypes && kitchen.cuisineTypes.length > 0) || (kitchen.dietaryOptions && kitchen.dietaryOptions.length > 0)) && (
+                  <div className="flex gap-2 mt-6 flex-wrap">
+                    {kitchen.cuisineTypes?.map((cuisine: string) => (
+                      <Badge key={cuisine} variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 border-0 px-3 py-1 text-xs">
+                        {cuisine}
+                      </Badge>
+                    ))}
+                    {kitchen.dietaryOptions?.map((opt: string) => (
+                      <Badge key={opt} variant="outline" className="text-muted-foreground border-border px-3 py-1 text-xs bg-card">
+                        {opt}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* Menu Section */}
             <div>
@@ -271,76 +287,85 @@ export default function KitchenDetailPage() {
                 <Utensils className="w-4 h-4 text-primary" />
                 Menu ({menuItems.length} items)
               </h2>
-              <div className="grid sm:grid-cols-2 gap-2">
+              <div className="grid sm:grid-cols-2 xl:grid-cols-2 gap-4">
                 {menuItems.map((item) => {
                   const quantity = getItemQuantity(item.id);
-                  const isVeg = item.dietaryInfo?.includes("Vegetarian");
+                  const isVeg = item.dietaryInfo?.includes("Vegetarian") || item.dietaryInfo?.includes("Vegan");
                   return (
-                    <Card key={item.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                      <CardContent className="p-3">
-                        <div className="flex gap-3">
-                          <div className="w-20 h-20 rounded-xl overflow-hidden bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center text-3xl shrink-0 relative">
-                            {item.image_url ? (
-                              <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                    <div key={item.id} className="group flex gap-4 p-4 rounded-xl border bg-card hover:shadow-md transition-all">
+                      <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-muted shrink-0 relative border border-border/50">
+                        {item.image_url ? (
+                          <img src={item.image_url} alt={item.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-3xl bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900">
+                            {isVeg ? "🥬" : "🍖"}
+                          </div>
+                        )}
+                        {item.rating > 0 && (
+                           <div className="absolute bottom-1.5 left-1.5 bg-background/95 backdrop-blur-sm px-1.5 py-0.5 rounded text-[10px] font-medium flex items-center gap-1 shadow-sm border border-border/50">
+                             <Star className="w-3 h-3 fill-yellow-400 text-yellow-500" />
+                             {item.rating}
+                           </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex-1 flex flex-col min-w-0 py-1">
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="min-w-0 pr-2">
+                            <h3 className="font-semibold text-base line-clamp-1 tracking-tight">{item.name}</h3>
+                            <p className="text-sm text-muted-foreground line-clamp-2 mt-1 leading-snug">
+                              {item.description}
+                            </p>
+                          </div>
+                          <span className="font-bold whitespace-nowrap text-lg">${item.price.toFixed(2)}</span>
+                        </div>
+                        
+                        <div className="mt-auto pt-3 flex items-center justify-between">
+                          <div className="flex flex-wrap gap-1">
+                             {item.dietaryInfo?.map((info: string) => (
+                               <Badge key={info} variant="secondary" className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-secondary/50">
+                                 {info}
+                               </Badge>
+                             ))}
+                          </div>
+                          
+                          <div className="shrink-0 flex items-center justify-end">
+                            {quantity > 0 ? (
+                              <div className="flex items-center gap-2 bg-muted/60 rounded-lg p-1 border">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7 rounded border bg-background text-foreground hover:bg-background/80"
+                                  onClick={() => updateQuantity(item.id, quantity - 1)}
+                                >
+                                  <Minus className="w-3 h-3" />
+                                </Button>
+                                <span className="w-6 text-center text-sm font-semibold">{quantity}</span>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7 rounded border bg-primary text-primary-foreground hover:bg-primary/90"
+                                  onClick={() => addToCart(item, kitchen.id, kitchen.name)}
+                                >
+                                  <Plus className="w-3 h-3" />
+                                </Button>
+                              </div>
                             ) : (
-                              isVeg ? "🥬" : "🍖"
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-9 px-4 rounded-lg bg-background hover:bg-primary hover:text-primary-foreground transition-all duration-300 shadow-sm"
+                                onClick={() => addToCart(item, kitchen.id, kitchen.name)}
+                                disabled={!item.available}
+                              >
+                                <Plus className="w-4 h-4 mr-1.5" />
+                                Add
+                              </Button>
                             )}
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="min-w-0">
-                                <h3 className="font-medium text-sm line-clamp-1">{item.name}</h3>
-                                <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
-                                  {item.description}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center justify-between mt-3">
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-primary">${item.price.toFixed(2)}</span>
-                                {item.rating && (
-                                  <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
-                                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                                    {item.rating}
-                                  </span>
-                                )}
-                              </div>
-                              {quantity > 0 ? (
-                                <div className="flex items-center gap-1.5">
-                                  <Button
-                                    size="icon"
-                                    variant="outline"
-                                    className="h-7 w-7"
-                                    onClick={() => updateQuantity(item.id, quantity - 1)}
-                                  >
-                                    <Minus className="w-3 h-3" />
-                                  </Button>
-                                  <span className="w-6 text-center text-sm font-medium">{quantity}</span>
-                                  <Button
-                                    size="icon"
-                                    variant="outline"
-                                    className="h-7 w-7"
-                                    onClick={() => addToCart(item, kitchen.id, kitchen.name)}
-                                  >
-                                    <Plus className="w-3 h-3" />
-                                  </Button>
-                                </div>
-                              ) : (
-                                <Button
-                                  size="sm"
-                                  className="h-7 text-xs px-3 "
-                                  onClick={() => addToCart(item, kitchen.id, kitchen.name)}
-                                  disabled={!item.available}
-                                >
-                                  <Plus className="w-3 h-3 mr-1" />
-                                  Add
-                                </Button>
-                              )}
-                            </div>
-                          </div>
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
@@ -403,7 +428,7 @@ export default function KitchenDetailPage() {
                     <Card key={review.id}>
                       <CardContent className="p-3">
                         <div className="flex items-start gap-2">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-emerald-500/20 flex items-center justify-center shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-orange-500/20 flex items-center justify-center shrink-0">
                             <span className="text-xs font-semibold text-primary">
                               {review.userName.charAt(0)}
                             </span>

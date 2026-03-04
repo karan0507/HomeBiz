@@ -127,8 +127,8 @@ export default function BusinessServicesPage() {
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
+                  <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                    <CheckCircle className="w-5 h-5 text-orange-600" />
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{stats.available}</p>
@@ -239,7 +239,7 @@ export default function BusinessServicesPage() {
                         <Badge
                           className={
                             service.available
-                              ? "bg-green-100 text-green-800 hover:bg-green-100"
+                              ? "bg-orange-100 text-orange-800 hover:bg-orange-100"
                               : "bg-gray-100 text-gray-800 hover:bg-gray-100"
                           }
                         >

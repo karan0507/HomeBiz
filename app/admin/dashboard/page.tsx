@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { ProtectedRoute } from "@/components/protected-route"
 import { AdminLayout } from "@/components/admin/admin-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { fetchAPI } from "@/lib/services/api.client"
 import { Users, Building, FolderTree, Star, TrendingUp, Activity } from "lucide-react"
 import { SkeletonStatCard, SkeletonCardContent } from "@/components/shared/skeleton-cards"
@@ -42,7 +43,7 @@ export default function AdminDashboardPage() {
     hasFetched.current = true
 
     Promise.allSettled([
-      fetchAPI<any>("/admin/stats"),
+      fetchAPI<any>("/admin/analytics"),
       fetchAPI<any>("/admin/kitchens?per_page=5&page=1"),
       fetchAPI<any>("/admin/reviews?per_page=5&page=1"),
     ]).then(([statsRes, kitchensRes, reviewsRes]) => {
@@ -123,17 +124,18 @@ export default function AdminDashboardPage() {
                             {[kitchen.neighborhood, kitchen.city].filter(Boolean).join(", ")}
                           </p>
                         </div>
-                        <div
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        <Badge
+                          variant="secondary"
+                          className={
                             kitchen.verification_status === "approved"
-                              ? "bg-green-100 text-green-700"
+                              ? "bg-orange-100 text-orange-700 hover:bg-orange-200"
                               : kitchen.verification_status === "pending"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-red-100 text-red-700"
-                          }`}
+                                ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
+                                : "bg-red-100 text-red-700 hover:bg-red-200"
+                          }
                         >
                           {kitchen.verification_status}
-                        </div>
+                        </Badge>
                       </div>
                     ))}
                   </div>

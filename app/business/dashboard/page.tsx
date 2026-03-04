@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { BusinessLayout } from "@/components/business/business-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Alert } from "@/components/ui/alert"
 import { ShoppingCart, Package, DollarSign, Star, TrendingUp, TrendingDown, Eye, AlertCircle } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
@@ -101,7 +102,7 @@ export default function BusinessDashboardPage() {
         <div className="space-y-6 md:space-y-8">
           {/* Header with gradient accent */}
           <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-emerald-500/5 rounded-2xl -z-10" />
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-orange-500/5 rounded-2xl -z-10" />
             <div className="py-2">
               <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
               <p className="text-muted-foreground mt-1 md:mt-2">Welcome back, <span className="text-primary font-medium">{user?.name}</span></p>
@@ -127,7 +128,7 @@ export default function BusinessDashboardPage() {
                 stats.map((stat, index) => {
                   const Icon = stat.icon
                   const gradients = [
-                    "from-primary/10 to-emerald-500/10",
+                    "from-primary/10 to-orange-500/10",
                     "from-accent/10 to-blue-500/10",
                     "from-yellow-500/10 to-orange-500/10",
                     "from-pink-500/10 to-purple-500/10"
@@ -137,17 +138,17 @@ export default function BusinessDashboardPage() {
                       <div className={`absolute inset-0 bg-gradient-to-br ${gradients[index]} opacity-50`} />
                       <CardHeader className="flex flex-row items-center justify-between pb-2 relative">
                         <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-emerald-500/20 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-orange-500/20 flex items-center justify-center">
                           <Icon className="h-5 w-5 text-primary" />
                         </div>
                       </CardHeader>
                       <CardContent className="relative">
                         <div className="text-2xl md:text-3xl font-bold">{stat.value}</div>
                         <div className="flex items-center gap-1 mt-2">
-                          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${stat.trendUp ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                          <Badge variant="secondary" className={stat.trendUp ? "bg-orange-100 text-orange-700 hover:bg-orange-200" : "bg-red-100 text-red-700 hover:bg-red-200"}>
                             {stat.trendUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                            <span className="text-xs font-medium">{stat.trend}</span>
-                          </div>
+                            {stat.trend}
+                          </Badge>
                           <span className="text-xs text-muted-foreground">from last month</span>
                         </div>
                       </CardContent>
@@ -183,7 +184,7 @@ export default function BusinessDashboardPage() {
                             <div
                               className={`px-2 py-1 rounded-full text-xs font-medium inline-block ${
                                 order.status === "completed" || order.status === "picked_up"
-                                  ? "bg-green-100 text-green-700"
+                                  ? "bg-orange-100 text-orange-700"
                                   : order.status === "preparing" || order.status === "ready"
                                     ? "bg-blue-100 text-blue-700"
                                     : order.status === "placed" || order.status === "confirmed"
@@ -225,7 +226,7 @@ export default function BusinessDashboardPage() {
                         <span className="text-sm font-bold text-primary">0</span>
                       </div>
                       <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
-                        <div className="bg-gradient-to-r from-primary to-emerald-500 h-2.5 rounded-full transition-all" style={{ width: "0%" }} />
+                        <div className="bg-gradient-to-r from-primary to-orange-500 h-2.5 rounded-full transition-all" style={{ width: "0%" }} />
                       </div>
                     </div>
                     {/* Simplified for now */}

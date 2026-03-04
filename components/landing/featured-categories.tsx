@@ -87,7 +87,7 @@ export function FeaturedCategories() {
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.05 }}
                 >
-                  <Link href={`/kitchens?cuisines=${ct.id}`}>
+                  <Link href={`/kitchens?cuisine=${ct.slug}`}>
                     <div className="group p-6 rounded-3xl glass hover-lift cursor-pointer text-center">
                       <motion.div
                         whileHover={{ scale: 1.1, rotate: 5 }}

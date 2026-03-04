@@ -62,7 +62,7 @@ export function AboutSection() {
 
       {/* Gradient Orbs */}
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-orange-500/20 rounded-full blur-3xl" />
 
       {/* Content */}
       <div className="container mx-auto px-4 relative z-10">
@@ -79,7 +79,7 @@ export function AboutSection() {
           </span>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6">
             Our Story &{" "}
-            <span className="bg-gradient-to-r from-primary to-emerald-500 bg-clip-text text-transparent">
+            <span className="text-gradient">
               Vision
             </span>
           </h2>
@@ -117,10 +117,10 @@ export function AboutSection() {
             </div>
           </div>
           <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-emerald-500/30 rounded-3xl blur-xl" />
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-orange-500/30 rounded-3xl blur-xl" />
             <div className="relative bg-zinc-800/50 backdrop-blur-sm rounded-3xl p-8 border border-white/10">
               <div className="text-center">
-                <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary to-emerald-600 flex items-center justify-center">
+                <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary to-orange-600 flex items-center justify-center">
                   <ChefHat className="w-10 h-10 text-white" />
                 </div>
                 <h4 className="text-xl font-bold text-white mb-2">Our Mission</h4>
@@ -151,7 +151,7 @@ export function AboutSection() {
                 transition={{ delay: index * 0.1 }}
                 className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-primary/50 transition-colors"
               >
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-emerald-500/20 flex items-center justify-center mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-orange-500/20 flex items-center justify-center mb-4">
                   <value.icon className="w-6 h-6 text-primary" />
                 </div>
                 <h4 className="text-lg font-semibold text-white mb-2">{value.title}</h4>
@@ -179,7 +179,7 @@ export function AboutSection() {
                 transition={{ delay: index * 0.1 }}
                 className="text-center"
               >
-                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary to-emerald-600 flex items-center justify-center text-white text-2xl font-bold">
+                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary to-orange-600 flex items-center justify-center text-white text-2xl font-bold">
                   {member.name.charAt(0)}
                 </div>
                 <h4 className="text-lg font-semibold text-white">{member.name}</h4>
@@ -200,7 +200,7 @@ export function AboutSection() {
           <p className="text-zinc-400 mb-6">Ready to taste the difference?</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/kitchens">
-              <Button size="lg" className="gap-2 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90">
+              <Button size="lg" className="gap-2 bg-gradient-to-r from-primary to-orange-600 hover:from-primary/90 hover:to-orange-600/90">
                 Browse Kitchens
                 <ArrowRight className="w-4 h-4" />
               </Button>

@@ -165,6 +165,7 @@ function FAQItem({
   return (
     <div className="rounded-2xl glass overflow-hidden">
       <button
+        suppressHydrationWarning
         onClick={onToggle}
         className="w-full flex items-center justify-between p-4 text-left hover:bg-secondary/30 transition-colors"
       >

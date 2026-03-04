@@ -304,7 +304,7 @@ export default function CartPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Pickup</span>
-                    <span className="text-green-600">Free</span>
+                    <span className="text-orange-600">Free</span>
                   </div>
                   <div className="flex justify-between font-bold pt-2 border-t">
                     <span>Total</span>

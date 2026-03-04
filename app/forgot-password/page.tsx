@@ -56,8 +56,8 @@ export default function ForgotPasswordPage() {
         <CardContent>
           {success ? (
             <div className="space-y-4">
-              <Alert className="bg-emerald-50 border-emerald-200">
-                <AlertDescription className="text-sm text-emerald-800">
+              <Alert className="bg-orange-50 border-orange-200">
+                <AlertDescription className="text-sm text-orange-800">
                   Password reset link sent! Check your email.
                 </AlertDescription>
               </Alert>

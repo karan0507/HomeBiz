@@ -85,7 +85,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       <aside className="hidden md:flex w-64 bg-card border-r flex-col h-screen sticky top-0">
         <div className="p-6 border-b">
           <Link href="/admin/dashboard" className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary via-primary to-emerald-600 flex items-center justify-center shadow-lg p-1.5 overflow-hidden">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary via-primary to-orange-600 flex items-center justify-center shadow-lg p-1.5 overflow-hidden">
               <img
                 src="/images/logo.png"
                 alt="HomeBiz"

@@ -5,6 +5,7 @@ import { Check, X, Clock, Phone, ChefHat, Eye, Loader2 } from "lucide-react"
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ProtectedRoute } from "@/components/protected-route"
 import { BusinessLayout } from "@/components/business/business-layout"
 import { StatusBadge } from "@/components/shared/status-badge"
@@ -109,7 +110,7 @@ function OrderCard({ order, onStatusChange, onReject }: OrderCardProps) {
           <div className="flex items-center gap-2">
             <StatusBadge status={order.status} />
             {order.paymentStatus === "paid" ? (
-              <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Paid</Badge>
+              <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">Paid</Badge>
             ) : (
               <Badge variant="outline">Pay on Pickup</Badge>
             )}
@@ -152,10 +153,11 @@ function OrderCard({ order, onStatusChange, onReject }: OrderCardProps) {
         </div>
 
         {order.specialInstructions && (
-          <div className="bg-amber-50 p-3 rounded-lg mb-4 text-sm">
-            <p className="font-medium text-amber-800">Special Instructions:</p>
-            <p className="text-amber-700">{order.specialInstructions}</p>
-          </div>
+          <Alert className="mb-4 border-amber-200 bg-amber-50">
+            <AlertDescription className="text-amber-900">
+              <span className="font-medium">Special Instructions:</span> {order.specialInstructions}
+            </AlertDescription>
+          </Alert>
         )}
 
         <div className="flex justify-between items-center pt-3 border-t">
@@ -338,15 +340,15 @@ export default function BusinessOrdersPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-green-50 border-green-200">
+            <Card className="bg-orange-50 border-orange-200">
               <CardContent className="p-3 md:p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs md:text-sm text-green-600">Ready</p>
-                    <p className="text-xl md:text-2xl font-bold text-green-700">{readyCount}</p>
+                    <p className="text-xs md:text-sm text-orange-600">Ready</p>
+                    <p className="text-xl md:text-2xl font-bold text-orange-700">{readyCount}</p>
                   </div>
-                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-green-100 flex items-center justify-center">
-                    <Check className="w-4 h-4 md:w-5 md:h-5 text-green-600" />
+                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                    <Check className="w-4 h-4 md:w-5 md:h-5 text-orange-600" />
                   </div>
                 </div>
               </CardContent>

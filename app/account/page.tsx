@@ -7,6 +7,7 @@ import { MainLayout } from "@/components/layout/main-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -270,10 +271,9 @@ function AccountContent() {
                 </div>
               </CardHeader>
                 {profileError && (
-                  <div className="bg-destructive/10 text-destructive text-xs p-3 rounded-lg mb-4 flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse" />
-                    {profileError}
-                  </div>
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertDescription>{profileError}</AlertDescription>
+                  </Alert>
                 )}
               <CardContent className="space-y-4">
                 {profileLoading ? (
@@ -375,7 +375,7 @@ function AccountContent() {
                         <div>
                           <div className="flex items-center gap-2 mb-1">
                             <h3 className="font-semibold">{kitchenName}</h3>
-                            <Badge className={isCompleted ? "bg-emerald-100 text-emerald-700 border-emerald-200 text-xs" : "bg-yellow-100 text-yellow-700 border-yellow-200 text-xs"}>
+                            <Badge className={isCompleted ? "bg-orange-100 text-orange-700 border-orange-200 text-xs" : "bg-yellow-100 text-yellow-700 border-yellow-200 text-xs"}>
                               {statusLabel}
                             </Badge>
                           </div>
@@ -433,7 +433,7 @@ function AccountContent() {
                       )}
                       {isCompleted && order.has_review && (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Check className="w-4 h-4 text-emerald-600" />
+                          <Check className="w-4 h-4 text-orange-600" />
                           Review submitted
                         </div>
                       )}
@@ -464,7 +464,7 @@ function AccountContent() {
                   </div>
                 </div>
                 <div className="flex items-start gap-4 p-4 bg-muted/30 rounded-lg">
-                  <Phone className="w-6 h-6 text-emerald-600 shrink-0 mt-1" />
+                  <Phone className="w-6 h-6 text-orange-600 shrink-0 mt-1" />
                   <div>
                     <h3 className="font-semibold mb-1">Phone Support</h3>
                     <p className="text-sm text-muted-foreground mb-2">416-555-HOME (4663)</p>
@@ -507,7 +507,7 @@ function AccountContent() {
                 <Card key={kitchen.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-5">
                     <div className="flex gap-4">
-                      <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-primary/20 to-emerald-500/10 flex items-center justify-center shrink-0">
+                      <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-primary/20 to-orange-500/10 flex items-center justify-center shrink-0">
                         <ChefHat className="w-10 h-10 text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -521,10 +521,10 @@ function AccountContent() {
                           </Button>
                         </div>
                         <div className="flex items-center gap-3 mb-3">
-                          <span className="flex items-center gap-1 bg-yellow-50 text-yellow-700 px-2 py-1 rounded-full text-xs font-medium">
+                          <Badge variant="secondary" className="bg-yellow-50 text-yellow-700 hover:bg-yellow-100">
                             <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                             {Number(kitchen.rating || 0).toFixed(1)}
-                          </span>
+                          </Badge>
                           {kitchen.neighborhood && (
                             <span className="flex items-center gap-1 text-xs text-muted-foreground">
                               <MapPin className="w-3 h-3" />

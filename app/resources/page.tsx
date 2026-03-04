@@ -49,7 +49,7 @@ export default function ResourcesPage() {
         <section className="py-16 md:py-24">
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
-              <span className="inline-block px-4 py-1.5 rounded-full bg-emerald-100 text-emerald-700 text-sm font-medium mb-4">
+              <span className="inline-block px-4 py-1.5 rounded-full bg-orange-100 text-orange-700 text-sm font-medium mb-4">
                 Chef Resources
               </span>
               <h1 className="text-3xl md:text-4xl font-bold mb-4">
@@ -67,8 +67,8 @@ export default function ResourcesPage() {
                   <Card key={resource.title}>
                     <CardHeader>
                       <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
-                          <Icon className="w-6 h-6 text-emerald-600" />
+                        <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center">
+                          <Icon className="w-6 h-6 text-orange-600" />
                         </div>
                         <div>
                           <CardTitle className="text-lg">

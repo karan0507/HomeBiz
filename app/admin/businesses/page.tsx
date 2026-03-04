@@ -1,13 +1,14 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useDebounce } from "@/hooks/useDebounce"
 import { ProtectedRoute } from "@/components/protected-route"
 import { AdminLayout } from "@/components/admin/admin-layout"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { fetchAPI, APIError } from "@/lib/services/api.client"
-import { Search, Building2, MoreVertical, Star, CheckCircle, Building, Clock, XCircle } from "lucide-react"
+import { Search, Building2, MoreVertical, Star, CheckCircle, Building, Clock, XCircle, Loader2 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { SkeletonTable } from "@/components/shared/skeleton-cards"
 import { EmptyBusinesses } from "@/components/shared/empty-state"
@@ -36,6 +37,7 @@ export default function AdminBusinessesPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | "approved" | "pending" | "rejected" | "suspended">("all")
   const [currentPage, setCurrentPage] = useState(1)
+  const [verifyingId, setVerifyingId] = useState<string | null>(null)
 
   const fetchKitchens = useCallback(async (page: number, status: string) => {
     setLoading(true)
@@ -56,28 +58,40 @@ export default function AdminBusinessesPage() {
 
   useEffect(() => { fetchKitchens(currentPage, statusFilter) }, [currentPage, statusFilter, fetchKitchens])
 
-  const filtered = searchQuery
+  const debouncedSearch = useDebounce(searchQuery, 300)
+
+  const filtered = debouncedSearch
     ? kitchens.filter(k =>
-        k.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (k.neighborhood || "").toLowerCase().includes(searchQuery.toLowerCase())
+        k.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        (k.neighborhood || "").toLowerCase().includes(debouncedSearch.toLowerCase())
       )
     : kitchens
 
   const handleVerify = async (id: string, status: "approved" | "rejected" | "suspended") => {
+    setVerifyingId(id)
     try {
       await fetchAPI(`/admin/kitchens/${id}/verify`, { method: "PUT", body: JSON.stringify({ status }) })
       toast.success(`Kitchen ${status}`)
       setKitchens(prev => prev.map(k => k.id === id ? { ...k, verification_status: status } : k))
     } catch (err: any) {
-      toast.error(err.message || "Failed to update status")
+      const errorMessages: Record<string, string> = {
+        INVALID_CERTIFICATE: "Food handler certificate is invalid or expired",
+        MISSING_DOCUMENTS: "Required verification documents are missing",
+        DUPLICATE_KITCHEN: "A kitchen with this name already exists",
+        INVALID_ADDRESS: "Kitchen address could not be verified",
+      }
+      const message = err.code ? errorMessages[err.code] || err.message : err.message || "Failed to update status"
+      toast.error(message)
+    } finally {
+      setVerifyingId(null)
     }
   }
 
   const stats = {
     total: meta.total,
-    approved: kitchens.filter(k => k.verification_status === "approved").length,
-    pending: kitchens.filter(k => k.verification_status === "pending").length,
-    rejected: kitchens.filter(k => k.verification_status === "rejected").length,
+    approved: meta.approved_count || 0,
+    pending: meta.pending_count || 0,
+    rejected: meta.rejected_count || 0,
   }
 
   const totalPages = Math.ceil(meta.total / meta.per_page)
@@ -100,7 +114,7 @@ export default function AdminBusinessesPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
             {[
               { label: "Total", value: stats.total, icon: Building, bg: "bg-primary/10", color: "text-primary" },
-              { label: "Approved", value: stats.approved, icon: CheckCircle, bg: "bg-green-100", color: "text-green-600" },
+              { label: "Approved", value: stats.approved, icon: CheckCircle, bg: "bg-orange-100", color: "text-orange-600" },
               { label: "Pending", value: stats.pending, icon: Clock, bg: "bg-amber-100", color: "text-amber-600" },
               { label: "Rejected", value: stats.rejected, icon: XCircle, bg: "bg-red-100", color: "text-red-600" },
             ].map(s => (
@@ -192,8 +206,12 @@ export default function AdminBusinessesPage() {
                             <td className="py-3 px-4 text-right">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <MoreVertical className="h-4 w-4" />
+                                  <Button variant="ghost" size="icon" className="h-8 w-8" disabled={verifyingId === k.id}>
+                                    {verifyingId === k.id ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <MoreVertical className="h-4 w-4" />
+                                    )}
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">

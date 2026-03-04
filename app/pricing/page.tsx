@@ -67,7 +67,7 @@ export default function PricingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <span className="inline-block px-4 py-1.5 rounded-full bg-emerald-100 text-emerald-700 text-sm font-medium mb-4">
+              <span className="inline-block px-4 py-1.5 rounded-full bg-orange-100 text-orange-700 text-sm font-medium mb-4">
                 Simple Pricing
               </span>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
@@ -85,7 +85,7 @@ export default function PricingPage() {
         <section className="py-12">
           <div className="container mx-auto px-4">
             <div className="flex items-center gap-2 mb-8">
-              <Users className="w-6 h-6 text-emerald-600" />
+              <Users className="w-6 h-6 text-orange-600" />
               <h2 className="text-2xl font-bold">For Customers</h2>
             </div>
 
@@ -93,7 +93,7 @@ export default function PricingPage() {
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   {customerPlan.name}
-                  <Badge className="bg-emerald-100 text-emerald-700">
+                  <Badge className="bg-orange-100 text-orange-700">
                     Limited Offer
                   </Badge>
                 </CardTitle>
@@ -107,7 +107,7 @@ export default function PricingPage() {
                 <ul className="space-y-3">
                   {customerPlan.features.map((feature) => (
                     <li key={feature} className="flex items-center gap-2">
-                      <Check className="w-5 h-5 text-emerald-600" />
+                      <Check className="w-5 h-5 text-orange-600" />
                       <span>{feature}</span>
                     </li>
                   ))}
@@ -127,7 +127,7 @@ export default function PricingPage() {
         <section className="py-12 bg-secondary/30">
           <div className="container mx-auto px-4">
             <div className="flex items-center gap-2 mb-8">
-              <ChefHat className="w-6 h-6 text-emerald-600" />
+              <ChefHat className="w-6 h-6 text-orange-600" />
               <h2 className="text-2xl font-bold">For Home Chefs</h2>
             </div>
 
@@ -140,13 +140,13 @@ export default function PricingPage() {
                   transition={{ delay: index * 0.1 }}
                 >
                   <Card
-                    className={plan.popular ? "border-emerald-500 border-2" : ""}
+                    className={plan.popular ? "border-orange-500 border-2" : ""}
                   >
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <CardTitle>{plan.name}</CardTitle>
                         {plan.popular && (
-                          <Badge className="bg-emerald-500 text-white">
+                          <Badge className="bg-orange-500 text-white">
                             Most Popular
                           </Badge>
                         )}
@@ -163,7 +163,7 @@ export default function PricingPage() {
                       <ul className="space-y-3">
                         {plan.features.map((feature) => (
                           <li key={feature} className="flex items-center gap-2">
-                            <Check className="w-5 h-5 text-emerald-600" />
+                            <Check className="w-5 h-5 text-orange-600" />
                             <span>{feature}</span>
                           </li>
                         ))}

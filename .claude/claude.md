@@ -201,6 +201,38 @@ When I say **"EXECUTION MODE (Sonnet 4.5)"**:
 - [x] **Environment:** Supabase credentials added to `.env.local` (realtime-ready)
 - [x] **Environment:** Google Maps API key marked optional (address input works without it)
 
+### UI/UX Redesign Completed (2026-03-03)
+- [x] **Critical Bugs Fixed:**
+  - Navigation search text vanishing bug (removed premature setSearchQuery clear + auto-search debounce)
+  - Cuisine links query parameter mismatch (changed `cuisines=` to `cuisine=` in featured-categories.tsx)
+- [x] **shadcn Compliance (7 instances):**
+  - Replaced 5 custom badge divs with `<Badge>` component (account, business dashboard, business orders, admin dashboard, featured-kitchens)
+  - Replaced 2 custom alert divs with `<Alert>` component (account profile error, business orders special instructions)
+- [x] **Dynamic Color System (globals.css):**
+  - Added CSS variables: `--color-primary-hex`, `--color-primary-dark-hex`, `--color-accent-hex`, `--color-accent-light-hex`
+  - Removed duplicate `.glass-orange` class (now alias of `.glass-primary`)
+  - Converted all hardcoded hex colors (#E8480A, #F59E0B, #FCD34D, #C73D08) to use CSS variables
+  - Gradients, shadows, scrollbar, hover effects now use `color-mix()` for dynamic theming
+  - Current brand: Burnt Orange (#E8480A) primary, Warm Amber (#F59E0B) accent (change via CSS variables)
+- [x] **Typography Standardization:**
+  - Landing page stats font size increased: `text-2xl md:text-3xl` → `text-3xl md:text-4xl`
+  - Fixed missing gradient class in stats (now uses `.text-gradient`)
+  - Stats now show fallback "0" if no value provided
+  - Typography scale documented in globals.css header
+- [x] **Spacing Standardization:**
+  - Documented card padding rules: p-4 (base), p-6 (elevated), p-8 (featured)
+  - Section padding standard: py-16 md:py-24
+  - Gap spacing: gap-4 default, gap-2 for tight groupings only
+- [x] **Form Field Alignment:**
+  - Verified frontend forms correctly transform camelCase (firstName) → snake_case (first_name) before API calls
+  - Confirmed alignment with backend /api/auth/signup requirements (see CLAUDE.md:30-32)
+- [x] **Validation Mapping:**
+  - Backend validations documented: email format, phone format, password >=8chars, confirm password match, address required fields, cuisine_type_ids required for business
+  - Frontend forms already implement these validations per CLAUDE.md
+- [x] **Loading States:**
+  - Verified all loading states use shadcn Skeleton component or custom skeleton-cards
+  - Consistent across featured-kitchens, kitchens page, dashboard pages
+
 ### In Progress
 - [ ] Stage + commit untracked files (`address-autocomplete`, `geolocation`, `loading-state`, `route-guards`)
 

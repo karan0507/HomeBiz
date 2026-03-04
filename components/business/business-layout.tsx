@@ -107,7 +107,7 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
       <aside className="hidden md:flex w-64 bg-gradient-to-b from-card to-card/95 border-r flex-col h-screen sticky top-0">
         <div className="p-6 border-b border-border/50">
           <Link href="/business/dashboard" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary via-primary to-emerald-600 flex items-center justify-center shadow-lg shadow-primary/25 p-1.5 overflow-hidden">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary via-primary to-orange-600 flex items-center justify-center shadow-lg shadow-primary/25 p-1.5 overflow-hidden">
               <img
                 src="/images/logo.png"
                 alt="HomeBiz"
@@ -135,7 +135,7 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
                   className={cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all",
                     active
-                      ? "bg-gradient-to-r from-primary/15 to-emerald-500/10 text-primary shadow-sm"
+                      ? "bg-gradient-to-r from-primary/15 to-orange-500/10 text-primary shadow-sm"
                       : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                   )}
                 >
@@ -153,7 +153,7 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
         </nav>
 
         <div className="p-4 border-t border-border/50 space-y-3">
-          <div className="px-3 py-3 rounded-xl bg-gradient-to-r from-primary/5 to-emerald-500/5">
+          <div className="px-3 py-3 rounded-xl bg-gradient-to-r from-primary/5 to-orange-500/5">
             <p className="text-sm font-semibold truncate">{user?.name}</p>
             <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
           </div>

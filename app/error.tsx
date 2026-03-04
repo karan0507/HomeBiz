@@ -31,18 +31,21 @@ export default function Error({
         </CardHeader>
         <CardContent className="space-y-3">
           <Button
-            onClick={reset}
+            onClick={() => {
+              reset();
+              window.location.reload();
+            }}
             className="w-full"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
             Try Again
           </Button>
-          <Link href="/">
-            <Button variant="outline" className="w-full">
+          <Button variant="outline" className="w-full" asChild>
+            <Link href="/">
               <Home className="w-4 h-4 mr-2" />
               Go Home
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </CardContent>
       </Card>
     </div>

@@ -58,7 +58,7 @@ export function FeaturedKitchens() {
           className="flex flex-col md:flex-row md:items-end md:justify-between mb-12"
         >
           <div>
-            <span className="inline-block px-4 py-1.5 rounded-full glass-emerald text-primary text-sm font-medium mb-4">
+            <span className="inline-block px-4 py-1.5 rounded-full glass-primary text-primary text-sm font-medium mb-4">
               Meet Our Chefs
             </span>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold">
@@ -228,7 +228,7 @@ function KitchenCard({ kitchen, index }: { kitchen: Kitchen; index: number }) {
 
             {/* Open/Closed Badge */}
             <div className="absolute top-3 right-3">
-              <Badge className={kitchen.is_active ? "bg-green-600 text-white shadow-sm" : "bg-slate-500 text-white shadow-sm"}>
+              <Badge className={kitchen.is_active ? "bg-green-600 text-white shadow-sm hover:bg-green-700" : "bg-slate-500 text-white shadow-sm hover:bg-slate-600"}>
                 {kitchen.is_active ? "Open" : "Closed"}
               </Badge>
             </div>
@@ -261,20 +261,20 @@ function KitchenCard({ kitchen, index }: { kitchen: Kitchen; index: number }) {
           </div>
 
           {/* Content */}
-          <div className="p-4">
+          <div className="p-5 space-y-3">
             {/* Kitchen Name & Rating */}
-            <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start justify-between gap-3">
               <h3 className="font-semibold text-lg md:text-xl line-clamp-1 group-hover:text-primary transition-colors">
                 {kitchen.name}
               </h3>
-              <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 px-2.5 py-1 rounded-full shrink-0">
+              <Badge variant="secondary" className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-100">
                 <Star className="w-4 h-4 fill-current" />
-                <span className="text-sm font-semibold">{kitchen.rating}</span>
-              </div>
+                {kitchen.rating}
+              </Badge>
             </div>
 
             {/* Cuisine & Location */}
-            <div className="flex items-center gap-1.5 mt-2 text-sm md:text-base text-muted-foreground">
+            <div className="flex items-center gap-1.5 text-sm md:text-base text-muted-foreground">
               <span>{kitchen.cuisineTypes?.slice(0, 2).join(" • ") || ""}</span>
               {kitchen.cuisineTypes && kitchen.cuisineTypes.length > 2 && (
                 <span className="text-xs text-muted-foreground">+{kitchen.cuisineTypes.length - 2}</span>
@@ -286,7 +286,7 @@ function KitchenCard({ kitchen, index }: { kitchen: Kitchen; index: number }) {
 
             {/* Address */}
             {kitchen.address && (
-              <div className="mt-1.5 text-sm text-muted-foreground line-clamp-1">
+              <div className="text-sm text-muted-foreground line-clamp-1">
                 <span className="font-medium">📍</span> {kitchen.address}
               </div>
             )}
@@ -307,7 +307,7 @@ function KitchenCard({ kitchen, index }: { kitchen: Kitchen; index: number }) {
             )}
 
             {/* Footer */}
-            <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
+            <div className="flex items-center justify-between pt-3 border-t border-border/50">
               <div className="flex items-center gap-1">
                 <span className="text-xs font-medium text-muted-foreground">Min:</span>
                 <span className="text-sm font-semibold text-foreground">

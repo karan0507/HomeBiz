@@ -56,7 +56,7 @@ export default function SuccessStoriesPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <span className="inline-block px-4 py-1.5 rounded-full bg-emerald-100 text-emerald-700 text-sm font-medium mb-4">
+              <span className="inline-block px-4 py-1.5 rounded-full bg-orange-100 text-orange-700 text-sm font-medium mb-4">
                 Real Stories
               </span>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
@@ -84,12 +84,12 @@ export default function SuccessStoriesPage() {
                   <Card className="h-full">
                     <CardContent className="p-6">
                       <div className="flex items-start gap-4 mb-4">
-                        <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
-                          <ChefHat className="w-8 h-8 text-emerald-600" />
+                        <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center">
+                          <ChefHat className="w-8 h-8 text-orange-600" />
                         </div>
                         <div>
                           <h3 className="font-bold text-lg">{story.name}</h3>
-                          <p className="text-emerald-600 font-medium">
+                          <p className="text-orange-600 font-medium">
                             {story.kitchen}
                           </p>
                           <p className="text-sm text-muted-foreground">
@@ -99,7 +99,7 @@ export default function SuccessStoriesPage() {
                       </div>
 
                       <div className="relative mb-6">
-                        <Quote className="absolute -top-2 -left-2 w-8 h-8 text-emerald-100" />
+                        <Quote className="absolute -top-2 -left-2 w-8 h-8 text-orange-100" />
                         <p className="text-muted-foreground italic pl-6">
                           &quot;{story.quote}&quot;
                         </p>

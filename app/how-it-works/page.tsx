@@ -76,7 +76,7 @@ export default function HowItWorksPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <span className="inline-block px-4 py-1.5 rounded-full bg-emerald-100 text-emerald-700 text-sm font-medium mb-4">
+              <span className="inline-block px-4 py-1.5 rounded-full bg-orange-100 text-orange-700 text-sm font-medium mb-4">
                 Simple & Easy
               </span>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
@@ -107,13 +107,13 @@ export default function HowItWorksPage() {
                     <div className="relative">
                       {/* Dotted line connector (hidden on mobile, shown on lg screens) */}
                       {index < steps.length - 1 && (
-                        <div className="hidden lg:block absolute top-10 left-[60%] w-full h-0.5 border-t-2 border-dashed border-emerald-300 z-0" />
+                        <div className="hidden lg:block absolute top-10 left-[60%] w-full h-0.5 border-t-2 border-dashed border-orange-300 z-0" />
                       )}
 
-                      <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-emerald-500 to-lime-500 flex items-center justify-center mb-6 relative z-10">
+                      <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-primary to-orange-500 flex items-center justify-center mb-6 relative z-10">
                         <Icon className="w-10 h-10 text-white" />
                       </div>
-                      <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold z-10">
+                      <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-700 font-bold z-10">
                         {index + 1}
                       </div>
                     </div>
@@ -143,7 +143,7 @@ export default function HowItWorksPage() {
                     transition={{ delay: index * 0.1 }}
                     className="bg-card p-6 rounded-2xl border"
                   >
-                    <Icon className="w-10 h-10 text-emerald-600 mb-4" />
+                    <Icon className="w-10 h-10 text-orange-600 mb-4" />
                     <h3 className="font-bold mb-2">{benefit.title}</h3>
                     <p className="text-sm text-muted-foreground">
                       {benefit.description}

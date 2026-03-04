@@ -25,7 +25,7 @@ const statusConfig: Record<OrderStatus, { label: string; className: string }> = 
   },
   ready: {
     label: "Ready",
-    className: "bg-emerald-100 text-emerald-800 hover:bg-emerald-100",
+    className: "bg-green-100 text-green-800 hover:bg-green-100",
   },
   picked_up: {
     label: "Picked Up",
@@ -58,7 +58,7 @@ export function UserStatusBadge({ status }: { status: UserStatus }) {
   const config: Record<UserStatus, { label: string; className: string }> = {
     active: {
       label: "Active",
-      className: "bg-green-100 text-green-800 hover:bg-green-100",
+      className: "bg-orange-100 text-orange-800 hover:bg-orange-100",
     },
     suspended: {
       label: "Suspended",

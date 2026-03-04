@@ -52,7 +52,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
-  const [wishlist, setWishlist] = useState<{ kitchenId: string; entryId: string }[]>([]);
+  const [wishlist, setWishlist] = useState<string[]>([]);
   const [currentKitchen, setCurrentKitchen] = useState<string | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -64,6 +64,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (initialized.current) return;
     initialized.current = true;
 
+    // Load Cart
     const savedCart = localStorage.getItem("cart");
     if (savedCart) {
       try {
@@ -86,6 +87,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem("cart");
       }
     }
+
+    // Load Offline Wishlist
+    const savedWishlist = localStorage.getItem("wishlist");
+    if (savedWishlist) {
+      try {
+        setWishlist(JSON.parse(savedWishlist));
+      } catch (e) {
+        localStorage.removeItem("wishlist");
+      }
+    }
+
     setIsHydrated(true);
   }, []);
 
@@ -96,15 +108,29 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (uid === wishlistUserId.current) return; // same user, skip
     wishlistUserId.current = uid;
     if (!uid || user?.role !== 'customer') {
-      setWishlist([]);
+      // Don't clear wishlist here, allow offline wishlist
       return;
     }
     fetchAPI<any[]>('/wishlist')
-      .then(data => {
-        setWishlist(data.map(item => ({
-          kitchenId: item.kitchen_id,
-          entryId: item.id
-        })));
+      .then(async data => {
+        // Map securely from nested kitchen object
+        const serverWishlistIds = data.map(item => item.kitchen?.id).filter(Boolean);
+        
+        // Merge offline with server (optimistic)
+        const localWishlist = JSON.parse(localStorage.getItem("wishlist") || "[]");
+        const missingOnServer = localWishlist.filter((id: string) => !serverWishlistIds.includes(id));
+        
+        // Sync missing offline wishlists to server
+        for (const id of missingOnServer) {
+          try {
+            await fetchAPI(`/wishlist/${id}`, { method: "POST" });
+            serverWishlistIds.push(id);
+          } catch(err) {
+            console.warn(`[Wishlist] Failed to sync offline wishlist ${id} to server.`);
+          }
+        }
+
+        setWishlist(Array.from(new Set([...serverWishlistIds])));
       })
       .catch(err => console.error('[Wishlist] Failed to fetch:', err));
   }, [user?.id, user?.role]); // ← Re-run when user ID or role changes
@@ -176,31 +202,39 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const toggleWishlist = async (kitchenId: string) => {
-    if (!user) return;
+    const isWishlisted = wishlist.includes(kitchenId);
     
-    const existing = wishlist.find(w => w.kitchenId === kitchenId);
-    
-    if (existing) {
-      try {
-        await fetchAPI(`/wishlist/${existing.entryId}`, { method: "DELETE" });
-        setWishlist(prev => prev.filter(w => w.kitchenId !== kitchenId));
-      } catch (err) {
-        showError(err);
+    if (isWishlisted) {
+      // Optimitistically update UI
+      setWishlist(prev => prev.filter(w => w !== kitchenId));
+      if (user && user.role === 'customer') {
+        try {
+          await fetchAPI(`/wishlist/${kitchenId}`, { method: "DELETE" });
+        } catch (err) {
+          showError(err);
+          // Revert optimistic update on error
+          setWishlist(prev => [...prev, kitchenId]);
+        }
       }
     } else {
-      try {
-        const created = await fetchAPI<any>(`/wishlist`, { 
-          method: "POST",
-          body: JSON.stringify({ kitchen_id: kitchenId })
-        });
-        setWishlist(prev => [...prev, { kitchenId, entryId: created.id }]);
-      } catch (err) {
-        showError(err);
+      // Optimitistically update UI
+      setWishlist(prev => [...prev, kitchenId]);
+      if (user && user.role === 'customer') {
+        try {
+          await fetchAPI(`/wishlist/${kitchenId}`, { method: "POST" });
+        } catch (err) {
+          // Ignore 400s if it implies "Already in wishlist" to prevent double error
+          if (!(err instanceof APIError && err.status === 201)) {
+             showError(err);
+             // Revert optimistic update on error
+             setWishlist(prev => prev.filter(w => w !== kitchenId));
+          }
+        }
       }
     }
   };
 
-  const isInWishlist = (kitchenId: string) => wishlist.some(w => w.kitchenId === kitchenId);
+  const isInWishlist = (kitchenId: string) => wishlist.includes(kitchenId);
 
   const cartCount = items.reduce((sum, c) => sum + c.quantity, 0);
   const cartTotal = items.reduce((sum, c) => sum + (c.item.price * c.quantity), 0);
@@ -209,7 +243,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     <CartContext.Provider
       value={{
         items,
-        wishlist: wishlist.map(w => w.kitchenId),
+        wishlist,
         addToCart,
         removeFromCart,
         updateQuantity,

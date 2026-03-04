@@ -56,6 +56,17 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // Auto-trigger search when debounced input changes
+  useEffect(() => {
+    if (showSearch && debouncedSearch !== undefined) {
+      if (debouncedSearch.trim()) {
+        router.push(`/kitchens?q=${encodeURIComponent(debouncedSearch.trim())}`);
+      } else if (pathname === '/kitchens') {
+        router.push('/kitchens');
+      }
+    }
+  }, [debouncedSearch, showSearch, pathname, router]);
+
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
@@ -73,16 +84,8 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
     if (query) {
       router.push(`/kitchens?q=${encodeURIComponent(query)}`);
       setShowSearch(false);
-      setSearchQuery("");
     }
   };
-
-  // Auto-search on debounce
-  useEffect(() => {
-    if (debouncedSearch && showSearch) {
-      handleSearch();
-    }
-  }, [debouncedSearch]);
 
   const navItems = [
     { href: "/", label: "Home", icon: Home },

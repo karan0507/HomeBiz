@@ -51,16 +51,20 @@ export function HeroSection() {
   }, []);
 
   // Map quick category labels to UUIDs from fetched cuisine types
-  const quickCategoriesWithIds = quickCategories.map(cat => {
-    const match = cuisineTypes.find(ct =>
-      ct.name.toLowerCase() === cat.label.toLowerCase() ||
-      ct.slug?.toLowerCase() === cat.label.toLowerCase()
-    );
-    return {
-      ...cat,
-      id: match?.id || "", // Fallback to empty string if not found
-    };
-  }).filter(cat => cat.id); // Only show categories that have matching IDs
+  const quickCategoriesWithIds = quickCategories
+    .map((cat) => {
+      const match = cuisineTypes.find(
+        (ct) =>
+          ct.name.toLowerCase() === cat.label.toLowerCase() ||
+          ct.slug?.toLowerCase() === cat.label.toLowerCase(),
+      );
+      return {
+        ...cat,
+        id: match?.id || "", // Fallback to empty string if not found
+        slug: match?.slug || "", // Add slug for URL param
+      };
+    })
+    .filter((cat) => cat.id); // Only show categories that have matching IDs
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,7 +123,9 @@ export function HeroSection() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0"
             >
-              Skip the meal prep. Order authentic home-cooked food from your neighbourhood&apos;s talented home chefs. Real recipes, real flavours, ready for pickup.
+              Skip the meal prep. Order authentic home-cooked food from your
+              neighbourhood&apos;s talented home chefs. Real recipes, real
+              flavours, ready for pickup.
             </motion.p>
 
             {/* Search Bar */}
@@ -139,6 +145,7 @@ export function HeroSection() {
                   placeholder="Search cuisines, dishes, or chefs..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  suppressHydrationWarning
                   className="flex-1 h-11 px-4 bg-transparent text-base outline-none placeholder:text-muted-foreground"
                 />
                 <Button
@@ -159,12 +166,14 @@ export function HeroSection() {
               transition={{ duration: 0.5, delay: 0.4 }}
               className="mb-10"
             >
-              <p className="text-sm text-muted-foreground mb-3 font-bold">Popular cuisines:</p>
+              <p className="text-sm text-muted-foreground mb-3 font-bold">
+                Popular cuisines:
+              </p>
               <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
                 {quickCategoriesWithIds.map((cat) => (
-                  <Link key={cat.id} href={`/kitchens?cuisine=${cat.id}`}>
-                    <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-background border hover:border-primary hover:bg-primary/5 transition-colors text-sm">
-                      <span>{cat.emoji}</span>
+                  <Link key={cat.id} href={`/kitchens?cuisine=${cat.slug}`}>
+                    <button className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-background border hover:border-primary hover:bg-primary/5 transition-colors text-base font-medium">
+                      <span className="text-lg">{cat.emoji}</span>
                       <span>{cat.label}</span>
                     </button>
                   </Link>
@@ -181,10 +190,12 @@ export function HeroSection() {
             >
               {stats.map((stat) => (
                 <div key={stat.label} className="text-center lg:text-left">
-                  <div className="text-2xl md:text-3xl font-bold  bg-clip-text text-transparent">
-                    {stat.value}
+                  <div className="text-3xl md:text-4xl font-bold text-gradient">
+                    {stat.value || "0"}
                   </div>
-                  <div className="text-xs text-muted-foreground">{stat.label}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {stat.label}
+                  </div>
                 </div>
               ))}
             </motion.div>
@@ -203,10 +214,12 @@ export function HeroSection() {
                 alt="Delicious Home-Cooked Food"
                 className="w-full h-auto object-cover rounded-2xl"
                 style={{
-                  maskImage: 'linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%), linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)',
-                  WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%), linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)',
-                  maskComposite: 'intersect',
-                  WebkitMaskComposite: 'source-in'
+                  maskImage:
+                    "linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%), linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)",
+                  WebkitMaskImage:
+                    "linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%), linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)",
+                  maskComposite: "intersect",
+                  WebkitMaskComposite: "source-in",
                 }}
               />
             </div>
