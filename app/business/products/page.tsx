@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { fetchAPI } from "@/lib/services/api.client"
+import { getCachedDietaryOptions } from "@/lib/services/data.service"
+import type { DietaryOption } from "@/types/database"
 import { showError } from "@/lib/notifications"
 import { Plus, MoreVertical, Search, Package, CheckCircle, XCircle, Clock, Loader2 } from "lucide-react"
 import Image from "next/image"
@@ -76,6 +78,7 @@ export default function BusinessProductsPage() {
   const { user } = useAuth()
   const [kitchenId, setKitchenId] = useState<string | null>(null)
   const [products, setProducts] = useState<Product[]>([])
+  const [dietaryOptions, setDietaryOptions] = useState<DietaryOption[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [availabilityFilter, setAvailabilityFilter] = useState<"all" | "available" | "unavailable">("all")
@@ -106,7 +109,7 @@ export default function BusinessProductsPage() {
     quantity: "",
     quantity_unit: "",
     tags: "",
-    dietary_info: "",
+    dietaryOptionIds: [] as string[],
     available: true,
     image_url: "",
     display_order: 1,
@@ -121,9 +124,17 @@ export default function BusinessProductsPage() {
     let mounted = true
 
     fetchAPI<{ id: string }>("/business/kitchen")
-      .then(kitchen => {
+      .then(async kitchen => {
         if (!mounted) return
         setKitchenId(kitchen.id)
+        
+        try {
+          const dietary = await getCachedDietaryOptions()
+          if (mounted) setDietaryOptions(dietary)
+        } catch (e) {
+          showError(e)
+        }
+        
         return fetchAPI<any[]>(`/kitchens/${kitchen.id}/menu-items`)
       })
       .then(items => {
@@ -220,7 +231,7 @@ export default function BusinessProductsPage() {
       quantity: "",
       quantity_unit: "",
       tags: "",
-      dietary_info: "",
+      dietaryOptionIds: [],
       available: true,
       image_url: "",
       display_order: 1,
@@ -246,6 +257,15 @@ export default function BusinessProductsPage() {
     }
   }
 
+  const toggleDietary = (optionId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      dietaryOptionIds: prev.dietaryOptionIds.includes(optionId)
+        ? prev.dietaryOptionIds.filter(id => id !== optionId)
+        : [...prev.dietaryOptionIds, optionId]
+    }))
+  }
+
   const handleAddProduct = async () => {
     if (!validateForm() || !user || !kitchenId) return
 
@@ -267,7 +287,7 @@ export default function BusinessProductsPage() {
           quantity: formData.quantity ? parseFloat(formData.quantity) : null,
           quantity_unit: formData.quantity_unit || null,
           tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
-          dietary_info: formData.dietary_info.split(',').map(d => d.trim()).filter(Boolean),
+          dietary_option_ids: formData.dietaryOptionIds,
           display_order: formData.display_order,
         }),
       })
@@ -321,7 +341,7 @@ export default function BusinessProductsPage() {
         quantity: formData.quantity ? parseFloat(formData.quantity) : null,
         quantity_unit: formData.quantity_unit || null,
         tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
-        dietary_info: formData.dietary_info.split(',').map(d => d.trim()).filter(Boolean),
+        dietary_option_ids: formData.dietaryOptionIds,
         display_order: formData.display_order,
       }
 
@@ -347,7 +367,7 @@ export default function BusinessProductsPage() {
                 quantity: formData.quantity ? parseFloat(formData.quantity) : p.quantity,
                 quantityUnit: formData.quantity_unit,
                 tags: updateData.tags,
-                dietaryInfo: updateData.dietary_info,
+                dietaryInfo: formData.dietaryOptionIds.map(id => dietaryOptions.find(opt => opt.id === id)?.name || id),
                 displayOrder: formData.display_order,
                 images: formData.image_url ? [formData.image_url] : p.images 
               }
@@ -414,7 +434,9 @@ export default function BusinessProductsPage() {
       quantity: product.quantity?.toString() || "",
       quantity_unit: product.quantityUnit || "",
       tags: product.tags?.join(', ') || "",
-      dietary_info: product.dietaryInfo?.join(', ') || "",
+      dietaryOptionIds: dietaryOptions
+        .filter(opt => product.dietaryInfo?.includes(opt.name))
+        .map(opt => opt.id),
       available: product.available,
       image_url: product.images[0] !== "/placeholder.svg" ? product.images[0] : "",
       display_order: product.displayOrder,
@@ -853,14 +875,28 @@ export default function BusinessProductsPage() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="dietary_info">Dietary Info (comma separated)</Label>
-                <Input
-                  id="dietary_info"
-                  value={formData.dietary_info}
-                  onChange={(e) => setFormData({ ...formData, dietary_info: e.target.value })}
-                  placeholder="e.g. Gluten Free, Nut Free"
-                />
+              <div className="space-y-3">
+                <Label>Dietary Options</Label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {dietaryOptions.map((opt) => (
+                    <div
+                      key={opt.id}
+                      onClick={() => toggleDietary(opt.id)}
+                      className={`flex items-center gap-2 p-2 rounded-md border text-sm cursor-pointer transition-colors ${
+                        formData.dietaryOptionIds.includes(opt.id)
+                          ? "border-primary bg-primary/5 shadow-sm"
+                          : "border-border hover:bg-muted/50"
+                      }`}
+                    >
+                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                        formData.dietaryOptionIds.includes(opt.id) ? "border-primary bg-primary" : "border-input"
+                      }`}>
+                        {formData.dietaryOptionIds.includes(opt.id) && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                      </div>
+                      <span className="truncate">{opt.name}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -904,7 +940,7 @@ export default function BusinessProductsPage() {
                 Cancel
               </Button>
               <Button onClick={handleAddProduct} disabled={isSubmitting}>
-                {isSubmitting ? "Adding..." : "Add Product"}
+                {isSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Adding...</> : "Add Product"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1048,13 +1084,28 @@ export default function BusinessProductsPage() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="edit-dietary_info">Dietary Info (comma separated)</Label>
-                <Input
-                  id="edit-dietary_info"
-                  value={formData.dietary_info}
-                  onChange={(e) => setFormData({ ...formData, dietary_info: e.target.value })}
-                />
+              <div className="space-y-3">
+                <Label>Dietary Options</Label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {dietaryOptions.map((opt) => (
+                    <div
+                      key={opt.id}
+                      onClick={() => toggleDietary(opt.id)}
+                      className={`flex items-center gap-2 p-2 rounded-md border text-sm cursor-pointer transition-colors ${
+                        formData.dietaryOptionIds.includes(opt.id)
+                          ? "border-primary bg-primary/5 shadow-sm"
+                          : "border-border hover:bg-muted/50"
+                      }`}
+                    >
+                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                        formData.dietaryOptionIds.includes(opt.id) ? "border-primary bg-primary" : "border-input"
+                      }`}>
+                        {formData.dietaryOptionIds.includes(opt.id) && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                      </div>
+                      <span className="truncate">{opt.name}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -1094,7 +1145,7 @@ export default function BusinessProductsPage() {
                 Cancel
               </Button>
               <Button onClick={handleEditProduct} disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : "Save Changes"}
+                {isSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</> : "Save Changes"}
               </Button>
             </DialogFooter>
           </DialogContent>

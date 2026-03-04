@@ -17,6 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   ChefHat,
   Lock,
@@ -29,10 +30,6 @@ import {
 import AddressAutocomplete, {
   Address,
 } from "@/components/ui/address-autocomplete";
-
-function Req() {
-  return <span className="text-destructive ml-0.5">*</span>;
-}
 
 export default function SignupPage() {
   const [firstName, setFirstName] = useState("");
@@ -185,7 +182,7 @@ export default function SignupPage() {
         router.push("/login");
         return;
       }
-      loginWithSession(result.user, result.session?.access_token);
+      loginWithSession(result.user, result.session?.access_token, result.session?.refresh_token);
       showSuccess("Account created!", "Welcome to HomeBiz.");
       router.push("/account");
     } catch (err) {
@@ -223,7 +220,14 @@ export default function SignupPage() {
               <div className="space-y-1.5">
                 <Label htmlFor="firstName" className="text-sm">
                   First Name
-                  <Req />
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="text-destructive ml-0.5 cursor-help">*</span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>This field is required</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -240,7 +244,14 @@ export default function SignupPage() {
               <div className="space-y-1.5">
                 <Label htmlFor="lastName" className="text-sm">
                   Last Name
-                  <Req />
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="text-destructive ml-0.5 cursor-help">*</span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>This field is required</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -259,7 +270,14 @@ export default function SignupPage() {
             <div className="space-y-1.5">
               <Label htmlFor="email" className="text-sm">
                 Email
-                <Req />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-destructive ml-0.5 cursor-help">*</span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>This field is required</p>
+                  </TooltipContent>
+                </Tooltip>
               </Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -278,7 +296,14 @@ export default function SignupPage() {
             <div className="space-y-1.5">
               <Label htmlFor="phone" className="text-sm">
                 Phone Number
-                <Req />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-destructive ml-0.5 cursor-help">*</span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>This field is required</p>
+                  </TooltipContent>
+                </Tooltip>
               </Label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -297,7 +322,14 @@ export default function SignupPage() {
             <div className="space-y-1.5">
               <Label htmlFor="password" className="text-sm">
                 Password
-                <Req />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-destructive ml-0.5 cursor-help">*</span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>This field is required</p>
+                  </TooltipContent>
+                </Tooltip>
               </Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -316,7 +348,14 @@ export default function SignupPage() {
             <div className="space-y-1.5">
               <Label htmlFor="confirmPassword" className="text-sm">
                 Confirm Password
-                <Req />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-destructive ml-0.5 cursor-help">*</span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>This field is required</p>
+                  </TooltipContent>
+                </Tooltip>
               </Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

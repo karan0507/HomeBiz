@@ -16,6 +16,7 @@ import { Toaster } from "sonner";
 import { AuthProvider } from "@/lib/auth-context";
 import { CartProvider } from "@/lib/cart-context";
 import { NavigationCacheHandler } from "@/components/providers/navigation-cache-handler";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
 // Configure fonts
@@ -66,28 +67,30 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${dmSans.variable} ${playfairDisplay.variable} font-sans antialiased min-h-screen bg-background`}
       >
-        <AuthProvider>
-          <CartProvider>
-            <NavigationCacheHandler />
-            {children}
-          </CartProvider>
-          <Toaster
-            position="top-right"
-            expand={true}
-            richColors
-            closeButton
-            visibleToasts={5}
-            toastOptions={{
-              duration: 4000,
-              classNames: {
-                toast: 'font-sans text-sm border',
-                error: 'border-red-200',
-                success: 'border-orange-200',
-                warning: 'border-yellow-200',
-              },
-            }}
-          />
-        </AuthProvider>
+        <TooltipProvider>
+          <AuthProvider>
+            <CartProvider>
+              <NavigationCacheHandler />
+              {children}
+            </CartProvider>
+          </AuthProvider>
+        </TooltipProvider>
+        <Toaster
+          position="top-right"
+          expand={true}
+          richColors
+          closeButton
+          visibleToasts={5}
+          toastOptions={{
+            duration: 4000,
+            classNames: {
+              toast: 'font-sans text-sm border',
+              error: 'border-red-200',
+              success: 'border-orange-200',
+              warning: 'border-yellow-200',
+            },
+          }}
+        />
       </body>
     </html>
   );

@@ -67,11 +67,11 @@ export function FAQSection() {
           transition={{ duration: 0.5 }}
           className="text-center mb-16"
         >
-          <span className="inline-block px-4 py-1.5 rounded-full glass-orange text-orange-700 text-sm font-medium mb-4">
-            Got Questions?
+          <span className="inline-block px-4 py-1.5 rounded-full glass-primary text-sm font-medium mb-4">
+            <span className="bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">Got Questions?</span>
           </span>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
-            Frequently Asked <span className="text-gradient">Questions</span>
+            Frequently Asked <span className="bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">Questions</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Everything you need to know about HomeBiz. Can&apos;t find what you&apos;re
@@ -96,7 +96,7 @@ export function FAQSection() {
               >
                 {/* Category Header */}
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-xl gradient-warm flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                     <Icon className="w-5 h-5 text-white" />
                   </div>
                   <h3 className="text-lg font-bold capitalize">{category}</h3>
@@ -127,7 +127,7 @@ export function FAQSection() {
           className="text-center mt-12"
         >
           <div className="inline-flex flex-col sm:flex-row items-center gap-4 p-6 rounded-3xl glass">
-            <div className="w-12 h-12 rounded-full gradient-warm flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
               <HelpCircle className="w-6 h-6 text-white" />
             </div>
             <div className="text-center sm:text-left">
@@ -138,7 +138,7 @@ export function FAQSection() {
             </div>
             <a
               href="mailto:support@homebiz.ca"
-              className="px-6 py-2.5 rounded-full gradient-warm text-white font-medium hover:opacity-90 transition-opacity"
+              className="px-6 py-2.5 rounded-full bg-gradient-to-r from-primary to-accent text-white font-medium hover:opacity-90 transition-opacity"
             >
               Contact Us
             </a>
@@ -175,7 +175,7 @@ function FAQItem({
           transition={{ duration: 0.2 }}
           className="flex-shrink-0"
         >
-          <ChevronDown className="w-5 h-5 text-orange-500" />
+          <ChevronDown className="w-5 h-5 text-primary" />
         </motion.div>
       </button>
 

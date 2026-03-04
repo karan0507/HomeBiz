@@ -57,7 +57,7 @@ function LoginForm() {
         showError(new APIError("Use the admin portal to sign in.", 403, "FORBIDDEN"));
         return;
       }
-      loginWithSession(result.user, result.session?.access_token);
+      loginWithSession(result.user, result.session?.access_token, result.session?.refresh_token);
       showSuccess("Welcome back!", "You're now signed in.");
       // Use full page reload for business users to ensure cookie is committed
       if (result.user.role === 'business') {

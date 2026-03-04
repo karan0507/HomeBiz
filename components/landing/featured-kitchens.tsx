@@ -23,7 +23,6 @@ import {
   ChefHat,
   Utensils,
   Badge as BadgeIcon,
-  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -58,11 +57,11 @@ export function FeaturedKitchens() {
           className="flex flex-col md:flex-row md:items-end md:justify-between mb-12"
         >
           <div>
-            <span className="inline-block px-4 py-1.5 rounded-full glass-primary text-primary text-sm font-medium mb-4">
-              Meet Our Chefs
+            <span className="inline-block px-4 py-1.5 rounded-full glass-primary text-sm font-medium mb-4">
+              <span className="bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">Meet Our Chefs</span>
             </span>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold">
-              Featured <span className="text-gradient">Home Kitchens</span>
+              Featured <span className="bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">Home Kitchens</span>
             </h2>
             <p className="text-muted-foreground mt-4 max-w-xl">
               Discover talented home chefs in your neighbourhood, each bringing
@@ -70,7 +69,7 @@ export function FeaturedKitchens() {
             </p>
           </div>
           <Link href="/kitchens" className="mt-6 md:mt-0">
-            <Button variant="outline" className="gap-2 group">
+            <Button variant="ghost" className="gap-2 group text-foreground hover:text-primary transition-colors">
               View All Kitchens
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Button>
@@ -132,30 +131,7 @@ export function FeaturedKitchens() {
   );
 }
 
-// Cuisine emoji mapping
-const cuisineEmojiMap: Record<string, string> = {
-  "South Indian": "🇮🇳",
-  "Tamil": "🇮🇳",
-  "Italian": "🇮🇹",
-  "Neapolitan": "🇮🇹",
-  "Jamaican": "🇯🇲",
-  "Caribbean": "🇯🇲",
-  "Chinese": "🇨🇳",
-  "Cantonese": "🇨🇳",
-  "Halal": "☪️",
-  "Middle Eastern": "🥙",
-  "Lebanese": "🇱🇧",
-  "Ethiopian": "🇪🇹",
-  "African": "🌍",
-  "Mexican": "🇲🇽",
-  "Greek": "🇬🇷",
-  "Thai": "🇹🇭",
-  "Japanese": "🇯🇵",
-  "Korean": "🇰🇷",
-  "Vietnamese": "🇻🇳",
-  "Filipino": "🇵🇭",
-  "Indian": "🇮🇳",
-};
+
 
 // Truncate text helper
 function truncateText(text: string, maxLength: number) {
@@ -170,10 +146,6 @@ function truncateText(text: string, maxLength: number) {
 function KitchenCard({ kitchen, index }: { kitchen: Kitchen; index: number }) {
   const { isInWishlist, toggleWishlist, isHydrated } = useCart();
   const isWishlisted = isHydrated && isInWishlist(kitchen.id);
-
-  // Get cuisine emoji from first cuisine type
-  const firstCuisine = kitchen.cuisineTypes?.[0] || "";
-  const cuisineEmoji = cuisineEmojiMap[firstCuisine] || "🍽️";
 
   // Format minimum order as price range indicator
   const minOrder = kitchen.minimum_order || kitchen.minimumOrder || 0;
@@ -194,17 +166,25 @@ function KitchenCard({ kitchen, index }: { kitchen: Kitchen; index: number }) {
         <div className="group relative bg-card rounded-2xl overflow-hidden border border-border hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
           {/* Image Container */}
           <div className="relative aspect-[16/10] bg-muted overflow-hidden">
-            {/* Placeholder with cuisine emoji */}
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-24 h-24 rounded-full bg-white dark:bg-slate-700 shadow-lg mx-auto flex items-center justify-center mb-3">
-                  <span className="text-5xl">{cuisineEmoji}</span>
+            {kitchen.cover_image_url || kitchen.coverImageUrl ? (
+              <img
+                src={kitchen.cover_image_url || kitchen.coverImageUrl}
+                alt={kitchen.name}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+            ) : (
+              /* Placeholder — premium gradient with cuisine label */
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/3 via-primary/5 to-primary/8 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-accent shadow-lg mx-auto flex items-center justify-center mb-3">
+                    <Utensils className="w-9 h-9 text-white" />
+                  </div>
+                  <span className="text-sm font-medium text-primary/80">
+                    {kitchen.cuisineTypes?.[0] || "Home Kitchen"}
+                  </span>
                 </div>
-                <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
-                  {kitchen.cuisineTypes?.[0] || "Home Kitchen"}
-                </span>
               </div>
-            </div>
+            )}
 
             {/* Badges */}
             <div className="absolute top-3 left-3 flex flex-col gap-2">
@@ -215,13 +195,13 @@ function KitchenCard({ kitchen, index }: { kitchen: Kitchen; index: number }) {
                 </Badge>
               )}
               {kitchen.is_featured && (
-                <Badge className="bg-amber-600 text-white border-0 text-xs shadow-sm">
+                <Badge className="bg-accent text-white border-0 text-xs shadow-sm">
                   Featured
                 </Badge>
               )}
               {kitchen.rating >= 4.8 && (
-                <Badge className="bg-amber-50 text-amber-700 border border-amber-200 text-xs shadow-sm">
-                  ⭐ Top Rated
+                <Badge className="bg-accent/10 text-accent border border-accent/20 text-xs shadow-sm gap-1">
+                  <Star className="w-3 h-3 fill-accent text-accent" /> Top Rated
                 </Badge>
               )}
             </div>
@@ -286,8 +266,8 @@ function KitchenCard({ kitchen, index }: { kitchen: Kitchen; index: number }) {
 
             {/* Address */}
             {kitchen.address && (
-              <div className="text-sm text-muted-foreground line-clamp-1">
-                <span className="font-medium">📍</span> {kitchen.address}
+              <div className="text-sm text-muted-foreground line-clamp-1 flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-muted-foreground shrink-0" /> {kitchen.address}
               </div>
             )}
 
@@ -311,13 +291,15 @@ function KitchenCard({ kitchen, index }: { kitchen: Kitchen; index: number }) {
               <div className="flex items-center gap-1">
                 <span className="text-xs font-medium text-muted-foreground">Min:</span>
                 <span className="text-sm font-semibold text-foreground">
-                  ${kitchen.minimum_order || kitchen.minimumOrder || 0}
+                  ${(kitchen.minimum_order ?? kitchen.minimumOrder) || "—"}
                 </span>
               </div>
               <div className="flex items-center gap-1">
                 <Clock className="w-3.5 h-3.5 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground">
-                  {kitchen.prep_time_min}-{kitchen.prep_time_max} min
+                  {kitchen.prep_time_min && kitchen.prep_time_max
+                    ? `${kitchen.prep_time_min}–${kitchen.prep_time_max} min`
+                    : kitchen.preparationTime || "—"}
                 </span>
               </div>
             </div>

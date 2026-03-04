@@ -211,7 +211,7 @@ export default function KitchenDetailPage() {
                     <div className="flex items-center gap-1.5 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 px-3 py-1.5 rounded-full shadow-sm">
                       <Star className="w-4 h-4 fill-current" />
                       <span className="font-semibold">{kitchen.rating || 'New'}</span>
-                      <span className="text-muted-foreground text-xs ml-0.5 font-normal">({kitchen.review_count || kitchen.reviewCount || 0})</span>
+                      <span className="text-muted-foreground text-xs ml-0.5 font-normal">({kitchen.review_count || 0})</span>
                     </div>
                     <Button
                       variant="outline"
@@ -242,7 +242,7 @@ export default function KitchenDetailPage() {
                     <span className="font-medium">
                       {kitchen.prep_time_min && kitchen.prep_time_max
                         ? `${kitchen.prep_time_min}-${kitchen.prep_time_max} min`
-                        : kitchen.preparation_time || '30-45 m'
+                        : '30-45 min'
                       }
                     </span>
                   </div>

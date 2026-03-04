@@ -15,6 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   ChefHat,
   Lock,
@@ -36,10 +37,6 @@ import AddressAutocomplete, {
 } from "@/components/ui/address-autocomplete";
 import { getCachedCuisineTypes, getCachedDietaryOptions } from "@/lib/services/data.service";
 import type { CuisineType, DietaryOption } from "@/types/database";
-
-function Req() {
-  return <span className="text-destructive ml-0.5">*</span>;
-}
 
 export default function BusinessSignupPage() {
   const [step, setStep] = useState(1);
@@ -101,7 +98,7 @@ export default function BusinessSignupPage() {
       setCuisineTypes(cuisines);
       hasFetchedCuisines.current = true;
     } catch (err) {
-      console.error("Failed to fetch cuisines:", err);
+      showError(err);
     } finally {
       setIsLoadingOptions(false);
     }
@@ -115,7 +112,7 @@ export default function BusinessSignupPage() {
       setDietaryOptions(dietary);
       hasFetchedDietary.current = true;
     } catch (err) {
-      console.error("Failed to fetch dietary options:", err);
+      showError(err);
     } finally {
       setIsLoadingOptions(false);
     }
@@ -294,7 +291,7 @@ export default function BusinessSignupPage() {
         );
         setTimeout(() => router.push("/business/login"), 1500);
       } else {
-        loginWithSession(result.user, result.session?.access_token);
+        loginWithSession(result.user, result.session?.access_token, result.session?.refresh_token);
         showSuccess("Account created!", "Redirecting to your dashboard...");
         setTimeout(() => router.push("/business/dashboard"), 1200);
       }
@@ -358,7 +355,14 @@ export default function BusinessSignupPage() {
                   <div className="space-y-2">
                     <Label htmlFor="firstName">
                       First Name
-                      <Req />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-destructive ml-0.5 cursor-help">*</span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>This field is required</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </Label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -379,7 +383,14 @@ export default function BusinessSignupPage() {
                   <div className="space-y-2">
                     <Label htmlFor="lastName">
                       Last Name
-                      <Req />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-destructive ml-0.5 cursor-help">*</span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>This field is required</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </Label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -399,7 +410,14 @@ export default function BusinessSignupPage() {
                 <div className="space-y-2">
                   <Label htmlFor="email">
                     Email
-                    <Req />
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="text-destructive ml-0.5 cursor-help">*</span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>This field is required</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -417,7 +435,17 @@ export default function BusinessSignupPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number<Req /></Label>
+                  <Label htmlFor="phone">
+                    Phone Number
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="text-destructive ml-0.5 cursor-help">*</span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>This field is required</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </Label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -438,7 +466,14 @@ export default function BusinessSignupPage() {
                   <div className="space-y-2">
                     <Label htmlFor="password">
                       Password
-                      <Req />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-destructive ml-0.5 cursor-help">*</span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>This field is required</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -457,7 +492,14 @@ export default function BusinessSignupPage() {
                   <div className="space-y-2">
                     <Label htmlFor="confirmPassword">
                       Confirm
-                      <Req />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-destructive ml-0.5 cursor-help">*</span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>This field is required</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -486,7 +528,14 @@ export default function BusinessSignupPage() {
                 <div className="space-y-2">
                   <Label htmlFor="kitchenName">
                     Kitchen Name
-                    <Req />
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="text-destructive ml-0.5 cursor-help">*</span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>This field is required</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </Label>
                   <div className="relative">
                     <ChefHat className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -508,7 +557,14 @@ export default function BusinessSignupPage() {
                 <div className="space-y-2">
                   <Label htmlFor="neighborhood">
                     Neighborhood
-                    <Req />
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="text-destructive ml-0.5 cursor-help">*</span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>This field is required</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </Label>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -531,7 +587,14 @@ export default function BusinessSignupPage() {
                 <div className="space-y-2">
                   <Label htmlFor="description">
                     Description
-                    <Req />
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="text-destructive ml-0.5 cursor-help">*</span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>This field is required</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </Label>
                   <div className="relative">
                     <FileText className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -598,7 +661,14 @@ export default function BusinessSignupPage() {
                   <Label className="flex items-center gap-2">
                     <Utensils className="h-4 w-4" />
                     Cuisine Types
-                    <Req />
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="text-destructive ml-0.5 cursor-help">*</span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>This field is required</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </Label>
                   <p className="text-xs text-muted-foreground">
                     Select at least one

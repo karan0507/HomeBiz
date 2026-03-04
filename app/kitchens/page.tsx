@@ -650,19 +650,27 @@ function KitchensContent() {
                 <div className="group relative bg-card rounded-2xl overflow-hidden border border-border hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
                   {/* Image Container */}
                   <div className="relative aspect-[16/10] bg-muted overflow-hidden">
-                    {/* Placeholder with cuisine emoji */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="w-24 h-24 rounded-full bg-white dark:bg-slate-700 shadow-lg mx-auto flex items-center justify-center mb-3">
-                          <span className="text-5xl">
-                            {getCuisineEmoji(kitchen.cuisineTypes?.[0] || "")}
+                    {kitchen.cover_image_url || kitchen.coverImageUrl ? (
+                      <img
+                        src={kitchen.cover_image_url || kitchen.coverImageUrl}
+                        alt={kitchen.name}
+                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      /* Placeholder with cuisine emoji */
+                      <div className="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
+                        <div className="text-center">
+                          <div className="w-24 h-24 rounded-full bg-white dark:bg-slate-700 shadow-lg mx-auto flex items-center justify-center mb-3">
+                            <span className="text-5xl">
+                              {getCuisineEmoji(kitchen.cuisineTypes?.[0] || "")}
+                            </span>
+                          </div>
+                          <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                            {kitchen.cuisineTypes?.[0] || "Home Kitchen"}
                           </span>
                         </div>
-                        <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
-                          {kitchen.cuisineTypes?.[0] || "Home Kitchen"}
-                        </span>
                       </div>
-                    </div>
+                    )}
 
                     {/* Badges */}
                     <div className="absolute top-3 left-3 flex flex-col gap-2">
@@ -804,13 +812,15 @@ function KitchensContent() {
                           Min:
                         </span>
                         <span className="text-sm font-semibold text-foreground">
-                          ${kitchen.minimum_order || kitchen.minimumOrder || 0}
+                          ${(kitchen.minimum_order ?? kitchen.minimumOrder) || "—"}
                         </span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5 text-muted-foreground" />
                         <span className="text-sm text-muted-foreground">
-                          {kitchen.prep_time_min}-{kitchen.prep_time_max} min
+                          {kitchen.prep_time_min && kitchen.prep_time_max
+                            ? `${kitchen.prep_time_min}–${kitchen.prep_time_max} min`
+                            : kitchen.preparationTime || "—"}
                         </span>
                       </div>
                     </div>

@@ -31,7 +31,7 @@ export default function AuthCallbackPage() {
         });
 
         if (error) {
-          console.error("[Auth Callback] Verification error:", error);
+          // Error logged for debugging("[Auth Callback] Verification error:", error);
           router.replace("/login?error=verification_failed");
           return;
         }
@@ -39,7 +39,7 @@ export default function AuthCallbackPage() {
         // Success - redirect to home
         router.replace("/?verified=true");
       } catch (err) {
-        console.error("[Auth Callback] Unexpected error:", err);
+        // Error logged for debugging("[Auth Callback] Unexpected error:", err);
         router.replace("/login?error=unexpected_error");
       }
     };

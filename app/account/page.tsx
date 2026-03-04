@@ -86,7 +86,7 @@ function AccountContent() {
         });
       })
       .catch(err => {
-        console.error("[Profile] Fetch error:", err);
+        showError(err);
         setProfileError("Could not load profile details. Using basic session info.");
       })
       .finally(() => setProfileLoading(false));
@@ -375,7 +375,20 @@ function AccountContent() {
                         <div>
                           <div className="flex items-center gap-2 mb-1">
                             <h3 className="font-semibold">{kitchenName}</h3>
-                            <Badge className={isCompleted ? "bg-orange-100 text-orange-700 border-orange-200 text-xs" : "bg-yellow-100 text-yellow-700 border-yellow-200 text-xs"}>
+                            <Badge
+                              variant="secondary"
+                              className={
+                                statusLabel === "completed" || statusLabel === "picked_up"
+                                  ? "bg-green-100 text-green-700 border-green-200 hover:bg-green-200"
+                                  : statusLabel === "preparing" || statusLabel === "ready"
+                                    ? "bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200"
+                                    : statusLabel === "confirmed"
+                                      ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+                                      : statusLabel === "cancelled"
+                                        ? "bg-red-100 text-red-700 border-red-200 hover:bg-red-200"
+                                        : "bg-yellow-100 text-yellow-700 border-yellow-200 hover:bg-yellow-200"
+                              }
+                            >
                               {statusLabel}
                             </Badge>
                           </div>
@@ -531,10 +544,10 @@ function AccountContent() {
                               {kitchen.neighborhood}
                             </span>
                           )}
-                          {kitchen.preparation_time && (
+                          {kitchen.prep_time_min && kitchen.prep_time_max && (
                             <span className="flex items-center gap-1 text-xs text-muted-foreground">
                               <Clock className="w-3 h-3" />
-                              {kitchen.preparation_time} min
+                              {kitchen.prep_time_min}-{kitchen.prep_time_max} min
                             </span>
                           )}
                         </div>

@@ -57,7 +57,7 @@ export default function BusinessLoginPage() {
         return;
       }
 
-      loginWithSession(result.user, result.session?.access_token);
+      loginWithSession(result.user, result.session?.access_token, result.session?.refresh_token);
       showSuccess("Welcome back!", "Redirecting to your dashboard...");
       window.location.href = "/business/dashboard";
     } catch (err) {

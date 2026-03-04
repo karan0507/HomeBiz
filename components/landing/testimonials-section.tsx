@@ -67,11 +67,11 @@ export function TestimonialsSection() {
           transition={{ duration: 0.5 }}
           className="text-center mb-10"
         >
-          <span className="inline-block px-4 py-1.5 rounded-full glass-orange text-primary text-sm font-medium mb-4">
-            Community Love
+          <span className="inline-block px-4 py-1.5 rounded-full glass-primary text-sm font-medium mb-4">
+            <span className="bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">Community Love</span>
           </span>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
-            What Our <span className="text-gradient">Community</span> Says
+            What Our <span className="bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">Community</span> Says
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Real stories from real people - customers and chefs sharing their
@@ -165,7 +165,7 @@ function TestimonialCard({
       <div className="h-full flex flex-col p-4 md:p-5 rounded-2xl glass hover-lift">
         {/* Header Row - Quote Icon + Rating */}
         <div className="flex items-center justify-between mb-3">
-          <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-primary flex items-center justify-center">
+          <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
             <Quote className="w-4 h-4 md:w-5 md:h-5 text-white" />
           </div>
           <div className="flex items-center gap-0.5">

@@ -17,7 +17,7 @@ export interface SessionUser {
 
 interface AuthContextType {
   user: SessionUser | null
-  loginWithSession: (userData: { id: string; email: string; name: string; first_name?: string; last_name?: string; role: string }, accessToken?: string) => void
+  loginWithSession: (userData: { id: string; email: string; name: string; first_name?: string; last_name?: string; role: string }, accessToken?: string, refreshToken?: string) => void
   logout: () => void
   isAuthenticated: boolean
   isAdmin: boolean
@@ -108,7 +108,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginWithSession = (
     userData: { id: string; email: string; name: string; first_name?: string; last_name?: string; role: string },
-    accessToken?: string
+    accessToken?: string,
+    refreshToken?: string
   ) => {
     const sessionUser: SessionUser = {
       id: userData.id,
@@ -123,6 +124,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (accessToken) {
       localStorage.setItem("access_token", accessToken)
     }
+    if (refreshToken) {
+      localStorage.setItem("refresh_token", refreshToken)
+    }
   }
 
   const logout = async () => {
@@ -130,6 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     localStorage.removeItem("user");
     localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
     localStorage.removeItem("cart");
     localStorage.removeItem("wishlist");
 

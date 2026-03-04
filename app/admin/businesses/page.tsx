@@ -1,100 +1,145 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useCallback } from "react"
-import { useDebounce } from "@/hooks/useDebounce"
-import { ProtectedRoute } from "@/components/protected-route"
-import { AdminLayout } from "@/components/admin/admin-layout"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { fetchAPI, APIError } from "@/lib/services/api.client"
-import { Search, Building2, MoreVertical, Star, CheckCircle, Building, Clock, XCircle, Loader2 } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { SkeletonTable } from "@/components/shared/skeleton-cards"
-import { EmptyBusinesses } from "@/components/shared/empty-state"
-import { Pagination } from "@/components/shared/pagination"
-import { VerificationBadge } from "@/components/shared/status-badge"
-import { toast } from "sonner"
+import { useState, useEffect, useCallback } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
+import { ProtectedRoute } from "@/components/protected-route";
+import { AdminLayout } from "@/components/admin/admin-layout";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { fetchAPI, APIError } from "@/lib/services/api.client";
+import {
+  Search,
+  Building2,
+  MoreVertical,
+  Star,
+  CheckCircle,
+  Building,
+  Clock,
+  XCircle,
+  Loader2,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { SkeletonTable } from "@/components/shared/skeleton-cards";
+import { EmptyBusinesses } from "@/components/shared/empty-state";
+import { Pagination } from "@/components/shared/pagination";
+import { VerificationBadge } from "@/components/shared/status-badge";
+import { toast } from "sonner";
 
 interface Kitchen {
-  id: string
-  name: string
-  phone?: string
-  neighborhood?: string
-  city?: string
-  rating?: number
-  review_count?: number
-  verification_status: "pending" | "approved" | "rejected" | "suspended"
-  owner?: { id: string; email: string; name: string; phone?: string }
+  id: string;
+  name: string;
+  phone?: string;
+  neighborhood?: string;
+  city?: string;
+  rating?: number;
+  review_count?: number;
+  verification_status: "pending" | "approved" | "rejected" | "suspended";
+  owner?: { id: string; email: string; name: string; phone?: string };
 }
 
-interface Meta { total: number; page: number; per_page: number }
+interface Meta {
+  total: number;
+  page: number;
+  per_page: number;
+  approved_count?: number;
+  pending_count?: number;
+  rejected_count?: number;
+}
 
 export default function AdminBusinessesPage() {
-  const [kitchens, setKitchens] = useState<Kitchen[]>([])
-  const [meta, setMeta] = useState<Meta>({ total: 0, page: 1, per_page: 20 })
-  const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState<"all" | "approved" | "pending" | "rejected" | "suspended">("all")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [verifyingId, setVerifyingId] = useState<string | null>(null)
+  const [kitchens, setKitchens] = useState<Kitchen[]>([]);
+  const [meta, setMeta] = useState<Meta>({ total: 0, page: 1, per_page: 20 });
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "approved" | "pending" | "rejected" | "suspended"
+  >("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
 
   const fetchKitchens = useCallback(async (page: number, status: string) => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), per_page: "20" })
-      if (status !== "all") params.set("status", status)
-      const res = await fetchAPI<any>(`/admin/kitchens?${params}`)
-      const raw = res as any
-      setKitchens(Array.isArray(raw) ? raw : raw.data ?? [])
-      if (raw.meta) setMeta(raw.meta)
+      const params = new URLSearchParams({
+        page: String(page),
+        per_page: "20",
+      });
+      if (status !== "all") params.set("status", status);
+      const res = await fetchAPI<any>(`/admin/kitchens?${params}`);
+      const raw = res as any;
+      setKitchens(Array.isArray(raw) ? raw : (raw.data ?? []));
+      if (raw.meta) setMeta(raw.meta);
     } catch (err) {
-      if (err instanceof APIError && err.code !== "NETWORK_ERROR") toast.error((err as APIError).message)
-      setKitchens([])
+      if (err instanceof APIError && err.code !== "NETWORK_ERROR")
+        toast.error((err as APIError).message);
+      setKitchens([]);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [])
+  }, []);
 
-  useEffect(() => { fetchKitchens(currentPage, statusFilter) }, [currentPage, statusFilter, fetchKitchens])
+  useEffect(() => {
+    fetchKitchens(currentPage, statusFilter);
+  }, [currentPage, statusFilter, fetchKitchens]);
 
-  const debouncedSearch = useDebounce(searchQuery, 300)
+  const debouncedSearch = useDebounce(searchQuery, 300);
 
   const filtered = debouncedSearch
-    ? kitchens.filter(k =>
-        k.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-        (k.neighborhood || "").toLowerCase().includes(debouncedSearch.toLowerCase())
+    ? kitchens.filter(
+        (k) =>
+          k.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+          (k.neighborhood || "")
+            .toLowerCase()
+            .includes(debouncedSearch.toLowerCase()),
       )
-    : kitchens
+    : kitchens;
 
-  const handleVerify = async (id: string, status: "approved" | "rejected" | "suspended") => {
-    setVerifyingId(id)
+  const handleVerify = async (
+    id: string,
+    status: "approved" | "rejected" | "suspended",
+  ) => {
+    setVerifyingId(id);
     try {
-      await fetchAPI(`/admin/kitchens/${id}/verify`, { method: "PUT", body: JSON.stringify({ status }) })
-      toast.success(`Kitchen ${status}`)
-      setKitchens(prev => prev.map(k => k.id === id ? { ...k, verification_status: status } : k))
+      await fetchAPI(`/admin/kitchens/${id}/verify`, {
+        method: "PUT",
+        body: JSON.stringify({ status }),
+      });
+      toast.success(`Kitchen ${status}`);
+      setKitchens((prev) =>
+        prev.map((k) =>
+          k.id === id ? { ...k, verification_status: status } : k,
+        ),
+      );
     } catch (err: any) {
       const errorMessages: Record<string, string> = {
         INVALID_CERTIFICATE: "Food handler certificate is invalid or expired",
         MISSING_DOCUMENTS: "Required verification documents are missing",
         DUPLICATE_KITCHEN: "A kitchen with this name already exists",
         INVALID_ADDRESS: "Kitchen address could not be verified",
-      }
-      const message = err.code ? errorMessages[err.code] || err.message : err.message || "Failed to update status"
-      toast.error(message)
+      };
+      const message = err.code
+        ? errorMessages[err.code] || err.message
+        : err.message || "Failed to update status";
+      toast.error(message);
     } finally {
-      setVerifyingId(null)
+      setVerifyingId(null);
     }
-  }
+  };
 
   const stats = {
     total: meta.total,
     approved: meta.approved_count || 0,
     pending: meta.pending_count || 0,
     rejected: meta.rejected_count || 0,
-  }
+  };
 
-  const totalPages = Math.ceil(meta.total / meta.per_page)
+  const totalPages = Math.ceil(meta.total / meta.per_page);
 
   return (
     <ProtectedRoute requireAdmin>
@@ -102,8 +147,12 @@ export default function AdminBusinessesPage() {
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold">Business Management</h1>
-              <p className="text-muted-foreground mt-1">Manage all registered businesses</p>
+              <h1 className="text-2xl md:text-3xl font-bold">
+                Business Management
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Manage all registered businesses
+              </p>
             </div>
             <Button size="sm" disabled>
               <Building2 className="h-4 w-4 mr-2" />
@@ -113,15 +162,41 @@ export default function AdminBusinessesPage() {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
             {[
-              { label: "Total", value: stats.total, icon: Building, bg: "bg-primary/10", color: "text-primary" },
-              { label: "Approved", value: stats.approved, icon: CheckCircle, bg: "bg-orange-100", color: "text-orange-600" },
-              { label: "Pending", value: stats.pending, icon: Clock, bg: "bg-amber-100", color: "text-amber-600" },
-              { label: "Rejected", value: stats.rejected, icon: XCircle, bg: "bg-red-100", color: "text-red-600" },
-            ].map(s => (
+              {
+                label: "Total",
+                value: stats.total,
+                icon: Building,
+                bg: "bg-primary/10",
+                color: "text-primary",
+              },
+              {
+                label: "Approved",
+                value: stats.approved,
+                icon: CheckCircle,
+                bg: "bg-orange-100",
+                color: "text-orange-600",
+              },
+              {
+                label: "Pending",
+                value: stats.pending,
+                icon: Clock,
+                bg: "bg-amber-100",
+                color: "text-amber-600",
+              },
+              {
+                label: "Rejected",
+                value: stats.rejected,
+                icon: XCircle,
+                bg: "bg-red-100",
+                color: "text-red-600",
+              },
+            ].map((s) => (
               <Card key={s.label}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full ${s.bg} flex items-center justify-center`}>
+                    <div
+                      className={`w-10 h-10 rounded-full ${s.bg} flex items-center justify-center`}
+                    >
                       <s.icon className={`w-5 h-5 ${s.color}`} />
                     </div>
                     <div>
@@ -147,12 +222,23 @@ export default function AdminBusinessesPage() {
                   />
                 </div>
                 <div className="flex gap-2 flex-wrap">
-                  {(["all", "approved", "pending", "rejected", "suspended"] as const).map(s => (
+                  {(
+                    [
+                      "all",
+                      "approved",
+                      "pending",
+                      "rejected",
+                      "suspended",
+                    ] as const
+                  ).map((s) => (
                     <Button
                       key={s}
                       variant={statusFilter === s ? "default" : "outline"}
                       size="sm"
-                      onClick={() => { setStatusFilter(s); setCurrentPage(1) }}
+                      onClick={() => {
+                        setStatusFilter(s);
+                        setCurrentPage(1);
+                      }}
                     >
                       {s.charAt(0).toUpperCase() + s.slice(1)}
                     </Button>
@@ -171,42 +257,72 @@ export default function AdminBusinessesPage() {
                     <table className="w-full">
                       <thead>
                         <tr className="border-b">
-                          <th className="text-left py-3 px-4 font-semibold text-sm">Business</th>
-                          <th className="text-left py-3 px-4 font-semibold text-sm hidden md:table-cell">Location</th>
-                          <th className="text-left py-3 px-4 font-semibold text-sm hidden sm:table-cell">Rating</th>
-                          <th className="text-left py-3 px-4 font-semibold text-sm">Status</th>
-                          <th className="text-right py-3 px-4 font-semibold text-sm">Actions</th>
+                          <th className="text-left py-3 px-4 font-semibold text-sm">
+                            Business
+                          </th>
+                          <th className="text-left py-3 px-4 font-semibold text-sm hidden md:table-cell">
+                            Location
+                          </th>
+                          <th className="text-left py-3 px-4 font-semibold text-sm hidden sm:table-cell">
+                            Rating
+                          </th>
+                          <th className="text-left py-3 px-4 font-semibold text-sm">
+                            Status
+                          </th>
+                          <th className="text-right py-3 px-4 font-semibold text-sm">
+                            Actions
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
                         {filtered.map((k) => (
-                          <tr key={k.id} className="border-b hover:bg-muted/50 transition-colors">
+                          <tr
+                            key={k.id}
+                            className="border-b hover:bg-muted/50 transition-colors"
+                          >
                             <td className="py-3 px-4">
                               <div>
                                 <p className="font-medium flex items-center gap-1">
                                   {k.name}
-                                  {k.verification_status === "approved" && <CheckCircle className="h-3 w-3 text-primary" />}
+                                  {k.verification_status === "approved" && (
+                                    <CheckCircle className="h-3 w-3 text-primary" />
+                                  )}
                                 </p>
-                                <p className="text-xs text-muted-foreground">{k.owner?.email || k.phone || ""}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {k.owner?.email || k.phone || ""}
+                                </p>
                               </div>
                             </td>
                             <td className="py-3 px-4 text-muted-foreground hidden md:table-cell">
-                              {[k.neighborhood, k.city].filter(Boolean).join(", ")}
+                              {[k.neighborhood, k.city]
+                                .filter(Boolean)
+                                .join(", ")}
                             </td>
                             <td className="py-3 px-4 hidden sm:table-cell">
                               <div className="flex items-center gap-1">
                                 <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                                <span className="font-medium">{Number(k.rating || 0).toFixed(1)}</span>
-                                <span className="text-xs text-muted-foreground">({k.review_count || 0})</span>
+                                <span className="font-medium">
+                                  {Number(k.rating || 0).toFixed(1)}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  ({k.review_count || 0})
+                                </span>
                               </div>
                             </td>
                             <td className="py-3 px-4">
-                              <VerificationBadge status={k.verification_status} />
+                              <VerificationBadge
+                                status={k.verification_status}
+                              />
                             </td>
                             <td className="py-3 px-4 text-right">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8" disabled={verifyingId === k.id}>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    disabled={verifyingId === k.id}
+                                  >
                                     {verifyingId === k.id ? (
                                       <Loader2 className="h-4 w-4 animate-spin" />
                                     ) : (
@@ -217,15 +333,40 @@ export default function AdminBusinessesPage() {
                                 <DropdownMenuContent align="end">
                                   {k.verification_status === "pending" && (
                                     <>
-                                      <DropdownMenuItem onClick={() => handleVerify(k.id, "approved")}>Approve</DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => handleVerify(k.id, "rejected")}>Reject</DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={() =>
+                                          handleVerify(k.id, "approved")
+                                        }
+                                      >
+                                        Approve
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={() =>
+                                          handleVerify(k.id, "rejected")
+                                        }
+                                      >
+                                        Reject
+                                      </DropdownMenuItem>
                                     </>
                                   )}
                                   {k.verification_status === "approved" && (
-                                    <DropdownMenuItem onClick={() => handleVerify(k.id, "suspended")}>Suspend</DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handleVerify(k.id, "suspended")
+                                      }
+                                    >
+                                      Suspend
+                                    </DropdownMenuItem>
                                   )}
-                                  {(k.verification_status === "rejected" || k.verification_status === "suspended") && (
-                                    <DropdownMenuItem onClick={() => handleVerify(k.id, "approved")}>Re-approve</DropdownMenuItem>
+                                  {(k.verification_status === "rejected" ||
+                                    k.verification_status === "suspended") && (
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handleVerify(k.id, "approved")
+                                      }
+                                    >
+                                      Re-approve
+                                    </DropdownMenuItem>
                                   )}
                                 </DropdownMenuContent>
                               </DropdownMenu>
@@ -249,5 +390,5 @@ export default function AdminBusinessesPage() {
         </div>
       </AdminLayout>
     </ProtectedRoute>
-  )
+  );
 }

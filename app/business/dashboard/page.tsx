@@ -81,7 +81,6 @@ export default function BusinessDashboardPage() {
 
       } catch (err: any) {
         if (err.name === 'AbortError') return;
-        console.error("Dashboard error:", err);
         setError('An unexpected error occurred.');
         showError(err);
       } finally {

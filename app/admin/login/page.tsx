@@ -38,7 +38,7 @@ export default function AdminLoginPage() {
         return
       }
 
-      loginWithSession(result.user, result.session?.access_token)
+      loginWithSession(result.user, result.session?.access_token, result.session?.refresh_token)
       showSuccess("Welcome, Admin", "Redirecting to dashboard...")
       // Use full page reload to ensure cookie is committed before middleware check
       window.location.href = "/admin/dashboard"

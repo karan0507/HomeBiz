@@ -33,6 +33,42 @@ export class APIError extends Error {
   }
 }
 
+/**
+ * Attempt to refresh the Supabase access_token using the stored refresh_token.
+ * Returns the new access_token on success, or null on failure.
+ * Only runs in browser context.
+ */
+async function attemptTokenRefresh(): Promise<string | null> {
+  if (typeof window === 'undefined') return null;
+
+  const refreshToken = localStorage.getItem('refresh_token');
+  if (!refreshToken) return null;
+
+  try {
+    const res = await fetch(`${API_URL}/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    const newToken = data?.data?.access_token;
+    const newRefresh = data?.data?.refresh_token;
+
+    if (newToken) {
+      localStorage.setItem('access_token', newToken);
+    }
+    if (newRefresh) {
+      localStorage.setItem('refresh_token', newRefresh);
+    }
+    return newToken ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const method = options?.method || 'GET';
 
@@ -68,6 +104,55 @@ export async function fetchAPI<T>(endpoint: string, options?: RequestInit): Prom
       });
 
       clearTimeout(timeoutId);
+
+      // --- 401 Auto-Refresh Interceptor ---
+      // If we get a 401 (and it's not the auth endpoints themselves), try to refresh and retry once.
+      if (
+        response.status === 401 &&
+        endpoint !== '/auth/me' &&
+        endpoint !== '/auth/refresh' &&
+        endpoint !== '/auth/login'
+      ) {
+        const newToken = await attemptTokenRefresh();
+        if (newToken) {
+          // Retry the original request with the fresh token
+          const retryController = new AbortController();
+          const retryTimeoutId = setTimeout(() => retryController.abort(), 10000);
+
+          const retryResponse = await fetch(`${API_URL}${endpoint}`, {
+            ...options,
+            credentials: 'include',
+            signal: retryController.signal,
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest',
+              'Authorization': `Bearer ${newToken}`,
+              ...options?.headers,
+            },
+          });
+
+          clearTimeout(retryTimeoutId);
+
+          if (retryResponse.ok) {
+            const retryResult = await retryResponse.json();
+            if (retryResult.success === false) {
+              const err = retryResult.error || {};
+              throw new APIError(err.message || 'Request failed', 0, err.code || 'API_ERROR');
+            }
+            return (retryResult.data !== undefined ? retryResult.data : retryResult) as T;
+          }
+          // Retry also failed — fall through to normal error handling below
+          const retryErrorData = await retryResponse.json().catch(() => ({}));
+          const retryBackendError = retryErrorData.error || {};
+          throw new APIError(
+            retryBackendError.message || 'Session expired. Please sign in again.',
+            retryResponse.status,
+            retryBackendError.code || 'UNAUTHORIZED'
+          );
+        }
+        // No refresh token available — fall through to normal 401 error
+      }
+      // --- End 401 Auto-Refresh Interceptor ---
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));

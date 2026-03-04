@@ -35,7 +35,12 @@ interface MainLayoutProps {
   fullWidth?: boolean;
 }
 
-export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLayoutProps) {
+export function MainLayout({
+  children,
+  hideNav,
+  hideFooter,
+  fullWidth,
+}: MainLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -60,9 +65,11 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
   useEffect(() => {
     if (showSearch && debouncedSearch !== undefined) {
       if (debouncedSearch.trim()) {
-        router.push(`/kitchens?q=${encodeURIComponent(debouncedSearch.trim())}`);
-      } else if (pathname === '/kitchens') {
-        router.push('/kitchens');
+        router.push(
+          `/kitchens?q=${encodeURIComponent(debouncedSearch.trim())}`,
+        );
+      } else if (pathname === "/kitchens") {
+        router.push("/kitchens");
       }
     }
   }, [debouncedSearch, showSearch, pathname, router]);
@@ -130,7 +137,8 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
                   size="sm"
                   className={cn(
                     "hover:bg-primary/10 hover:text-primary transition-colors",
-                    isActive("/kitchens") && "bg-primary/10 text-primary font-medium"
+                    isActive("/kitchens") &&
+                      "bg-primary/10 text-primary font-medium",
                   )}
                 >
                   Browse Kitchens
@@ -142,7 +150,8 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
                   size="sm"
                   className={cn(
                     "hover:bg-primary/10 hover:text-primary transition-colors",
-                    isActive("/how-it-works") && "bg-primary/10 text-primary font-medium"
+                    isActive("/how-it-works") &&
+                      "bg-primary/10 text-primary font-medium",
                   )}
                 >
                   How It Works
@@ -154,7 +163,8 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
                   size="sm"
                   className={cn(
                     "hover:bg-primary/10 hover:text-primary transition-colors",
-                    isActive("/contact") && "bg-primary/10 text-primary font-medium"
+                    isActive("/contact") &&
+                      "bg-primary/10 text-primary font-medium",
                   )}
                 >
                   Contact
@@ -346,7 +356,9 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
 
       {/* Main Content */}
       <main className={cn("flex-1", !hideNav && "pt-14 pb-16 md:pb-0")}>
-        <div className={cn("px-2 md:px-4 lg:px-8", fullWidth && "px-0 max-w-none w-full")}>{children}</div>
+        <div className={cn("", fullWidth && "px-0 max-w-none w-full")}>
+          {children}
+        </div>
       </main>
 
       {/* Mobile Footer (expandable on homepage) */}
@@ -354,7 +366,9 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
         <div
           className={cn(
             "fixed left-0 right-0 z-40 md:hidden bg-gradient-to-b from-zinc-900 to-black text-white transition-all duration-300 ease-in-out overflow-hidden",
-            showMobileFooter ? "bottom-14 max-h-[70vh] opacity-100" : "bottom-0 max-h-0 opacity-0"
+            showMobileFooter
+              ? "bottom-14 max-h-[70vh] opacity-100"
+              : "bottom-0 max-h-0 opacity-0",
           )}
         >
           <div className="overflow-y-auto max-h-[70vh] pb-4 scrollbar-thin">
@@ -362,13 +376,18 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
               {/* Brand */}
               <div>
                 <Link href="/" className="flex items-center gap-2 mb-4">
-                  <img src="/images/logo.png" alt="HomeBiz" className="w-8 h-8 object-contain" />
+                  <img
+                    src="/images/logo.png"
+                    alt="HomeBiz"
+                    className="w-8 h-8 object-contain"
+                  />
                   <span className="text-xl font-bold bg-clip-text text-transparent ">
                     HomeBiz
                   </span>
                 </Link>
                 <p className="text-zinc-400 text-xs leading-relaxed">
-                  Connecting Toronto with authentic home-cooked meals from talented neighbourhood chefs.
+                  Connecting Toronto with authentic home-cooked meals from
+                  talented neighbourhood chefs.
                 </p>
               </div>
 
@@ -438,13 +457,22 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
 
               {/* Social */}
               <div className="flex gap-3">
-                <a href="#" className="w-9 h-9 rounded-xl bg-white/5 hover:bg-primary/20 flex items-center justify-center transition-colors">
+                <a
+                  href="#"
+                  className="w-9 h-9 rounded-xl bg-white/5 hover:bg-primary/20 flex items-center justify-center transition-colors"
+                >
                   <Instagram className="w-4 h-4" />
                 </a>
-                <a href="#" className="w-9 h-9 rounded-xl bg-white/5 hover:bg-primary/20 flex items-center justify-center transition-colors">
+                <a
+                  href="#"
+                  className="w-9 h-9 rounded-xl bg-white/5 hover:bg-primary/20 flex items-center justify-center transition-colors"
+                >
                   <Twitter className="w-4 h-4" />
                 </a>
-                <a href="#" className="w-9 h-9 rounded-xl bg-white/5 hover:bg-primary/20 flex items-center justify-center transition-colors">
+                <a
+                  href="#"
+                  className="w-9 h-9 rounded-xl bg-white/5 hover:bg-primary/20 flex items-center justify-center transition-colors"
+                >
                   <Facebook className="w-4 h-4" />
                 </a>
               </div>
@@ -452,13 +480,25 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
               {/* Legal */}
               <div className="border-t border-white/10 pt-4">
                 <div className="flex items-center gap-4 text-[10px] text-zinc-500">
-                  <Link href="/privacy" className="hover:text-white transition-colors" onClick={() => setShowMobileFooter(false)}>
+                  <Link
+                    href="/privacy"
+                    className="hover:text-white transition-colors"
+                    onClick={() => setShowMobileFooter(false)}
+                  >
                     Privacy
                   </Link>
-                  <Link href="/terms" className="hover:text-white transition-colors" onClick={() => setShowMobileFooter(false)}>
+                  <Link
+                    href="/terms"
+                    className="hover:text-white transition-colors"
+                    onClick={() => setShowMobileFooter(false)}
+                  >
                     Terms
                   </Link>
-                  <Link href="/contact" className="hover:text-white transition-colors" onClick={() => setShowMobileFooter(false)}>
+                  <Link
+                    href="/contact"
+                    className="hover:text-white transition-colors"
+                    onClick={() => setShowMobileFooter(false)}
+                  >
                     Contact
                   </Link>
                 </div>
@@ -474,7 +514,12 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
       {/* Mobile Bottom Navigation */}
       {!hideNav && (
         <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background/95 backdrop-blur-md border-t safe-area-pb">
-          <div className={cn("grid h-14", isHomepage ? "grid-cols-5" : "grid-cols-4")}>
+          <div
+            className={cn(
+              "grid h-14",
+              isHomepage ? "grid-cols-5" : "grid-cols-4",
+            )}
+          >
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -509,7 +554,7 @@ export function MainLayout({ children, hideNav, hideFooter, fullWidth }: MainLay
                 onClick={() => setShowMobileFooter(!showMobileFooter)}
                 className={cn(
                   "flex flex-col items-center justify-center gap-0.5 transition-colors",
-                  showMobileFooter ? "text-primary" : "text-muted-foreground"
+                  showMobileFooter ? "text-primary" : "text-muted-foreground",
                 )}
               >
                 <div className="flex items-center justify-center w-6 h-6">

@@ -12,6 +12,7 @@ import { MainLayout } from "@/components/layout/main-layout";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth-context";
 import { fetchAPI } from "@/lib/services/api.client";
+import { showError } from "@/lib/notifications";
 
 export default function CartPage() {
   const router = useRouter();
@@ -19,21 +20,31 @@ export default function CartPage() {
   const { user } = useAuth();
   const [deliveryInstructions, setDeliveryInstructions] = useState("");
   const [kitchenMenuItems, setKitchenMenuItems] = useState<any[]>([]);
+  const [kitchenSlug, setKitchenSlug] = useState<string>("");
 
   const kitchenId = items[0]?.kitchenId;
   const kitchenName = items[0]?.kitchenName || "Kitchen";
 
   useEffect(() => {
     if (!kitchenId) return;
-    fetchAPI<any[]>(`/kitchens/${kitchenId}/menu-items`)
-      .then(data =>
-        setKitchenMenuItems((Array.isArray(data) ? data : []).map(i => ({
+
+    Promise.all([
+      fetchAPI<any>(`/kitchens/${kitchenId}`),
+      fetchAPI<any[]>(`/kitchens/${kitchenId}/menu-items`)
+    ])
+      .then(([kitchen, menuItems]) => {
+        setKitchenSlug(kitchen?.slug || kitchen?.id || kitchenId);
+        setKitchenMenuItems((Array.isArray(menuItems) ? menuItems : []).map(i => ({
           ...i,
           available: i.is_available,
           dietaryInfo: i.dietary_info ?? [],
-        })))
-      )
-      .catch(() => setKitchenMenuItems([]));
+        })));
+      })
+      .catch((err) => {
+        showError(err);
+        setKitchenSlug(kitchenId);
+        setKitchenMenuItems([]);
+      });
   }, [kitchenId]);
 
   const handleCheckout = () => {
@@ -65,7 +76,6 @@ export default function CartPage() {
 
   const itemsInCart = items.map((i) => i.item.id);
   const availableItems = kitchenMenuItems.filter((item) => !itemsInCart.includes(item.id));
-  const kitchenSlug = kitchenId;
 
   const tax = cartTotal * 0.13;
   const total = cartTotal + tax;
